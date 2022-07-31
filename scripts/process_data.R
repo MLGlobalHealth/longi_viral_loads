@@ -1,5 +1,9 @@
+# cuarvmed = current arvmed
+# everarvmed = ever used arv
+
 require(data.table)
 require(ggplot2)
+require(readxl)
 
 # TODO:
 # There seem to be a couple of individuals whose firstpositive visit is successive to
@@ -7,18 +11,16 @@ require(ggplot2)
 # - remove those measurements
 # - study other individuals for which first HIV_VL measuremnts are 0 in dvl
 
-# TODO: need to get population denominators too
-# - this means the number of positive individuals tested in each round
-# - Probably DONE, depending on NA meaning.
+# TODO: load the new dataset  from Kate and compare it with what we have
 
-#########
-# Paths #
+
+######### 
+# Paths # 
 #########
 
 usr <- Sys.info()[['user']]
 if(usr == 'andrea')
 {
-        init()
         indir.repository <-'~/git/longi_viral_loads'
         indir.deepsequence.data <- '~/Documents/Box/ratmann_pangea_deepsequencedata'
         indir.deepsequence.analyses   <- '~/Documents/Box/ratmann_deepseq_analyses/live/PANGEA2_RCCS1519_UVRI'
@@ -29,9 +31,10 @@ if(usr == 'andrea')
 }
 
 out.dir <- file.path(indir.repository,'results')
-file.viral.loads <- file.path(indir.deepsequence.data, 'RCCS_R15_R20', "Quest_R015_R020_VOIs_May062022.csv")
+file.viral.loads1 <- file.path(indir.deepsequence.data, 'RCCS_R15_R20', "Quest_R015_R020_VOIs_May062022.csv")
+file.viral.loads2 <- file.path(indir.deepsequence.data, 'RCCS_R15_R20', "Allpcr_data_for_R015_R020_study_ids.xlsx")
+file.negative.participants <- file.path(indir.deepsequence.data, 'RCCS_R15_R20', 'R016_R020_Data_for_HIVnegatives.csv')
 file.community.keys <- file.path(indir.deepsequence.analyses,'community_names.csv')
-
 
 ###########
 # HELPERS #
@@ -61,30 +64,13 @@ fix.death.dates <- 1
 save.images <- 0
 
 # explore dataset
-dvl <- fread(file.viral.loads)
+dvl <- fread(file.viral.loads1)
 setkey(dvl, study_id, hivdate)
 
-if(0) # JOSEPH's TABLE
-{
-        cols <- c('study_id', 'sex', 'round','hivdate', 'hiv_vl')
-        tmp <- dvl[, .SD, .SDcols=cols]
-        tmp <- tmp[round != 'R020' & !is.na(hiv_vl),]
-
-        tmp1 <- tmp[, .(VL=length(hiv_vl)) ,by=c('study_id', 'sex')]
-        tmp1 <- tmp1[, .N, by=c('VL', 'sex')]
-        tmp1 <- dcast(tmp1, VL~sex)
-        tmp1[, Total:=M+F]
-        tmp1[, Total2:=Total*VL]
-        knitr::kable(tmp1)
-# | VL|    F|    M| Total| Total2|
-# |--:|----:|----:|-----:|------:|
-# |  1| 2094| 1160|  3254|   3254|
-# |  2|  905|  643|  1548|   3096|
-# |  3|  850|  491|  1341|   4023|
-# |  4|  335|  208|   543|   2172|
-# |  5|    8|    7|    15|     75|
-}
-
+cat('Excluding R20:')
+make_vl_samplesize_table(dvl, excludeR20 = TRUE)
+cat('Including R20:')
+make_vl_samplesize_table(dvl, excludeR20 = FALSE)
 
 # Empty Entries to NA
 cols <- dvl[, sapply(.SD, is.character)]
@@ -130,6 +116,14 @@ dvl <- make_relational_database(dvl)
 tmp <- sapply(c('dsero','darv','dcd4','dintdates','ddeath', 'dlocate', 'dbirth'), exists)
 stopifnot(all(tmp))
 
+# load Allpcr dataset and substitute missing hiv_vl 
+tmp <- fill_na_vls_with_allpcr_data(file=file.viral.loads2)
+cat('The new dataset provided viral load measurements in rounds:\n')
+tmp$tbl
+dvl <- tmp$dvl
+
+study_low_level_viremia(dvl)
+
 # extract and plot 
 cat('How many participants had measurements in both rounds 15 and 15S?\n')
 dvl[round %in% c(15, 15.5), sum(!is.na(hiv_vl)) > 1, by='study_id'][, table(V1)]
@@ -173,7 +167,7 @@ if(save.images) # STUDY NA VL MEASUREMENTS
                 tmp1 <- dcast(tmp1, study_id ~ DUMMY)
                 colnames(tmp1)[-1] <- paste0('R',colnames(tmp1)[-1])
 
-                .f <- function(x) mean(x != 0)
+                .f <- function(x) round(mean(x != 0)*100, 2 )
                 rbind(
                         tmp1[R15 > 0, lapply(.SD, .f)],
                         tmp1[R16 > 0, lapply(.SD, .f)],
@@ -285,115 +279,219 @@ if(save.images) # STUDY NA VL MEASUREMENTS
 # save dvl in R15_R20 folder:
 filename <- file.path(indir.deepsequence.data,
                       'RCCS_R15_R20',
-                      "viral_loads_r15r20_processed_220614.csv")
+                      "viral_loads_r15r20_processed_220727.csv")
 if( ! file.exists(filename) )
         fwrite(dvl, filename)
 
-# Maybe this not needed as reported above
-dvl_15 <- count_vls_by_round(DT=dvl, rnd=15, subset_n=4)
-dvl_16 <- count_vls_by_round(DT=dvl, rnd=16, subset_n=4)
 
-# participants moving from inland to fishing communities.
-idx <- dvl[, uniqueN(comm), by='study_id'][V1 > 1, unique(study_id)] 
-dvl[study_id %in% idx]
+# Process darv
+#_____________
+
+melt(darv, 
+     id.vars="study_id",
+) -> tmp
+
+tmp[, round := round2numeric( gsub('^.*med', '', variable) )]
+tmp[, variable := gsub('^(.*med).*$', '\\1', variable) ]
+
+dcast(tmp, 
+      study_id + round ~ variable
+) -> darv
+
+cat('Check inconsisten ARV reporting, eg: cuarvmed but not arvmed\n')
+darv[ cuarvmed == 1 & is.na(arvmed), cat(' -',.N, 'participants reported current, but not ever ARVMED ')]
+
+cat('If a participant reported cuarvmed or arvmed at a given round, set arvmed=1 for succesive rounds\n')
+
+darv[ , arvmed := {
+        idx <- ! is.na(arvmed) | ! is.na(cuarvmed)
+        idx <- which(idx)[1]
+        if ( ! is.na(idx) )
+                arvmed[idx:length(arvmed)] <- 1L
+        arvmed
+} , by='study_id']
+
+#########################
+# Negative Participants #
+#########################
+
+dneg <- fread(file.negative.participants)
+
+# remove conf_age
+dneg[ ageyrs != conf_age]
+dneg[ , conf_age := NULL]
+# Fix date, round and get community type
+dneg[, int_date := as.Date(int_date, '%d/%m/%Y')]
+dneg[, hivdate := as.Date(hivdate, '%d%b%Y')]
+dneg[, round := round2numeric(round)]
+dneg <- community.keys2type(dneg)
+
+# tables
+by_cols <- c('round',  'comm', 'sex')
+tbl <- dneg[, .N, by=by_cols]
+setkeyv(tbl, by_cols) 
+# tbl
+
+# remove columns not in dvl and merge
+dneg[, `:=` (hiv_vl=0, HIV_STATUS=0)]
+dvl[,  `:=` (HIV_STATUS=1)]
+
+stopifnot(names(dvl) %in% names(dneg))
+idx <- names(dneg) %in% names(dvl)
+cols <- names(dneg)[idx]
+dvl[, hivdate := as.Date(hivdate)]
+
+dall <- rbind(dneg[, ..cols], dvl)
+
+dall <- merge(dall, darv[, .(study_id, round, arvmed)], 
+      by=c('study_id', 'round'), all.x=TRUE)
+# study arvmed
+# tmp <- dall[HIV_STATUS == 1, mean( !is.na(arvmed)) , by=c('round', 'sex')]
+# knitr::kable(dcast(tmp,round ~ sex))
+
+setnames(dall, names(dall), toupper(names(dall)) )
+cols <- c('STUDY_ID', 'ROUND', 'SEX', 'AGEYRS' , 'COMM', 'COMM_NUM',  'CURR_ID', 'HIV_STATUS', 'HIV_VL', 'HIVDATE', 'ARVMED')
+setcolorder(dall, cols)
+
+# write to file
+filename <- file.path(indir.deepsequence.data, 
+         'RCCS_R15_R20', 
+         'all_participants_hivstatus_vl_220829.csv')
+if( ! file.exists(filename) )
+        fwrite(dall, filename)
 
 
-
-
-# define trajectory types
-#________________________
-
-date_utt <- 2013 # according to grabowsky2021
-
-# Define trajectories
-cat('Trajectories for round 15 and larger')
-dclass_15 <- define_trajectories(dvl_15)
-plot_classification(DT=dvl_15, dclass_15)
-
-cat('Trajectories for round 16 and larger')
-dclass_16 <- define_trajectories(dvl_16)
-plot_classification(DT=dvl_16, dclass_16)
-
-
-# process outputs of relational database
-# __
-
-# DCD4 <- copy(dcd4)
-dcd4 <- process_dcd4(dcd4)
-
-stopifnot(dcd4[!is.na(cd4), all(!is.na(cd4date))] & dcd4[!is.na(cd4date), all(!is.na(cd4))])
-tmp <- dcd4[, any(!is.na(cd4)) ,by='study_id']
-cat(sum(tmp$V1), 'out of ', tmp[, .N], 'study_ids (', round(tmp[, 100*sum(V1)/.N], 2)  ,'%)have at least a CD4 count measurement.\n')
-
-tmp <- dcd4[, .(N=sum(!is.na(cd4))) ,by='study_id']
-cat('Number of study_ids with with N CD4 counts.\n')
-knitr::kable(tmp[, table(N)])
-
-# sex:
-
-# Classifications stratified by age, sex, community
-if(save.images)
+if(0)
 {
-        # R15 :
-        plot_classes_by_sex_age(dclass_15, dvl_15,
-                                file.path(out.dir, 'classes_by_agesex_15.png'))
-        plot_classes_by_comm_age(dclass_15, dvl_15,
-                                file.path(out.dir, 'classes_by_agecomm_15.png'))
-        # R16 :
-        plot_classes_by_comm_age(dclass_16, dvl_16,
-                                file.path(out.dir, 'classes_by_agecomm_16.png'))
-        plot_classes_by_sex_age(dclass_16, dvl_16,
-                                file.path(out.dir, 'classes_by_agesex_16.png'))
+        ###########
+        #  EXTRA  #
+        ###########
+
+        if(0)
+        {
+                # participants moving from inland to fishing communities.
+                idx <- dvl[, uniqueN(comm), by='study_id'][V1 > 1, unique(study_id)] 
+                dvl[study_id %in% idx]
+        }
+
+	# define trajectory types
+	#________________________
+
+        date_utt <- 2013 # according to grabowsky2021
+
+	# Maybe this not needed as reported above
+	# Round 15 only has VLs for fishing communities
+        dvl_15 <- count_vls_by_round(DT=dvl, rnd=15, subset_n=4)
+        dvl_16 <- count_vls_by_round(DT=dvl, rnd=16, subset_n=4)
+
+
+	# Define trajectories
+        cat('Trajectories for round 15 and larger')
+        dclass_15 <- define_trajectories(dvl_15)
+        plot_classification(DT=dvl_15, dclass_15)
+
+        cat('Trajectories for round 16 and larger')
+        dclass_16 <- define_trajectories(dvl_16)
+        plot_classification(DT=dvl_16, dclass_16)
+
+
+	# process outputs of relational database
+	# __
+
+	# DCD4 <- copy(dcd4)
+        dcd4 <- process_dcd4(dcd4)
+
+        stopifnot(dcd4[!is.na(cd4), all(!is.na(cd4date))] & dcd4[!is.na(cd4date), all(!is.na(cd4))])
+        tmp <- dcd4[, any(!is.na(cd4)) ,by='study_id']
+        cat(sum(tmp$V1), 'out of ', tmp[, .N], 'study_ids (', round(tmp[, 100*sum(V1)/.N], 2)  ,'%)have at least a CD4 count measurement.\n')
+
+        tmp <- dcd4[, .(N=sum(!is.na(cd4))) ,by='study_id']
+        cat('Number of study_ids with with N CD4 counts.\n')
+        knitr::kable(tmp[, table(N)])
+
+	# sex:
+
+	# Classifications stratified by age, sex, community
+        if(save.images)
+        {
+                # R15 :
+                plot_classes_by_sex_age(dclass_15, dvl_15,
+                                        file.path(out.dir, 'classes_by_agesex_15.png'))
+                plot_classes_by_comm_age(dclass_15, dvl_15,
+                                        file.path(out.dir, 'classes_by_agecomm_15.png'))
+                # R16 :
+                plot_classes_by_comm_age(dclass_16, dvl_16,
+                                        file.path(out.dir, 'classes_by_agecomm_16.png'))
+                plot_classes_by_sex_age(dclass_16, dvl_16,
+                                        file.path(out.dir, 'classes_by_agesex_16.png'))
+        }
+
+	# get arv
+
+        darv <- process_darv(darv)
+        cat('The proportion of participant who did not report ARV on their first visit is:\n',
+                darv[, firstarv[1], by=study_id][, mean(is.na(V1))], '\n')
+
+        dvl_tmp <- merge(darv[, .(study_id, round, arvmed, cuarvmed)], dvl, by=c('study_id', 'round'), all.y=T)
+
+	# joint cd4 and vl
+        if(save.images)
+        {
+	# higher CD4 counts in F vs M consistent with 
+	# https://www.researchgate.net/publication/253336206_Population-Based_CD4_Counts_in_a_Rural_Area_in_South_Africa_with_High_HIV_Prevalence_and_High_Antiretroviral_Treatment_Coverage/figures?lo=1
+
+                plot_scatter_cd4vl_bygroup(dcd4, dvl, group='sex', 
+                                           filename=file.path(out.dir, 'scatter_cd4vl_by_sex.png'))
+                plot_scatter_cd4vl_bygroup(dcd4, dvl, group='comm', 
+                                           filename=file.path(out.dir, 'scatter_cd4vl_by_comm.png'))
+                plot_scatter_cd4vl_bygroup(dcd4, dvl_tmp, group='arvmed', 
+                                           filename=file.path(out.dir, 'scatter_cd4vl_by_arvmed.png'))
+        }
+        rm(dvl_tmp)
+
+	# get deaths
+        ddeath <- process_deaths(ddeath)
+
+
+	# compare demographics
+        cols <- c('study_id', 'region', 'comm', 'sex')
+        tmp <- dclass_15[, .(study_id,class)]
+
+	# Participants with defined first arv use are underepresented in the durably viremic class.
+	# Makes sense
+	# However NOTE THAT THE MERGING MAY NOT BE COMPLETE!!!!
+        tmp1 <- unique(darv[,.(study_id, firstarv)])
+        tmp <- merge(tmp, tmp1, by='study_id')
+        tmp[, list(dvl
+                   N_firstarv=sum(!is.na(firstarv)),
+                   N_tot=.N,
+                   mean=round(mean(!is.na(firstarv)),3)),
+        by=class]
+
+
+	# save image
+        rm(tmp, tmp1, tmp2)
+        cat('process_data.R completed, saving environment...\n')
+        filename <- file.path(out.dir, 'preprocessed_data.RData')
+        save.image(file=filename)
+        cat('done\n')
+
+
+        tmp <- dclass_16[, .(study_id, class = as.factor(class))]
+        tmp1 <- dvl_16[, lapply(.SD, function(x) x[length(x)]), by='study_id']
+        tmp1 <- tmp1[, .(study_id, comm, sex, ageyrs)]
+        tmp <- merge(tmp, tmp1)
+
+	# to specify baseline:
+        tmp[, class := relevel(class, ref='durably_suppressed')]
+        test <- nnet::multinom(data = tmp, class ~ sex + comm)
+
+        summary(test)
+
+	# compare predictions
+        cbind(
+              tmp[, .(study_id, class)], 
+              fitted(test)
+        ) -> tmp1
 }
 
-# get arv
-
-darv <- process_darv(darv)
-cat('The proportion of participant who did not report ARV on their first visit is:\n',
-        darv[, firstarv[1], by=study_id][, mean(is.na(V1))], '\n')
-
-dvl_tmp <- merge(darv[, .(study_id, round, arvmed, cuarvmed)], dvl, by=c('study_id', 'round'), all.y=T)
-
-# joint cd4 and vl
-if(save.images)
-{
-# higher CD4 counts in F vs M consistent with 
-# https://www.researchgate.net/publication/253336206_Population-Based_CD4_Counts_in_a_Rural_Area_in_South_Africa_with_High_HIV_Prevalence_and_High_Antiretroviral_Treatment_Coverage/figures?lo=1
-
-        plot_scatter_cd4vl_bygroup(dcd4, dvl, group='sex', 
-                                   filename=file.path(out.dir, 'scatter_cd4vl_by_sex.png'))
-        plot_scatter_cd4vl_bygroup(dcd4, dvl, group='comm', 
-                                   filename=file.path(out.dir, 'scatter_cd4vl_by_comm.png'))
-        plot_scatter_cd4vl_bygroup(dcd4, dvl_tmp, group='arvmed', 
-                                   filename=file.path(out.dir, 'scatter_cd4vl_by_arvmed.png'))
-}
-rm(dvl_tmp)
-
-# get deaths
-ddeath <- process_deaths(ddeath)
-
-
-# compare demographics
-cols <- c('study_id', 'region', 'comm', 'sex')
-tmp <- dclass_15[, .(study_id,class)]
-
-# Participants with defined first arv use are underepresented in the durably viremic class.
-# Makes sense
-# However NOTE THAT THE MERGING MAY NOT BE COMPLETE!!!!
-tmp1 <- unique(darv[,.(study_id, firstarv)])
-tmp <- merge(tmp, tmp1, by='study_id')
-tmp[, list(
-           N_firstarv=sum(!is.na(firstarv)),
-           N_tot=.N,
-           mean=round(mean(!is.na(firstarv)),3)),
-by=class]
-
-# TODO: need to get population denominators too
-
-
-# save image
-rm(tmp, tmp1, tmp2)
-cat('process_data.R completed, saving environment...\n')
-filename <- file.path(out.dir, 'preprocessed_data.RData')
-save.image(file=filename)
-cat('done\n')
