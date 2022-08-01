@@ -21,6 +21,8 @@ round2factor <- function(x)
         as.factor(x)
 }
 
+na2zero <- function(x){x[is.na(x)] <-0; x}
+
 table_f <- function(x, print=FALSE)
 {
         # TODO: for some reason it does not print the result
@@ -78,11 +80,85 @@ community.keys2type <- function(DT, path=file.community.keys, by.DT='comm_num')
         tmp <- merge(DT, dkeys, all.x=TRUE, by.x=by.DT , by.y='comm_num_raw', sort=FALSE)
         if(tmp[, any(is.na(comm))]) warning('At least one comm_num not found')
 
-        # substitiute by.DT column with new, and keep order
+        # reorder as original, with comm preceding comm_num
         rnk <- names(DT) 
-        rnk[rnk==by.DT] <- 'comm'
+        rnk <- c(rnk[1:(idx-1)], 'comm', rnk[idx:length(rnk)])
         tmp <- tmp[, .SD, .SDcols=rnk]
         tmp
+}
+
+make_vl_samplesize_table <- function(DT, excludeR20 = FALSE)
+{
+        cols <- c('study_id', 'sex', 'round','hivdate', 'hiv_vl')
+        tmp <- DT[, .SD, .SDcols=cols]
+        tmp <- tmp[!is.na(hiv_vl),]
+        if(excludeR20)  tmp <- tmp[!round %like% '20']
+
+        tmp1 <- tmp[, .(VL=length(hiv_vl)) ,by=c('study_id', 'sex')]
+        tmp1 <- tmp1[, .N, by=c('VL', 'sex')]
+        tmp1 <- dcast(tmp1, VL~sex)
+        tmp1[, Total:=M+F]
+        tmp1[, Total2:=Total*VL]
+        knitr::kable(tmp1)
+}
+
+fill_na_vls_with_allpcr_data <- function(file=file.viral.loads2)
+{ 
+        
+        cat('===\n Studying ', file, '...\n===\n\n')
+
+        # Warnings about 6 dates prior to 1900, but shouldn t be an issue
+        dvl2 <- suppressWarnings(read_xlsx(file)) 
+        dvl2 <- as.data.table(dvl2)
+        setkey(dvl2, study_id, round)
+        setcolorder(dvl2, c('study_id', 'round'))
+
+        dvl2[, round := gsub('PLA', '', round)] 
+        dvl2[, `:=` (studyid = NULL, round = round2numeric(round))]
+        
+        # What to do with non-numeric entries?
+        dvl2[, guessed := FALSE]
+        dvl2[copies %like% '[A-Z]|<|>', table(copies)] |> knitr::kable()
+        dvl2[copies %like% '[A-Z]|<|>', guessed := TRUE]
+
+        cat(' - For "<" ranges, keep the upper bound...\n')
+        cols <- c('copies', 'new_copies')
+        dvl2[, (cols) := lapply(.SD, function(x) gsub(',', '', x) ) , .SDcols=cols]
+        dvl2[, (cols) := lapply(.SD, function(x) gsub('<|< ', '', x) ) , .SDcols=cols]
+
+        # It would seem that new-copies should be kept if it differs from copies!
+        # BD is generally equivalent with 0 hiv_vl (~70% of times, else NA)
+        tmp <- merge(dvl[, .(study_id, round, hiv_vl, hivdate)], dvl2, by=c('study_id', 'round'))
+        # tmp[hiv_vl != new_copies & hiv_vl != 0]
+        # tmp[new_copies %like% "[A-Z]", .(hiv_vl, new_copies)][, mean(!is.na(hiv_vl))]
+
+        # 
+        cat(' - setting BD, ND to 0...\n')
+        cols <- c('copies', 'new_copies')
+        dvl2[, (cols) := lapply(.SD, function(x) gsub('^BD|^ND|^Not Dete.*?$', '0',x)), .SDcols=cols]
+        dvl2[, (cols) := lapply(.SD, function(x) gsub('[A-Z]', '0',x)), .SDcols=cols]
+        dvl2[, hiv_vl := copies]
+        dvl2[copies != new_copies, hiv_vl := new_copies]
+        dvl2[, hiv_vl := as.numeric(hiv_vl)]
+
+        # merge?
+        tmp <- dvl[is.na(hiv_vl), .(study_id, round)]
+        tmp <- merge(tmp, dvl2, all.x=TRUE)
+        tmp[, cat("Out of ", .N, " NA viral loads in the first dataset, ", round(100*mean(!is.na(hiv_vl)),2), '% are reported in the second one', '\n' )]
+
+        cat('Substituting....\n')
+        setnames(tmp, 'hiv_vl', 'hiv_vl2')
+        tmp[!is.na(hiv_vl2), round]
+        tbl <- knitr::kable(tmp[!is.na(hiv_vl2), table(round)])
+        
+
+        dvl <- merge(dvl,
+              tmp[!is.na(hiv_vl2), .(study_id, round, hiv_vl2)],
+              all.x=TRUE, by=c('study_id', 'round'))
+        dvl[!is.na(hiv_vl2), hiv_vl := hiv_vl2]
+        dvl[, hiv_vl2:=NULL]
+
+        return(list(dvl=dvl, tbl=tbl))
 }
 
 make_relational_database <- function(DT)
@@ -124,7 +200,8 @@ make_relational_database <- function(DT)
         if(!exists('dlocate'))
         {
                 cols <- grep('^loc|^resident|^mobility|^hh_num', names(DT), value=TRUE) 
-                dlocate <<- unique(DT[, .SD, .SDcols=c('study_id', 'region','comm', cols)])
+                cols2 <- grep('^comm|study_id|region|round', names(DT), value=TRUE) 
+                dlocate <<- unique(DT[, .SD, .SDcols=c(cols2, cols)])
                 DT <- DT[, .SD, .SDcols=!cols]
         }
 
@@ -154,6 +231,51 @@ make_relational_database <- function(DT)
         }
 
         return( unique(DT) )
+}
+
+study_low_level_viremia <- function(DT)
+{
+        tmp <- copy(DT)
+
+        # define viremic classes
+        tmp[, hiv_vl_type := ifelse(hiv_vl > 200, 'low_level_viremia', 'non_viremic')]
+        tmp[hiv_vl > 1000, hiv_vl_type := 'viremic']
+        tmp[is.na(hiv_vl_type), hiv_vl_type := 'unknown']
+        tmp[, round := round2factor(round)]
+        tmp[, hiv_vl_type := ordered(hiv_vl_type,
+                                     levels=c('non_viremic', 'low_level_viremia', 'viremic', 'unknown'))]
+
+        ggplot(tmp, aes(round, fill=hiv_vl_type)) +
+                geom_histogram(position='stack', stat='count') + 
+                theme_bw() + 
+                theme(legend.position='bottom') + 
+                labs(y='', x='Sample collection round', 
+                     title='Viremia types',
+                     subtitle='The proportion of low-viremic participants is decreasing with rounds'
+                )
+
+        .f <- function(remove_unknown=TRUE, remove_viremic=TRUE)
+        {
+                tmp1 <- tmp[, .N , by=c('round', 'hiv_vl_type')]
+                tmp1 <- dcast(tmp1, round ~ hiv_vl_type, value.var='N')
+                cols <- setdiff(names(tmp1), 'round')
+                if(remove_unknown) cols <- setdiff(cols, 'unknown')
+                if(remove_viremic) cols <- setdiff(cols, 'viremic')
+                tmp1[, (cols):=lapply(.SD, na2zero) , .SDcols=cols]
+                setcolorder(tmp1, c('round','non_viremic', 'low_level_viremia', 'viremic', 'unknown'))
+                tmp1$TOTAL <- rowSums(tmp1[, ..cols])
+                tmp2 <- tmp1[, lapply(.SD, function(x) scales::label_percent(accuracy=0.01)(x/TOTAL)) , .SDcols=cols]
+                tmp2[, `:=` (round = tmp1$round, N=tmp1$TOTAL)]
+                setcolorder(tmp2, 'round')
+                knitr::kable(tmp2)
+        }
+
+        cat('Among suppressed participants, the prevalence of low level viremia is decreasing')
+        .f()
+
+        cat('Among participants with non-NA measurements, the prevalence of low level viremia is decreasing')
+        .f(remove_unknown=TRUE, remove_viremic=FALSE)
+        
 }
 
 process_darv <- function(DT=darv)
