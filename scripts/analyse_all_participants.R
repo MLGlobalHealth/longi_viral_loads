@@ -30,11 +30,11 @@ if(usr == 'andrea')
         indir.deepsequence.data <- '~/rds/general/projects/LALALADEEPDATA'
 }
 
-out.dir <- file.path(indir.repository,'results', '220829_oli')
+out.dir <- file.path(indir.repository,'results', '220729_oli')
 path.stan <- file.path(indir.repository, 'stan')
 path.tests <- file.path(indir.deepsequence.data, 
                         'RCCS_R15_R20',
-                        "all_participants_hivstatus_vl_220829.csv")
+                        "all_participants_hivstatus_vl_220729.csv")
 
 file.exists(
         out.dir,
@@ -67,6 +67,8 @@ print(my.cluster)
 VL_DETECTABLE = 400
 VIREMIC_VIRAL_LOAD = 500
 
+# dall[ HIV_STATUS == 1, mean(!is.na(HIV_VL)), by=ROUND]
+
 # Load data: exclude round 20 as incomplete
 dall <- fread(path.tests)
 dall <- dall[ROUND >= 16 & ROUND <= 19]
@@ -96,97 +98,9 @@ if(0) # already done and takes time!
 # Estimate mean viral load
 # ________________________
 
-vl.meanviralload.by.gender.loc.age.icar<- function()
-{
-	
-        # DT <- copy(dall)
-	outdir <- file.path(out.dir)
-        DT <- .preprocess.ds.oli(DT)
-	
-	tmp <- seq.int(min(DT$AGEYRS), max(DT$AGEYRS))
-        tmp1 <- DT[, sort(unique(ROUND))]
-	vla <- as.data.table(expand.grid(ROUND=tmp1,
-                                         FC=c('fishing','inland'),
-                                         SEX=c('M','F'),
-                                         AGEYRS=tmp))
-	vla <- vla[, {	
-                z <- which(DT$FC==FC & DT$SEX==SEX & DT$AGEYRS==AGEYRS)	
-                list(N          = length(z),
-                     VL_MEAN    = mean(DT$VLC[z]),
-                     VL_SD      = sd(DT$VLC[z]),
-                     VL_MEAN_SD = sd(DT$VLC[z]) / sqrt(length(z)),
-                     HIV_N      = sum(DT$HIV_STATUS[z]==1),
-                     VLNS_N     = sum(DT$VLNS[z]==1),
-                     ARV_N      = sum(DT$ARVMED[z]==0 & DT$HIV_STATUS[z]==1 & !is.na(DT$ARVMED[z]) )
-                )}, by=names(vla)]
 
-	setnames(vla, c('FC','SEX','AGEYRS'), c('LOC_LABEL','SEX_LABEL','AGE_LABEL'))
-	vla[, LOC:= as.integer(LOC_LABEL=='fishing')]
-	vla[, SEX:= as.integer(SEX_LABEL=='M')]
-	vla[, AGE:= AGE_LABEL-14L]
-	vla[, ROW_ID:= seq_len(nrow(vla))]
-	
-	ggplot(vla, aes(x=AGE_LABEL, fill=SEX_LABEL, color=SEX_LABEL) ) + 		
-			geom_ribbon(aes(x=AGE_LABEL, ymin=VL_MEAN-2*VL_MEAN_SD, ymax=VL_MEAN+2*VL_MEAN_SD, group=interaction(SEX_LABEL,LOC_LABEL)), alpha=0.2, colour=NA) +
-			geom_line(aes(x=AGE_LABEL, y=VL_MEAN, colour=SEX_LABEL)) +
-			scale_x_continuous( expand=c(0,0) ) + 
-			scale_y_log10() +
-			scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-			scale_fill_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-			facet_wrap(SEX_LABEL~LOC_LABEL, ncol=2, scales='free') +
-			theme_bw() +
-			labs(x='\nage at visit (years)', 
-					y='mean viral load\n(95% credibility interval)\n', 
-					colour='gender', fill='gender',
-					linetype='location')
-	ggsave(file=file.path(prjdir,'results_200220','200428d_mvl_vs_age_by_gender_fishinland_raw.pdf'), w=6, h=5)
-	
-	stan.code <- 
-	
-	stan.model <- stan_model(model_name= 'icar_age_interactions',model_code = gsub('\t',' ',stan.code))
-	stan.data <- list()
-	stan.data$N <- nrow(vla)
-	stan.data$MEAN <- vla[,VL_MEAN]
-	stan.data$SD <- pmax(1, vla[,VL_MEAN_SD])
-	stan.data$AGE_N <- vla[, max(AGE)]
-	stan.data$AGE <- vla[, AGE]
-	stan.data$SEX <- vla[, SEX]
-	stan.data$LOC <- vla[, LOC]
-	#	second order RW prior
-	stan.data$node1 <-  c(vla[, seq.int(1, max(AGE)-1L)], vla[, seq.int(1, max(AGE)-2L)])
-	stan.data$node2 <-  c(vla[, seq.int(2, max(AGE))], vla[, seq.int(3, max(AGE))])
-	tmp <- sort(stan.data$node1, index.return=TRUE)$ix
-	stan.data$node1 <- stan.data$node1[tmp]
-	stan.data$node2 <- stan.data$node2[tmp]
-	stan.data$N_edges <-  length(stan.data$node1)
-	fit <- sampling(stan.model, data=stan.data, iter=20e3, warmup=5e2, chains=1, control = list(max_treedepth= 15, adapt_delta= 0.999) )	
-	save(fit, file=file.path(outdir, "mvlinpop_icar_stanfit_200428b.rda"))
-	
-	min( summary(fit)$summary[, 'n_eff'] )	
-	re <- rstan::extract(fit)
-	ps <- c(0.025,0.5,0.975)
-	
-	
-	#	make prevalence plot by age
-	tmp <- apply(re$mu, 2, quantile, probs=ps)
-	rownames(tmp) <- c('CL','M','CU')
-	tmp <- as.data.table(reshape2::melt(tmp))	
-	mvl.by.age <- cbind(vla, dcast.data.table(tmp, Var2~Var1, value.var='value'))	
-	ggplot(mvl.by.age) + 		
-			geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=interaction(SEX_LABEL,LOC_LABEL)), alpha=0.2) +
-			geom_line(aes(x=AGE_LABEL, y=M, colour=SEX_LABEL)) +
-			scale_x_continuous( expand=c(0,0) ) + 
-			#scale_y_log10() +
-			scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-			facet_wrap(~LOC_LABEL, ncol=2) +
-			theme_bw() +
-			labs(x='\nage at visit (years)', 
-					y='mean viral load\n(95% credibility interval)\n', 
-					colour='gender', 
-					linetype='location')
-	ggsave(file=file.path(prjdir,'results_200220','200428d_mvl_vs_age_by_gender_fishinland_stan.pdf'), w=6, h=5)
-	
-}
+vl.meanviralload.by.gender.loc.age.icar(dall)
+
 
 vl.meanviralload.by.gender.loc.age.gp<- function()
 {
