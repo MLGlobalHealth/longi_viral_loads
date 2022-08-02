@@ -1,6 +1,5 @@
 # AIMS:
 # - adapt older code from Oli to multi-round, longitudinal settings
-# TODO: add ARVMED to dall in preprocess_data.R
 
 ################
 # DEPENDENCIES #
@@ -102,15 +101,19 @@ if(0) # TORUN:
         vl.meanviralload.by.gender.loc.age.icar(dall)
 }
 
-# Estimate suppofinfected (whatever that means)
-# ________________________
+# Estimate suppressed pop
+# _______________________
 if(0)
 {
         vl.suppofinfected.by.gender.loc.age.icar(dall)
         vl.suppofinfected.by.gender.loc.age.gp(dall)
 }
 
+if(0)
+{
+        vl.suppofpop.by.gender.loc.age.gp(dall)
+        vl.suppofpop.by.gender.loc.age.icar(dall)
+}
 
 
-vl.suppofinfected.by.gender.loc.age.gp(dall)
 

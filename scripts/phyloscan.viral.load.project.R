@@ -130,22 +130,22 @@ vl.vlprops.by.comm.gender.loc<- function(DT, write.csv=FALSE)
         
 
 	vlc <- DT[, {
-                                z  <- .f( HIV_STATUS == 1, HIV_STATUS)
-                                z2 <- .f( VLNS == 1, VLNS )
-                                z3 <- .f( VLNS == 1, which(HIV_STATUS == 1) )
-				list(FC=FC[1],
-						N= length(HIV_STATUS),
-						PHIV_MEAN= z[1],
-						PHIV_CL= z[2],
-						PHIV_CU= z[3],				 
-						PVLNS_MEAN= z2[1],
-						PVLNS_CL= z2[2],
-						PVLNS_CU= z2[3],
-						PVLNSofHIV_MEAN= z3[1],
-						PVLNSofHIV_CL= z3[2],
-						PVLNSofHIV_CU= z3[3],				 
-						VLC_MEAN= mean(VLC))		
-			}, by=c('ROUND', 'COMM_NUM','SEX')]
+                z  <- .f( HIV_STATUS == 1, HIV_STATUS)
+                z2 <- .f( VLNS == 1, VLNS )
+                z3 <- .f( VLNS == 1, which(HIV_STATUS == 1) )
+                list(FC=FC[1],
+                     N= length(HIV_STATUS),
+                     PHIV_MEAN= z[1],
+                     PHIV_CL= z[2],
+                     PHIV_CU= z[3],				 
+                     PVLNS_MEAN= z2[1],
+                     PVLNS_CL= z2[2],
+                     PVLNS_CU= z2[3],
+                     PVLNSofHIV_MEAN= z3[1],
+                     PVLNSofHIV_CL= z3[2],
+                     PVLNSofHIV_CU= z3[3],				 
+                     VLC_MEAN= mean(VLC))		
+        }, by=c('ROUND', 'COMM_NUM','SEX')]
 
         .f <- function(m, l, u)
         {
@@ -1964,71 +1964,52 @@ vl.suppofpop.by.gender.loc.age.icar<- function(DT)
         return(tmp)
 }
 
-vl.vlrunningprops.by.gender.loc.age<- function()
+vl.vlrunningprops.by.gender.loc.age<- function(DT)
 {
-	require(Hmisc)
-	require(data.table)
-	require(ggplot2)
-	VL_DETECTABLE <- 4e2
-	VIREMIC_VIRAL_LOAD <- 1e3
-	
-	
-	require(data.table)
-	prjdir	<- '~/Box/OR_Work/2018/2018_RakaiViralLoad'
-	infile	<- file.path(prjdir,'data','191101_data_round17_vl_gps.rda')
-	load( infile )
-	setalloccol(ds)
-	
-	# remove HIV+ individuals with missing VLs
-	ds <- subset(ds, HIV_STATUS==0 | HIV_AND_VL==1)
-	# consider only ARVMED for infected
-	set(ds, ds[, which(ARVMED==1 & HIV_STATUS==0)], 'ARVMED', 0) 
-	
-	# define VL_COPIES for uninfected
-	set(ds, NULL, 'VLC', ds$VL_COPIES)
-	set(ds, ds[,which(HIV_STATUS==0)], 'VLC', 0)
-	
-	# define undetectable VL (machine-undetectable)
-	# define suppressed VL (according to WHO criteria)	
-	set(ds, NULL, 'VLU', ds[, as.integer(VLC<VL_DETECTABLE)])
-	set(ds, NULL, 'VLS', ds[, as.integer(VLC<VIREMIC_VIRAL_LOAD)])
-	set(ds, NULL, 'VLD', ds[, as.integer(VLC>=VL_DETECTABLE)])
-	set(ds, NULL, 'VLNS', ds[, as.integer(VLC>=VIREMIC_VIRAL_LOAD)])
-	set(ds, NULL, 'HIV_AND_VLD', ds[, as.integer(VLD==1 & HIV_AND_VL==1)])
-	
-	# reset VLC below machine detectable to 0
-	set(ds, ds[, which(HIV_AND_VL==1 & VLU==1)], 'VLC', 0)
-	setkey(ds, FC, SEX, AGEYRS)
-	
-	subset(ds, FC=='inland' & SEX=='F' & AGEYRS==25)
-	
-	tmp <- seq.int(min(ds$AGEYRS), max(ds$AGEYRS))
-	vla <- as.data.table(expand.grid(FC=c('fishing','inland'), SEX=c('M','F'), AGEYRS=tmp))
+        # TODO: 
+        # Check by round
+
+        # DT <- copy(dall)
+	outdir <- file.path(out.dir)
+        DT <- .preprocess.ds.oli(DT)
+
+	tmp <- seq.int(min(DT$AGEYRS), max(DT$AGEYRS))
+        tmp1 <- DT[, sort(unique(ROUND))]
+	vla <- as.data.table(expand.grid(ROUND=tmp1, 
+                                         FC=c('fishing','inland'),
+                                         SEX=c('M','F'),
+                                         AGEYRS=tmp))
+
+        .f <- function(x,y) as.vector( unname ( binconf( sum(x), length(y) )))
 	ans <- vla[, {		
-				z <- which(ds$FC==FC & ds$SEX==SEX & ds$AGEYRS<=(AGEYRS+2) & ds$AGEYRS>=(AGEYRS-2))				
-				z2<- as.vector( unname( binconf( length(which(ds$HIV_STATUS[z]==1)), length(z) ) ) )
-				z3<- as.vector( unname( binconf( length(which(ds$VLNS[z]==1)), length(z) ) ) )
-				z4<- as.vector( unname( binconf( length(which(ds$VLNS[z]==1)), length(which(ds$HIV_STATUS[z]==1)) ) ) )
-				z5<- as.vector( unname( binconf( length(which(ds$ARVMED[z]==0 & ds$HIV_STATUS[z]==1 & !is.na(ds$ARVMED[z]))), length(which(ds$HIV_STATUS[z]==1 & !is.na(ds$ARVMED[z]))) ) ) )
-				list(N= length(z),
-						PHIV_MEAN= z2[1],
-						PHIV_CL= z2[2],
-						PHIV_CU= z2[3],				 
-						PVLNS_MEAN= z3[1],
-						PVLNS_CL= z3[2],
-						PVLNS_CU= z3[3],
-						PVLNSofHIV_MEAN= z4[1],
-						PVLNSofHIV_CL= z4[2],
-						PVLNSofHIV_CU= z4[3],
-						PARVofHIV_MEAN= z5[1],
-						PARVofHIV_CL= z5[2],
-						PARVofHIV_CU= z5[3]
-						)				
-			}, by=c('FC','SEX','AGEYRS')]
+				z <- which(DT$ROUND == ROUND, DT$FC==FC & DT$SEX==SEX & DT$AGEYRS<=(AGEYRS+2) & DT$AGEYRS>=(AGEYRS-1))				
+                                z2 <- .f(DT$HIV_STATUS[z]==1, z)
+                                z3 <- .f(DT$VLNS[z]==1, z)
+                                z4 <- .f(DT$VLNS[z]==1, which(DT$HIV_STATUS[z]==1))
+                                z5 <- .f(DT$ARVMED[z]==0 & DT$HIV_STATUS[z] & !is.na(DT$ARVMED), which(DT$hiv_status[z]==1 & !is.na(DT$arvmed[z]))) 
+
+				list(
+                                     N= length(z),
+                                     PHIV_MEAN= z2[1],
+                                     PHIV_CL= z2[2],
+                                     PHIV_CU= z2[3],				 
+                                     PVLNS_MEAN= z3[1],
+                                     PVLNS_CL= z3[2],
+                                     PVLNS_CU= z3[3],
+                                     PVLNSofHIV_MEAN= z4[1],
+                                     PVLNSofHIV_CL= z4[2],
+                                     PVLNSofHIV_CU= z4[3],
+                                     PARVofHIV_MEAN= z5[1],
+                                     PARVofHIV_CL= z5[2],
+                                     PARVofHIV_CU= z5[3]
+                                )				
+        }, by=names(vla)]
+
 	set(ans, NULL, 'SEX', ans[, factor(SEX, levels=c('M','F'), labels=c('men','women'))])
 	
-	
-	#	HIV prevalence
+	# HIV prevalence
+	# ______________
+
 	p <- ggplot(ans) + 		
                 geom_ribbon(aes(x=AGEYRS, ymin=PHIV_CL, ymax=PHIV_CU, group=interaction(SEX,FC)), alpha=0.2) +
                 geom_line(aes(x=AGEYRS, y=PHIV_MEAN, colour=SEX)) +
@@ -2041,9 +2022,11 @@ vl.vlrunningprops.by.gender.loc.age<- function()
                      y='HIV prevalence (95% CI)\n', 
                      colour='gender', linetype='location')
 
-	ggsave(p, file=file.path(prjdir,'results_200220','200220_hivprevalence_vs_age_by_gender_fishinland.pdf'), w=6, h=5)
+	ggsave(p, file=file.path(outdir,'220729_hivprevalence_vs_age_by_gender_fishinland.pdf'), w=6, h=5)
 	
-	#	HIV unsuppressed viral load
+	# HIV unsuppressed viral load
+	# ___________________________
+
 	p <- ggplot(ans) + 		
                 geom_ribbon(aes(x=AGEYRS, ymin=PVLNS_CL, ymax=PVLNS_CU, group=interaction(SEX,FC)), alpha=0.2) +			
                 geom_line(aes(x=AGEYRS, y=PVLNS_MEAN, colour=SEX)) +
@@ -2057,10 +2040,12 @@ vl.vlrunningprops.by.gender.loc.age<- function()
                      colour='gender', 
                      linetype='location')
 
-        ggsave(p, file=file.path(prjdir,'results_200220','200220_hivnotsupp_vs_age_by_gender_fishinland.pdf'), w=6, h=5)
+        ggsave(p, file=file.path(outdir,'220729_hivnotsupp_vs_age_by_gender_fishinland.pdf'), w=6, h=5)
 
 	
-	#	HIV unsuppressed viral load among HIV+
+	# HIV unsuppressed viral load among HIV+
+	# ______________________________________
+
 	p <- ggplot(ans) + 		
                 geom_ribbon(aes(x=AGEYRS, ymin=PVLNSofHIV_CL, ymax=PVLNSofHIV_CU, group=interaction(SEX,FC)), alpha=0.2) +
                 geom_line(aes(x=AGEYRS, y=PARVofHIV_MEAN, colour=SEX), linetype='dotted') +
@@ -2075,15 +2060,17 @@ vl.vlrunningprops.by.gender.loc.age<- function()
                      colour='gender', 
                      linetype='location')
 
-        ggsave(p, file=file.path(prjdir,'results_200220','200220_hivnotsuppofhiv_vs_age_by_gender_fishinland.pdf'), w=6, h=5)
+        ggsave(p, file=file.path(outdir,'220729_hivnotsuppofhiv_vs_age_by_gender_fishinland.pdf'), w=6, h=5)
 	
 	
-	#	write results to file
+	# write results to file
+	# _____________________
+
 	setkey(ans, FC, SEX, AGEYRS)
 	ans[, PHIV_L:= paste0( round(PHIV_MEAN*100, d=1),' [', round(PHIV_CL*100, d=1),'-', round(PHIV_CU*100, d=1),']' )]
 	ans[, PVLNS_L:= paste0( round(PVLNS_MEAN*100, d=1),' [', round(PVLNS_CL*100, d=1),'-', round(PVLNS_CU*100, d=1),']' )]
 	ans[, PVLNSofHIV_L:= paste0( round(PVLNSofHIV_MEAN*100, d=1),' [', round(PVLNSofHIV_CL*100, d=1),'-', round(PVLNSofHIV_CU*100, d=1),']' )]
-	write.csv(ans, file=file.path(prjdir,'results_200220','200220_keystats_by_age_gender_fishinland.csv'))
+	write.csv(ans, file=file.path(outdir,'220729_keystats_by_age_gender_fishinland.csv'))
 }
 
 vl.vlrunningmean.by.gender.loc.age<- function()
