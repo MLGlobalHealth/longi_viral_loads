@@ -3,8 +3,8 @@ ggsave2 <- function(p, file, w, h)
         filename <- file
         filename2 <- gsub('pdf$','png',filename)
         cat('Saving', filename, '...\n')
-        ggsave(p, file=file.path(outdir,filename2), width=w, height=h)
-        ggsave(p, file=file.path(outdir, filename), width=w, height=h)	
+        ggsave(p, filename=file.path(outdir,filename2), width=w, height=h)
+        ggsave(p, filename=file.path(outdir, filename), width=w, height=h)	
 }
 
 
@@ -56,7 +56,7 @@ date2numeric<- function( x )
                                          SEX=c('M','F'),
                                          AGEYRS=tmp))
 	vla <- vla[, {		
-                z <- which(DT$ROUND==ROUND, DT$FC==FC & DT$SEX==SEX & DT$AGEYRS==AGEYRS)	
+                z <- which(DT$ROUND==ROUND & DT$FC==FC & DT$SEX==SEX & DT$AGEYRS==AGEYRS)	
                 list(N          = length(z),
                      HIV_N      = sum(DT$HIV_STATUS[z]==1),
                      VLNS_N     = sum(DT$VLNS[z]==1),
@@ -193,7 +193,7 @@ vl.vlprops.by.comm.gender.loc<- function(DT, write.csv=FALSE)
         list(DT=vlc, p=p)
 }
 
-vl.prevalence.by.gender.loc.age.gp <- function(DT) 
+vl.prevalence.by.gender.loc.age.gp <- function(DT, refit=FALSE) 
 {
         # DT <- copy(dall)
 	outdir <- file.path(out.dir)
@@ -210,7 +210,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
 	stan.model <- stan_model(file=file.stan.2, model_name= 'gp_all')
 	vla2 <- subset(vla, SEX==0 & LOC==0)
 
-        .fit.stan.and.plot.by.round <- function(DT, iter=2e3, warmup=5e2, chains=1, control=list(max_treedepth= 15, adapt_delta= 0.999))
+        .fit.stan.and.plot.by.round <- function(DT,refit=refit, iter=2e3, warmup=5e2, chains=1, control=list(max_treedepth= 15, adapt_delta= 0.999))
         {
                 #  DT <- copy(vla[ROUND == 16])
                 round <- DT[, unique(ROUND)]
@@ -246,19 +246,24 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                         rho_hyper_par_11 = diff(range(tmp))/3
                 )
 
-                fit <- sampling(stan.model,
-                                data=stan.data,
-                                iter=iter, warmup=warmup, chains=chains, 
-                                control = control)
-
                 filename <- file.path(outdir, paste0("hivprevalence_gp_stanfit_round",round,"_220829.rds"))
-                saveRDS(fit, file=filename)
+                if(file.exists(filename) & refit == FALSE)
+                {
+                        cat('Loading previously run HMC... \n')
+                        fit <- readRDS(filename)
+                }else{
+                        fit <- sampling(stan.model, data=stan.data, 
+                                        iter=iter, warmup=warmup,
+                                        chains=chains, control=control)
+                        saveRDS(fit, file=filename)
+                }
 
                 # Analyse posterior
                 # _________________
 
                 cat('The minimum effective sample size is:\n')
-                min( summary(fit)$summary[, 'n_eff'] )	
+                cat(min( summary(fit)$summary[, 'n_eff'] ), '\n')
+
                 re <- rstan::extract(fit)
                 ps <- c(0.025,0.25,0.5,0.75,0.975)
 
@@ -400,10 +405,10 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                 rp[, list(Q= quantile(PR_FM_D, probs=ps), P=c('CL','M','CU'))]
                 
 
-                filename=file.path(outdir, "220929f_hivprevalence.rda")
+                filename=paste0("220929f_hivprevalence_round",round,".rda")
                 save(DT, re, prev.hiv.by.age, prevratio.hiv.by.loc,
                      prev.hiv.by.sex.loc, prevratio.hiv.by.loc.age,
-                     file=filename)
+                     file=file.path(outdir, filename))
 
 
                 #	make table version suppressed
@@ -430,7 +435,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                 filename = file.path(outdir, paste0("220829f_hivprevalence_round",round,".csv"))
                 fwrite(dt, row.names=FALSE, file=filename)
 	
-                TRUE
+                return(TRUE)
         }
         
         foreach(
@@ -438,11 +443,14 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                 .combine='c'
         ) %dopar% {
                 cat('Running Round', r, '\n')
-                .fit.stan.and.plot.by.round(vla[ ROUND ==r, ], iter=2e3)
+                .fit.stan.and.plot.by.round(vla[ ROUND ==r, ], refit=refit, iter=2e3)
         } -> tmp
 
         return(tmp)
 
+        .fit.stan.and.plot.by.round(vla[ ROUND ==17, ], refit=FALSE)
+        .fit.stan.and.plot.by.round(vla[ ROUND ==18, ], refit=FALSE)
+        .fit.stan.and.plot.by.round(vla[ ROUND ==19, ], refit=FALSE)
 }
 
 vl.prevalence.by.gender.loc.age.icar<- function(DT)
@@ -1082,7 +1090,7 @@ vl.suppofinfected.by.gender.loc.age.icar<- function(DT)
         return(tmp)
 }
 
-vl.suppofinfected.by.gender.loc.age.gp<- function(DT)
+vl.suppofinfected.by.gender.loc.age.gp<- function(DT, refit=FALSE)
 {
 	
         # DT <- copy(dall)
@@ -1114,15 +1122,21 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT)
         file.stan.1 <- file.path(path.stan, 'vl_suppofinfected_by_gender_loc_age_gp.stan')
 	stan.model <- stan_model(file.stan.1, model_name='gp_all')	
 		
-	.fit.stan.and.plot.by.round <- function(DT , iter=10e3, warmup=5e2, chains=1, control = list(max_treedepth= 15, adapt_delta= 0.999))
+	.fit.stan.and.plot.by.round <- function(DT, refit=refit, iter=10e3, warmup=5e2, chains=1, control = list(max_treedepth= 15, adapt_delta= 0.999))
         {
                 # DT <- copy(DT[ROUND == 16] )
                 round <- DT[, unique(ROUND)]
                 stopifnot(length(round) == 1)
                 cat('Fitting stan model for round ', round, '\n')
 
+                tmp <- seq(DT[, min(AGE_LABEL)], DT[, max(AGE_LABEL)+1], 0.5)
+                tmp1 <- which(stan.data$x_predict%%1==0.5)
+
                 stan.data <- list(
-                        x_predict = seq(DT[, min(AGE_LABEL)], DT[, max(AGE_LABEL)+1], 0.5),
+                        x_predict = tmp,
+                        N_predict = length(tmp),
+                        observed_idx = tmp1 ,
+                        N_observed = length(tmp1),
                         y_observed_00 = DT[SEX==0 & LOC==0, HIV_N-VLNS_N],
                         y_observed_10 = DT[SEX==1 & LOC==0, HIV_N-VLNS_N],
                         y_observed_01 = DT[SEX==0 & LOC==1, HIV_N-VLNS_N],
@@ -1134,26 +1148,38 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT)
                         alpha_hyper_par_00 = 2,
                         alpha_hyper_par_10 = 2,
                         alpha_hyper_par_01 = 2,
-                        alpha_hyper_par_11 = 2
+                        alpha_hyper_par_11 = 2,
+                        rho_hyper_par_00 = diff(range(tmp))/3,
+                        rho_hyper_par_10 = diff(range(tmp))/3,
+                        rho_hyper_par_01 = diff(range(tmp))/3,
+                        rho_hyper_par_11 = diff(range(tmp))/3
                 )
-                stan.data$N_predict <- length(stan.data$x_predict)
-                stan.data$observed_idx <- which(stan.data$x_predict%%1==0.5)
-                stan.data$N_observed <- length(stan.data$observed_idx)
-                stan.data$rho_hyper_par_00 <- diff(range(stan.data$x_predict))/3
-                stan.data$rho_hyper_par_10 <- diff(range(stan.data$x_predict))/3
-                stan.data$rho_hyper_par_01 <- diff(range(stan.data$x_predict))/3
-                stan.data$rho_hyper_par_11 <- diff(range(stan.data$x_predict))/3
                 
-                fit <- sampling(stan.model, data=stan.data, iter=iter, warmup=warmup, chains=chains, control=control)
                 filename <- paste0( '220729f_notsuppAmongInfected_gp_stan_round',round,'.rds')
-                saveRDS(fit, file=file.path(outdir,filename))
-                
+                filename <- file.path(outdir, filename)
+
+                if(file.exists(filename) & refit == FALSE)
+                {
+                        cat('Loading previously run HMC... \n')
+                        fit <- readRDS(filename)
+                }else{
+                        fit <- sampling(stan.model, data=stan.data, 
+                                        iter=iter, warmup=warmup,
+                                        chains=chains, control=control)
+                        saveRDS(fit, file=filename)
+                }
                 
                 # compare to self-report
                 # ______________________
 
+                tmp <- seq(DT[, min(AGE_LABEL)], DT[, max(AGE_LABEL)+1], 0.5)
+                tmp1 <- which(stan.data$x_predict%%1==0.5)
+
                 stan.data <- list(
-                        x_predict = seq(DT[, min(AGE_LABEL)], DT[, max(AGE_LABEL)+1], 0.5),
+                        x_predict = tmp,
+                        N_predict = length(tmp),
+                        observed_idx = tmp1,
+                        N_observed = length(tmp1),
                         y_observed_00 = DT[SEX==0 & LOC==0, HIV_N-ARV_N],
                         y_observed_10 = DT[SEX==1 & LOC==0, HIV_N-ARV_N],
                         y_observed_01 = DT[SEX==0 & LOC==1, HIV_N-ARV_N],
@@ -1165,19 +1191,27 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT)
                         alpha_hyper_par_00 = 2,
                         alpha_hyper_par_10 = 2,
                         alpha_hyper_par_01 = 2,
-                        alpha_hyper_par_11 = 2
+                        alpha_hyper_par_11 = 2,
+                        rho_hyper_par_00 = diff(range(tmp))/3,
+                        rho_hyper_par_10 = diff(range(tmp))/3,
+                        rho_hyper_par_01 = diff(range(tmp))/3,
+                        rho_hyper_par_11 = diff(range(tmp))/3
                 )
-                stan.data$N_predict <- length(stan.data$x_predict)
-                stan.data$observed_idx <- which(stan.data$x_predict%%1==0.5)
-                stan.data$N_observed <- length(stan.data$observed_idx)
-                stan.data$rho_hyper_par_00 <- diff(range(stan.data$x_predict))/3
-                stan.data$rho_hyper_par_10 <- diff(range(stan.data$x_predict))/3
-                stan.data$rho_hyper_par_01 <- diff(range(stan.data$x_predict))/3
-                stan.data$rho_hyper_par_11 <- diff(range(stan.data$x_predict))/3
 
-                fit2 <- sampling(stan.model, data=stan.data, iter=iter, warmup=warmup, chains=chains, control=control)
                 filename <- paste0('200428f_notARVAmongInfected_icar_stan_round',round,'.rds')
-                saveRDS(fit2, file=file.path(outdir,filename))
+                filename <- file.path(outdir, filename)
+
+                if(file.exists(filename) & refit == FALSE)
+                {
+                        cat('Loading previously run HMC... \n')
+                        fit2 <- readRDS(filename)
+                }else{
+                        fit2 <- sampling(stan.model, data=stan.data, 
+                                         iter=iter, warmup=warmup,
+                                         chains=chains, control=control)
+                        saveRDS(fit2, file=filename)
+                }
+
                 
                 # Analyse posterior
                 # _________________
@@ -1220,10 +1254,7 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT)
                         labs(x='GP hyperparameter\n', y='')
 
                 filename <- paste0('220729f_notsuppAmongInfected_gppars_round',round,'.pdf')
-                cat('Saving', filename, '...\n')
-                filename2 <- gsub('pdf$','png',filename)
-                ggsave(p, file=file.path(out.dir, filename2), w=6, h=3)
-                ggsave(p, file=file.path(outdir, filename), w=6, h=3)
+                ggsave2(p, file=filename, w=6, h=3)
                 
                 
                 #	make prevalence plot by age
@@ -1270,10 +1301,7 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT)
                              linetype='location')
 
                 filename <- paste0('220729f_suppAmongInfected_vs_age_by_gender_fishinland_stan_round',round,'.pdf')
-                cat('Saving', filename, '...\n')
-                filename2 <- gsub('pdf$','png',filename)
-                ggsave(p, file=file.path(out.dir, filename2), w=6, h=5)
-                ggsave(p, file=file.path(out.dir,filename), w=6, h=5)		
+                ggsave2(p, file=filename, w=6, h=5)		
 
                 p <- ggplot(tmp) + 		
                         geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=interaction(SEX_LABEL,LOC_LABEL)), alpha=0.2) +
@@ -1290,10 +1318,7 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT)
                              colour='gender')
 
                 filename <- paste0('220729f_suppAmongInfected_vs_age_by_gender_fishinland_stan_v2_round',round,'.pdf')
-                cat('Saving', filename, '...\n')
-                filename2 <- gsub('pdf$','png',filename)
-                ggsave(p, file=file.path(out.dir, filename2), w=9, h=8)
-                ggsave(p, file=file.path(outdir,filename), w=6, h=5)	
+                ggsave2(p, file=filename, w=6, h=5)	
 
                 tmp <- rbind(nsinf.by.age, nainf.by.age, fill=TRUE)
                 p <- ggplot(tmp) + 		
@@ -1310,10 +1335,7 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT)
                              colour='gender')
 
                 filename <- paste0('220729f_suppAmongInfected_vs_age_by_gender_fishinland_stan_v3_round',round,'.pdf')
-                filename2 <- gsub('pdf$','png',filename)
-                cat('Saving', filename, '...\n')
-                ggsave(p, file=file.path(outdir,filename2), w=9, h=8)
-                ggsave(p, file=file.path(outdir,filename), w=9, h=8)
+                ggsave2(p, file=filename, w=9, h=8)
                 
                 
                 # extract basic not supp estimates
@@ -1442,7 +1464,7 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT)
                 setnames(tmp, 'LABEL2', 'PR_MF')
                 dt <- merge(dt, tmp, by=c('LOC_LABEL','AGE_LABEL'))
 
-                filename <- paste0('220729f_suppamonginfected_round',round,'csv')
+                filename <- paste0('220729f_suppamonginfected_round',round, '.csv')
                 fwrite(dt, row.names=FALSE, file=file.path(outdir,filename))	
 
                 TRUE
@@ -1453,7 +1475,7 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT)
                 .combine='c'
         ) %dopar% {
                 cat('Running Round', r, '\n')
-                .fit.stan.and.plot.by.round(vla[ ROUND ==r, ], iter=5e3)
+                .fit.stan.and.plot.by.round(vla[ ROUND ==r, ], refit=refit, iter=5e3)
         } -> tmp
 
         return(tmp)
