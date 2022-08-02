@@ -755,7 +755,7 @@ vl.meanviralload.by.gender.loc.age.icar<- function(DT)
         return(tmp)
 }
 
-vl.suppofinfected.by.gender.loc.age.icar<- function()
+vl.suppofinfected.by.gender.loc.age.icar<- function(DT)
 {
         # DT <- copy(dall)
 	outdir <- file.path(out.dir)
@@ -2012,53 +2012,36 @@ vl.vlrunningprops.by.gender.loc.age<- function(DT)
 	write.csv(ans, file=file.path(outdir,'220729_keystats_by_age_gender_fishinland.csv'))
 }
 
-vl.vlrunningmean.by.gender.loc.age<- function()
+vl.vlrunningmean.by.gender.loc.age<- function(DT)
 {
-	require(Hmisc)
-	require(data.table)
-	require(ggplot2)
-	VL_DETECTABLE <- 4e2
-	VIREMIC_VIRAL_LOAD <- 1e3
 	
+        # TODO: add facets per round?
+        # TODO: see whether Oli's comments below still apply
+
+        # DT <- copy(dall)
+	outdir <- file.path(out.dir)
+        DT <- .preprocess.ds.oli(DT)
 	
-	require(data.table)
-	prjdir	<- '~/Box/OR_Work/2018/2018_RakaiViralLoad'
-	infile	<- file.path(prjdir,'data','191101_data_round17_vl_gps.rda')
-	load( infile )
-	setalloccol(ds)
-	
-	# remove HIV+ individuals with missing VLs
-	ds <- subset(ds, HIV_STATUS==0 | HIV_AND_VL==1)
-	
-	# define VL_COPIES for uninfected
-	set(ds, NULL, 'VLC', ds$VL_COPIES)
-	set(ds, ds[,which(HIV_STATUS==0)], 'VLC', 0)
-	
-	# define undetectable VL (machine-undetectable)
-	# define suppressed VL (according to WHO criteria)	
-	set(ds, NULL, 'VLU', ds[, as.integer(VLC<VL_DETECTABLE)])
-	set(ds, NULL, 'VLS', ds[, as.integer(VLC<VIREMIC_VIRAL_LOAD)])
-	set(ds, NULL, 'VLD', ds[, as.integer(VLC>=VL_DETECTABLE)])
-	set(ds, NULL, 'VLNS', ds[, as.integer(VLC>=VIREMIC_VIRAL_LOAD)])
-	set(ds, NULL, 'HIV_AND_VLD', ds[, as.integer(VLD==1 & HIV_AND_VL==1)])
-	
-	# reset VLC below machine detectable to 0
-	set(ds, ds[, which(HIV_AND_VL==1 & VLU==1)], 'VLC', 0)
-	setkey(ds, FC, SEX, AGEYRS)
-	
-	tmp <- seq.int(min(ds$AGEYRS), max(ds$AGEYRS))
-	vla <- as.data.table(expand.grid(FC=c('fishing','inland'), SEX=c('M','F'), AGEYRS=tmp))
+	tmp <- seq.int(min(DT$AGEYRS), max(DT$AGEYRS))
+        tmp1 <- DT[, sort(unique(ROUND))]
+
+	vla <- as.data.table(expand.grid(ROUND=tmp1,
+                                         FC=c('fishing','inland'),
+                                         SEX=c('M','F'),
+                                         AGEYRS=tmp))
+
 	ans <- vla[, {
-				z <- which(ds$FC==FC & ds$SEX==SEX & ds$AGEYRS<=(AGEYRS+2) & ds$AGEYRS>=(AGEYRS-2))
-				z2 <- mean( ds$VLC[z] )
-				z3 <- sd(ds$VLC[z])/sqrt(length(z))
-				list(N= length(z),
-					VLCM_M= z2,
-					VLCM_CL= z2-1.96*z3,
-					VLCM_CU= z2+1.96*z3
-					)
-			}, by=c('FC','SEX','AGEYRS')]
-	set(ans, NULL, 'SEX', ans[, factor(SEX, levels=c('M','F'), labels=c('men','women'))])
+                z <- which(ds$FC==FC & ds$SEX==SEX & ds$AGEYRS<=(AGEYRS+2) & ds$AGEYRS>=(AGEYRS-2))
+                z2 <- mean( ds$VLC[z] )
+                z3 <- sd(ds$VLC[z])/sqrt(length(z))
+                list(N= length(z),
+                     VLCM_M= z2,
+                     VLCM_CL= z2-1.96*z3,
+                     VLCM_CU= z2+1.96*z3
+                )
+        }, by=c('FC','SEX','AGEYRS')]
+        set(ans, NULL, 'SEX', ans[, factor(SEX, levels=c('M','F'), labels=c('men','women'))])
+
 	
 	p <- ggplot(ans) + 
                 #geom_errorbar(aes(x=AGEYRS, ymin=VLCM_CL, ymax=VLCM_CU)) +		
@@ -2074,7 +2057,9 @@ vl.vlrunningmean.by.gender.loc.age<- function()
                      y='mean viral load (95% CI)\n', 
                      colour='gender', linetype='location')
 
-	ggsave(p, file=file.path(prjdir,'results_200220','200220_vlmean_vs_age_by_gender_fishinland.pdf'), w=8, h=5)
+        # TODO: add `_round` ?
+        filename='220729_vlmean_vs_age_by_gender_fishinland.pdf'
+	ggsave2(p, file=filename, w=8, h=5)
 	
 	
 	#	loess mean below 0 for some age groups, not a good model
@@ -2084,62 +2069,50 @@ vl.vlrunningmean.by.gender.loc.age<- function()
 	ans <- subset(ds, select=c(FC, SEX, AGEYRS, VLC, VLCS))	
 	ans[, VLCLO_M:= (vlclo$fitted)^2]
 	ggplot(ans) + 
-			geom_line(aes(x=AGEYRS, y=VLCLO_M)) +
-			scale_x_continuous( expand=c(0,0) )	
-	ans <- ds[, {
-				vlclo <- loess(VLC ~ AGEYRS, control=loess.control(trace.hat='approximate'))
-				list(	VLC= VLC,
-						AGEYRS= AGEYRS,
-						VLCLO_M= vlclo$fitted 
-				)				
-			}, by=c('FC','SEX')]	
+                geom_line(aes(x=AGEYRS, y=VLCLO_M)) +
+                scale_x_continuous( expand=c(0,0) )	
+
+        ans <- ds[, {
+                vlclo <- loess(VLC ~ AGEYRS, control=loess.control(trace.hat='approximate'))
+                list(	VLC= VLC,
+                     AGEYRS= AGEYRS,
+                     VLCLO_M= vlclo$fitted 
+                )				
+        }, by=c('FC','SEX')]	
 	predict(vlclo, newdata=NULL, se=TRUE)
+
 }
 
 vl.vldistribution.by.gender.loc<- function()
 {
-	require(Hmisc)
-	require(data.table)
-	VL_DETECTABLE <- 4e2
-	VIREMIC_VIRAL_LOAD <- 1e3
+
+        # TODO: add facets per round?
+
+        # DT <- copy(dall)
+	outdir <- file.path(out.dir)
+        DT <- .preprocess.ds.oli(DT)
 	
-	
-	require(data.table)
-	prjdir	<- '~/Box/OR_Work/2018/2018_RakaiViralLoad'
-	infile	<- file.path(prjdir,'data','191101_data_round17_vl_gps.rda')
-	load( infile )
-	setalloccol(ds)
-	
-	# remove HIV+ individuals with missing VLs
-	ds <- subset(ds, HIV_STATUS==0 | HIV_AND_VL==1)
-	
-	# define VL_COPIES for uninfected
-	set(ds, NULL, 'VLC', ds$VL_COPIES)
-	set(ds, ds[,which(HIV_STATUS==0)], 'VLC', 0)
-	
-	# define undetectable VL (machine-undetectable)
-	# define suppressed VL (according to WHO criteria)	
-	set(ds, NULL, 'VLU', ds[, as.integer(VLC<VL_DETECTABLE)])
-	set(ds, NULL, 'VLS', ds[, as.integer(VLC<VIREMIC_VIRAL_LOAD)])
-	set(ds, NULL, 'VLD', ds[, as.integer(VLC>=VL_DETECTABLE)])
-	set(ds, NULL, 'VLNS', ds[, as.integer(VLC>=VIREMIC_VIRAL_LOAD)])
-	set(ds, NULL, 'HIV_AND_VLD', ds[, as.integer(VLD==1 & HIV_AND_VL==1)])
-	
-	# reset VLC below machine detectable to 1e-6 (for plotting)
-	set(ds, ds[, which(HIV_AND_VL==1 & VLU==1)], 'VLC', 1e-6)
+	tmp <- seq.int(min(DT$AGEYRS), max(DT$AGEYRS))
+        tmp1 <- DT[, sort(unique(ROUND))]
 	
 	# plot proportion of population with viral load > x
-	x <- seq(log(1),log(max(ds$VLC)), length.out=1e3)
+	x <- seq(log(1),log(max(DT$VLC)), length.out=1e3)
 	x <- c(0,exp(x))
-	vld <- as.data.table(expand.grid(X=x, SEX=c('M','F'), FC=c('fishing','inland'), HIV_AND_VLD=c(0,1)))
+
+	vld <- as.data.table(expand.grid(ROUND=tmp1,
+                                         X=x,
+                                         SEX=c('M','F'),
+                                         FC=c('fishing','inland'),
+                                         HIV_AND_VLD=c(0,1)))
 	
 	ans <- vld[, {
-				n <- length(which(ds$SEX==SEX & ds$FC==FC & ds$HIV_AND_VLD>=HIV_AND_VLD))
-				k <- length(which(ds$SEX==SEX & ds$FC==FC & ds$HIV_AND_VLD>=HIV_AND_VLD & X<ds$VLC))
-				z<- as.vector( unname( binconf(k, n) ) )				
-				list(N=n, K=k, P_M= z[1], P_CL=z[2], P_CU=z[3] )
-			}, by=c('HIV_AND_VLD','FC','SEX','X')]
-	set(ans, NULL, 'HIV_AND_VLD', factor(ans[,HIV_AND_VLD], levels=c(0,1), labels=c('all study participants','infected study participants\nwith detectable viral load')))
+                n <- sum(DT$ROUND==ROUND, DT$SEX==SEX & DT$FC==FC & DT$HIV_AND_VLD>=HIV_AND_VLD)
+                k <- sum(DT$ROUND==ROUND, DT$SEX==SEX & DT$FC==FC & DT$HIV_AND_VLD>=HIV_AND_VLD & X<DT$VLC)
+                z<- as.vector( unname( binconf(k, n) ) )				
+                list(N=n, K=k, P_M= z[1], P_CL=z[2], P_CU=z[3] )
+        }, by=names(vld)]
+
+        set(ans, NULL, 'HIV_AND_VLD', factor(ans[,HIV_AND_VLD], levels=c(0,1), labels=c('all study participants','infected study participants\nwith detectable viral load')))
 	set(ans, NULL, 'SEX', ans[, factor(SEX, levels=c('M','F'), labels=c('men','women'))])
 	
 	ans <- subset(ans, !(HIV_AND_VLD=='infected study participants\nwith detectable viral load' & X<VL_DETECTABLE) )
@@ -2157,62 +2130,41 @@ vl.vldistribution.by.gender.loc<- function()
                      y='proportion of individuals with larger viral load\n',
                      colour='gender', linetype='location')
 
-	ggsave(p, file=file.path(prjdir,'results_200220','200220_vldistribution_by_gender_fishinland.pdf'), w=9, h=5)
+        # TODO: add `_round?`
+        filename <- '220729_vldistribution_by_gender_fishinland.pdf'
+	ggsave2(p, file=filename, w=9, h=5)
 }
 
-vl.keystats.by.gender.loc<- function()
+vl.keystats.by.gender.loc<- function(DT)
 {
-	require(Hmisc)
-	require(data.table)
-	VL_DETECTABLE <- 4e2
-	VIREMIC_VIRAL_LOAD <- 1e3
-	
-	
-	require(data.table)
-	prjdir	<- '~/Box/OR_Work/2018/2018_RakaiViralLoad'
-	infile	<- file.path(prjdir,'data','191101_data_round17_vl_gps.rda')
-	load( infile )
-	setalloccol(ds)
-	
-	# remove HIV+ individuals with missing VLs
-	ds <- subset(ds, HIV_STATUS==0 | HIV_AND_VL==1)
-	
-	# define VL_COPIES for uninfected
-	set(ds, NULL, 'VLC', ds$VL_COPIES)
-	set(ds, ds[,which(HIV_STATUS==0)], 'VLC', 0)
-	
-	# define undetectable VL (machine-undetectable)
-	# define suppressed VL (according to WHO criteria)	
-	set(ds, NULL, 'VLU', ds[, as.integer(VLC<VL_DETECTABLE)])
-	set(ds, NULL, 'VLS', ds[, as.integer(VLC<VIREMIC_VIRAL_LOAD)])
-	set(ds, NULL, 'VLD', ds[, as.integer(VLC>=VL_DETECTABLE)])
-	set(ds, NULL, 'VLNS', ds[, as.integer(VLC>=VIREMIC_VIRAL_LOAD)])
-	set(ds, NULL, 'HIV_AND_VLD', ds[, as.integer(VLD==1 & HIV_AND_VL==1)])
-	ds[, table(VLD, VLNS)]
-	#	   VLNS
-	#VLD     0     1
-  	#0 17577     0
-  	#1    90   976
-	#	--> there are only 90 individuals with VL in 4e2-1e3, so setting 4e2 or 1e3 is essentially the same
-	
-	# reset VLC below machine detectable to 0
-	set(ds, ds[, which(HIV_AND_VL==1 & VLU==1)], 'VLC', 0)
+
+        #TODO: by_round as well?
+
+        # DT <- copy(dall)
+	outdir <- file.path(out.dir)
+        DT <- .preprocess.ds.oli(DT)
 	
 	# entire population: 
 	# mean viral load, proportion with DVL
-	ds[, mean(VLC)]
+	DT[, mean(VLC)]
 	# 2290.494
-	binconf( length(which(ds$VLD==1)), nrow(ds) )
+	binconf( length(which(DT$VLD==1)), nrow(DT) )
 	# PointEst   Lower      Upper
 	# 0.05717964 0.05393704 0.06060469
 
-	#
 	# stratified by men/women inland/fishing
-	# 
-	ans <- ds[, {
-			z<- as.vector( unname( binconf( length(which(HIV_STATUS==1)), length(HIV_STATUS) ) ) )
-			z2<- as.vector( unname( binconf( length(which(VLNS==1)), length(VLNS) ) ) )
-			z3<- as.vector( unname( binconf( length(which(VLNS==1)), length(which(HIV_STATUS==1)) ) ) )
+	# ______________________________________
+
+        .f <- function(x,y)
+        {
+                as.vector( unname ( binconf(sum(x), length(y) )  ) )
+        }
+
+	ans <- DT[, {
+			z  <- .f(HIV_STATUS==1, HIV_STATUS)
+			z2 <- .f(VLNS==1, VLNS)
+			z3 <- .f(VLNS==1, which(HIV_STATUS==1))
+
 			list(N= length(HIV_STATUS),
 				 PHIV_MEAN= z[1],
 				 PHIV_CL= z[2],
@@ -2225,11 +2177,13 @@ vl.keystats.by.gender.loc<- function()
 				 PVLNSofHIV_CU= z3[3],				 
 				 VLC_MEAN= mean(VLC))	
 			}, by='SEX']
+
 	ans[, FC:='overall']	
-	tmp <- ds[, {
-				z<- as.vector( unname( binconf( length(which(HIV_STATUS==1)), length(HIV_STATUS) ) ) )
-				z2<- as.vector( unname( binconf( length(which(VLNS==1)), length(VLNS) ) ) )
-				z3<- as.vector( unname( binconf( length(which(VLNS==1)), length(which(HIV_STATUS==1)) ) ) )
+	tmp <- DT[, {
+				z  <- .f(HIV_STATUS==1, HIV_STATUS)
+				z2 <- .f(VLNS==1, VLNS)
+				z3 <- .f(VLNS==1, which(HIV_STATUS==1))
+
 				list(N= length(HIV_STATUS),
 						PHIV_MEAN= z[1],
 						PHIV_CL= z[2],
@@ -2242,111 +2196,100 @@ vl.keystats.by.gender.loc<- function()
 						PVLNSofHIV_CU= z3[3],				 						
 						VLC_MEAN= mean(VLC))	
 			}, by=c('FC','SEX')]
+
 	ans <- rbind(tmp, ans)
+
 	set(ans, NULL, 'FC', factor(ans$FC, levels=c('overall','fishing','inland')))
 	set(ans, NULL, 'SEX', factor(ans$SEX, levels=c('F','M')))
 	setkey(ans, FC, SEX)
 	
-	ans[, PHIV_L:= paste0( round(PHIV_MEAN*100, d=1),' [', round(PHIV_CL*100, d=1),'-', round(PHIV_CU*100, d=1),']' )]
-	ans[, PVLNS_L:= paste0( round(PVLNS_MEAN*100, d=1),' [', round(PVLNS_CL*100, d=1),'-', round(PVLNS_CU*100, d=1),']' )]
-	ans[, PVLNSofHIV_L:= paste0( round(PVLNSofHIV_MEAN*100, d=1),' [', round(PVLNSofHIV_CL*100, d=1),'-', round(PVLNSofHIV_CU*100, d=1),']' )]
+        .f <- function(m, l, u)
+        {
+                .r <- function(x) round(x*100, digits=1)
+                paste0( .r(m),' [', .r(l),'-', .r(u) ,']' )
+        }
+
+	ans[, PHIV_L:= .f( PHIV_MEAN, PHIV_CL, PHIV_CU) ]
+	ans[, PVLNS_L:= .f( PVLNS_MEAN, PVLNS_CL, PVLNS_CU) ]
+	ans[, PVLNSofHIV_L:= .f( PVLNSofHIV_MEAN, PVLNSofHIV_CL, PVLNSofHIV_CU)]
 	
-	#FC SEX    N  PHIV_MEAN    PHIV_CL   PHIV_CU  PVLD_MEAN    PVLD_CL    PVLD_CU PVLDofHIV_MEAN PVLDofHIV_CL PVLDofHIV_CU  VLC_MEAN           PHIV_L           PVLD_L      PVLDofHIV_L
-	#1: overall   F 9984 0.21764824 0.20966345 0.2258502 0.05348558 0.04924138 0.05807325      0.2457432    0.2281006    0.2642832 1376.0877   21.8 [21-22.6]    5.3 [4.9-5.8] 24.6 [22.8-26.4]
-	#2: overall   M 8659 0.14943989 0.14208609 0.1571046 0.06143897 0.05657296 0.06669393      0.4111283    0.3846208    0.4381619 3344.8235 14.9 [14.2-15.7]    6.1 [5.7-6.7] 41.1 [38.5-43.8]
-	#3: fishing   F 1938 0.44272446 0.42074507 0.4649305 0.11455108 0.10112790 0.12949930      0.2587413    0.2305585    0.2890747 3771.5119 44.3 [42.1-46.5] 11.5 [10.1-12.9] 25.9 [23.1-28.9]
-	#4: fishing   M 2108 0.32542694 0.30575906 0.3457299 0.14753321 0.13303557 0.16331313      0.4533528    0.4164628    0.4907623 9052.8373 32.5 [30.6-34.6] 14.8 [13.3-16.3] 45.3 [41.6-49.1]
-	#5:  inland   F 8046 0.16343525 0.15551676 0.1716750 0.03877703 0.03477391 0.04322036      0.2372624    0.2150559    0.2609994  799.1138 16.3 [15.6-17.2]    3.9 [3.5-4.3] 23.7 [21.5-26.1]
-	#6:  inland   M 6551 0.09281026 0.08602036 0.1000774 0.03373531 0.02962926 0.03838786      0.3634868    0.3262210    0.4024669 1508.0821     9.3 [8.6-10]      3.4 [3-3.8] 36.3 [32.6-40.2]
-	
-	write.csv(ans, file=file.path(prjdir,'results_200220','200220_keystats_by_gender_fishinland.csv'))
+        # TODO: change name?
+	fwrite(ans, file=file.path(outdir, '220729_keystats_by_gender_fishinland.csv'))
 }
+
 
 vl.vlratio.by.loc<- function()
 {
-	require(Hmisc)
-	require(data.table)
-	VL_DETECTABLE <- 4e2
-	VIREMIC_VIRAL_LOAD <- 1e3
-	
-	
-	require(data.table)
-	prjdir	<- '~/Box/OR_Work/2018/2018_RakaiViralLoad'
-	infile	<- file.path(prjdir,'data','191101_data_round17_vl_gps.rda')
-	load( infile )
-	setalloccol(ds)
-	
-	# remove HIV+ individuals with missing VLs
-	ds <- subset(ds, HIV_STATUS==0 | HIV_AND_VL==1)
-	
-	# define VL_COPIES for uninfected
-	set(ds, NULL, 'VLC', ds$VL_COPIES)
-	set(ds, ds[,which(HIV_STATUS==0)], 'VLC', 0)
-	
-	# define undetectable VL (machine-undetectable)
-	# define suppressed VL (according to WHO criteria)	
-	set(ds, NULL, 'VLU', ds[, as.integer(VLC<VL_DETECTABLE)])
-	set(ds, NULL, 'VLS', ds[, as.integer(VLC<VIREMIC_VIRAL_LOAD)])
-	set(ds, NULL, 'VLD', ds[, as.integer(VLC>=VL_DETECTABLE)])
-	set(ds, NULL, 'VLNS', ds[, as.integer(VLC>=VIREMIC_VIRAL_LOAD)])
-	set(ds, NULL, 'HIV_AND_VLD', ds[, as.integer(VLD==1 & HIV_AND_VL==1)])
-	ds[, table(VLD, VLNS)]
-	
-	# reset VLC below machine detectable to 0
-	set(ds, ds[, which(HIV_AND_VL==1 & VLU==1)], 'VLC', 0)
-	
+        #TODO: by_round as well?
+        # What is BS????
+        # Bootstrap!
+
+        # DT <- copy(dall)
+	outdir <- file.path(out.dir)
+        DT <- .preprocess.ds.oli(DT)
 	
 	ans	<- as.data.table(expand.grid(BS= 1:1e3, FC=c('fishing','inland')))
 	set.seed(42)
+
 	ans <- ans[, {
-				zm <- which(ds$FC==FC & ds$SEX=='M')
-				zf <- which(ds$FC==FC & ds$SEX=='F')
+				zm <- which(DT$FC==FC & DT$SEX=='M')
+				zf <- which(DT$FC==FC & DT$SEX=='F')
 				zm <- sample(zm, length(zm), replace=TRUE)
 				zf <- sample(zf, length(zf), replace=TRUE)
-				list(VLCM_M=mean(ds$VLC[zm]), VLCM_F=mean(ds$VLC[zf])) 
+				list(VLCM_M=mean(DT$VLC[zm]), VLCM_F=mean(DT$VLC[zf])) 
 			}, by=c('FC','BS')]
+
 	ans[, VLCR:= VLCM_M/VLCM_F]	
-	ans <- ans[, list( V=quantile(VLCR, prob=c(0.5, 0.025, 0.975)),
-				P= c('M','CL','CU')
-				), by=c('FC')]
+
+	ans <- ans[, list( 
+                          V = quantile(VLCR, prob=c(0.5, 0.025, 0.975)),
+                          P = c('M','CL','CU')
+                          ), by=c('FC')]
 	ans <- dcast.data.table(ans, FC~P, value.var='V')
 	
 	#
 	# stratified by men/women inland/fishing
 	# 
-	ans <- ds[, {
-				z<- as.vector( unname( binconf( length(which(HIV_STATUS==1)), length(HIV_STATUS) ) ) )
-				z2<- as.vector( unname( binconf( length(which(VLNS==1)), length(VLNS) ) ) )
-				z3<- as.vector( unname( binconf( length(which(VLNS==1)), length(which(HIV_STATUS==1)) ) ) )
-				list(N= length(HIV_STATUS),
-						PHIV_MEAN= z[1],
-						PHIV_CL= z[2],
-						PHIV_CU= z[3],				 
-						PVLNS_MEAN= z2[1],
-						PVLNS_CL= z2[2],
-						PVLNS_CU= z2[3],
-						PVLNSofHIV_MEAN= z3[1],
-						PVLNSofHIV_CL= z3[2],
-						PVLNSofHIV_CU= z3[3],				 
-						VLC_MEAN= mean(VLC))	
-			}, by='SEX']
+        .f <- function(x,y)
+                as.vector( unname ( binconf(sum(x), length(y) )  ) )
+
+	ans <- DT[, {
+                z  <- .f(HIV_STATUS==1, HIV_STATUS) 
+                z2 <- .f(VLNS==1, VLNS) 
+                z3 <- .f(VLNS==1, which(HIV_STATUS==1))
+
+                list( N =length(HIV_STATUS),
+                      PHIV_MEAN= z[1],
+                      PHIV_CL= z[2],
+                      PHIV_CU= z[3],				 
+                      PVLNS_MEAN= z2[1],
+                      PVLNS_CL= z2[2],
+                      PVLNS_CU= z2[3],
+                      PVLNSofHIV_MEAN= z3[1],
+                      PVLNSofHIV_CL= z3[2],
+                      VLC_MEAN= mean(VLC) )	
+                }, by='SEX']
+
 	ans[, FC:='overall']	
-	tmp <- ds[, {
-				z<- as.vector( unname( binconf( length(which(HIV_STATUS==1)), length(HIV_STATUS) ) ) )
-				z2<- as.vector( unname( binconf( length(which(VLNS==1)), length(VLNS) ) ) )
-				z3<- as.vector( unname( binconf( length(which(VLNS==1)), length(which(HIV_STATUS==1)) ) ) )
-				list(N= length(HIV_STATUS),
-						PHIV_MEAN= z[1],
-						PHIV_CL= z[2],
-						PHIV_CU= z[3],				 
-						PVLNS_MEAN= z2[1],
-						PVLNS_CL= z2[2],
-						PVLNS_CU= z2[3],
-						PVLNSofHIV_MEAN= z3[1],
-						PVLNSofHIV_CL= z3[2],
-						PVLNSofHIV_CU= z3[3],				 						
-						VLC_MEAN= mean(VLC))	
-			}, by=c('FC','SEX')]
+
+	tmp <- DT[, {
+                z  <- .f(HIV_STATUS==1, HIV_STATUS) 
+                z2 <- .f(VLNS==1, VLNS) 
+                z3 <- .f(VLNS==1, which(HIV_STATUS==1)) 
+
+                list(N= length(HIV_STATUS),
+                     PHIV_MEAN= z[1],
+                     PHIV_CL= z[2],
+                     PHIV_CU= z[3],				 
+                     PVLNS_MEAN= z2[1],
+                     PVLNS_CL= z2[2],
+                     PVLNS_CU= z2[3],
+                     PVLNSofHIV_MEAN= z3[1],
+                     PVLNSofHIV_CL= z3[2],
+                     PVLNSofHIV_CU= z3[3],				 		
+                     VLC_MEAN= mean(VLC))	
+                }, by=c('FC','SEX')]
+        
 	ans <- rbind(tmp, ans)
 	set(ans, NULL, 'FC', factor(ans$FC, levels=c('overall','fishing','inland')))
 	set(ans, NULL, 'SEX', factor(ans$SEX, levels=c('F','M')))
@@ -2360,11 +2303,11 @@ vl.age.gender<- function()
 	infile	<- file.path(prjdir,'data','191101_data_round17_vl_gps.rda')
 	load( infile )
 	
-	# drop few infecteds with missing VL
-	ds <- subset(ds, HIV_STATUS==0 | (HIV_STATUS==1 & !is.na(VL_COPIES)) )
+	# drop few infecteDT with missing VL
+	DT <- subset(DT, HIV_STATUS==0 | (HIV_STATUS==1 & !is.na(VL_COPIES)) )
 	# set VL for uninfected to 0, and VL with undetectable VL to 0
-	set(ds, ds[, which(HIV_STATUS==0)], 'VL_COPIES', 0)
-	set(ds, ds[, which(HIV_STATUS==1 & VL_UNDETECTABLE==1)], 'VL_COPIES', 0)
+	set(DT, DT[, which(HIV_STATUS==0)], 'VL_COPIES', 0)
+	set(DT, DT[, which(HIV_STATUS==1 & VL_UNDETECTABLE==1)], 'VL_COPIES', 0)
 	
 	# 
 	# calculate proportion with VL > x among participants
@@ -2372,10 +2315,10 @@ vl.age.gender<- function()
 	# do general by as characters
 	# then determine sort index
 	# then calculate empirical quantile
-	ds <- ds[order(SEX,VL_COPIES),]
-	ds[VL]
+	DT <- DT[order(SEX,VL_COPIES),]
+	DT[VL]
 	
-	ds[, sort(unique(VL_COPIES))]
+	DT[, sort(unique(VL_COPIES))]
 	#dv <- data.table(VL:= )
 }
 
@@ -2386,9 +2329,9 @@ vl.get.data.round17<- function()
 	infile	<- 'data_raw/ViralLoad_Data_Pangea_Ratmann.rda'
 	load( file.path(prjdir, infile) )
 	
-	#
 	# subset to survey round 17
-	#
+	# _________________________
+
 	ds		<- subset(as.data.table(survey_data), visit==17)
 	# reset dates from Date format to numeric
 	for(x in c('visit_date','lastNegDate','firstPosDate'))
