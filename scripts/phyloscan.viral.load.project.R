@@ -194,29 +194,13 @@ vl.vlprops.by.comm.gender.loc<- function(DT, write.csv=FALSE)
 
 vl.prevalence.by.gender.loc.age.gp <- function(DT) 
 {
-
         # DT <- copy(dall)
 	outdir <- file.path(out.dir)
         DT <- .preprocess.ds.oli(DT)
 	
-	# subset(DT, FC=='inland' & SEX=='F' & AGEYRS==25)
-        tmp <- DT[, seq.int(min(AGEYRS), max(AGEYRS))]
-        tmp1 <- DT[, sort(unique(ROUND))]
-	vla <- as.data.table(expand.grid(ROUND=tmp1, FC=c('fishing','inland'), SEX=c('M','F'), AGEYRS=tmp))
-	vla <- vla[, {
-                z <- which(DT$ROUND==ROUND & DT$FC==FC & DT$SEX==SEX & DT$AGEYRS==AGEYRS)	
-                list(N = length(z),
-                     HIV_N= length(which(DT$HIV_STATUS[z]==1)),
-                     VLNS_N= length(which(DT$VLNS[z]==1)),
-                     ARV_N= length(which(DT$ARVMED[z]==0 & DT$HIV_STATUS[z]==1 & !is.na(DT$ARVMED[z])))
-                )}, by=names(vla)]
+        tmp <- c('N', 'HIV_N', 'VLNS_N', 'ARV_N')
+        vla <- .preprocess.make.vla(DT, select=tmp)
 
-	setnames(vla, c('FC','SEX','AGEYRS'), c('LOC_LABEL','SEX_LABEL','AGE_LABEL'))
-	vla[, LOC:= as.integer(LOC_LABEL=='fishing')]
-	vla[, SEX:= as.integer(SEX_LABEL=='M')]
-	vla[, AGE:= AGE_LABEL-14L]
-	vla[, ROW_ID:= seq_len(nrow(vla))]
-        
         # Stan file locations
         file.stan.1 <- file.path(path.stan, 'vl_prevalence_by_gender_loc_age_gp_1.stan')
         file.stan.2 <- file.path(path.stan, 'vl_prevalence_by_gender_loc_age_gp_2.stan')
@@ -232,8 +216,17 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                 stopifnot(length(round) == 1)
                 cat('Fitting stan model for round ', round, '\n')
 
+                # make stan data
+                # ______________
+
+                tmp <- seq(DT[, min(AGE_LABEL)], DT[, max(AGE_LABEL)+1], 0.5)
+                tmp1 <- which(tmp%%1==0.5)
+
                 stan.data <- list(
-                        x_predict = seq(DT[, min(AGE_LABEL)], DT[, max(AGE_LABEL)+1], 0.5),
+                        x_predict = tmp,
+                        N_predict = length(tmp),
+                        observed_idx = tmp1,
+                        N_observed = length(tmp1),
                         y_observed_00 = DT[SEX==0 & LOC==0, HIV_N],
                         y_observed_10 = DT[SEX==1 & LOC==0, HIV_N],
                         y_observed_01 = DT[SEX==0 & LOC==1, HIV_N],
@@ -245,20 +238,12 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                         alpha_hyper_par_00 = 2,
                         alpha_hyper_par_10 = 2,
                         alpha_hyper_par_01 = 2,
-                        alpha_hyper_par_11 = 2
+                        alpha_hyper_par_11 = 2,
+                        rho_hyper_par_00 = diff(range(tmp))/3,
+                        rho_hyper_par_10 = diff(range(tmp))/3,
+                        rho_hyper_par_01 = diff(range(tmp))/3,
+                        rho_hyper_par_11 = diff(range(tmp))/3
                 )
-                stan.data$N_predict = length(stan.data$x_predict)
-                stan.data$observed_idx = which(stan.data$x_predict%%1==0.5)
-                stan.data$N_observed = length(stan.data$observed_idx)
-                stan.data$rho_hyper_par_00 = diff(range(stan.data$x_predict))/3
-                stan.data$rho_hyper_par_10 = diff(range(stan.data$x_predict))/3
-                stan.data$rho_hyper_par_01 = diff(range(stan.data$x_predict))/3
-                stan.data$rho_hyper_par_11 = diff(range(stan.data$x_predict))/3
-
-                # iter=10
-                # warmup=5
-                # chains=1
-                # control=list()
 
                 fit <- sampling(stan.model,
                                 data=stan.data,
@@ -268,9 +253,8 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                 filename <- file.path(outdir, paste0("hivprevalence_gp_stanfit_round",round,"_220829.rds"))
                 saveRDS(fit, file=filename)
 
-                # fit <- readRDS(filename)
-                # round <- gsub('^.*round([0-9]+)_.*$', '\\1', filename)
-                # round <- as.integer(round)
+                # Analyse posterior
+                # _________________
 
                 cat('The minimum effective sample size is:\n')
                 min( summary(fit)$summary[, 'n_eff'] )	
@@ -297,11 +281,8 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                                 theme_bw() +
                                 labs(x='GP hyperparameter\n', y='')
 
-                filename=file.path(outdir, paste0('220829_hivprevalence_gppars_round',round,'.pdf'))
-                cat('Saving', filename, '...\n')
-                filename2 <- gsub('pdf$','png',filename)
-                ggsave(p, filename=filename2, w=6, h=3)
-                ggsave(p, filename=filename, w=6, h=3)
+                filename=paste0('220829_hivprevalence_gppars_round',round,'.pdf')
+                ggsave2(p, file=filename, w=6, h=3)
 
                 # make prevalence plot by age
                 .f <- function(x) apply(x, 2, quantile, probs=ps)
@@ -313,6 +294,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                 tmp <- as.data.table(expand.grid(AGE_LABEL=stan.data$x_predict, SEX=c(0,1), LOC=c(0,1)))
                 prev.hiv.by.age <- cbind(tmp, prev.hiv.by.age) 
                 prev.hiv.by.age <- merge(unique(subset(DT, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL))), prev.hiv.by.age, by=c('SEX','LOC'))
+
                 p <- ggplot(prev.hiv.by.age) + 		
                         geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=interaction(SEX_LABEL,LOC_LABEL)), alpha=0.2) +
                         geom_line(aes(x=AGE_LABEL, y=M, colour=SEX_LABEL)) +
@@ -325,16 +307,13 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                              y='HIV prevalence (95% credibility interval)\n', 
                              colour='gender', 
                              linetype='location')
-                        filename=file.path(outdir, paste0('220829_hivprevalence_vs_age_by_gender_fishinland_stan_round',round,'.pdf'))
-
-                cat('Saving', filename, '...\n')
-                filename2 <- gsub('pdf$','png',filename)
-                ggsave(p, filename=filename2, w=6, h=5)
-                ggsave(p, filename=filename, w=6, h=5)
+                filename=paste0('220829_hivprevalence_vs_age_by_gender_fishinland_stan_round',round,'.pdf')
+                ggsave2(p, file=filename, w=6, h=5)
 
 
+                # extract basic prevalence estimates
+                # __________________________________
 
-                #	extract basic prevalence estimates
                 ps <- c(0.025, 0.5, 0.975)
                 tmp <- cbind( re$p_predict_00, re$p_predict_10, re$p_predict_01, re$p_predict_11)
                 rp <- as.data.table(reshape2::melt(tmp))
@@ -354,8 +333,9 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                 rp <- merge(unique(subset(DT, select=c(LOC,LOC_LABEL,SEX,SEX_LABEL))), rp, by=c('LOC','SEX'))
                 prev.hiv.by.sex.loc <- copy(rp)
 
+                # extract prevalence ratio female:male and male:female
+                # ____________________________________________________
 
-                #	extract prevalence ratio female:male and male:female
                 tmp <- cbind( re$p_predict_00, re$p_predict_10, re$p_predict_01, re$p_predict_11)
                 rp <- as.data.table(reshape2::melt(tmp))
                 tmp <- as.data.table(expand.grid(AGE_LABEL=stan.data$x_predict-0.5, SEX=c(0,1), LOC=c(0,1)))
@@ -373,7 +353,9 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                 rp <- merge(unique(subset(DT, select=c(LOC,LOC_LABEL))), rp, by=c('LOC'))
                 prevratio.hiv.by.loc <- copy(rp)
 
-                #	plot prevalence ratio female:male and male:female by age
+                # plot prevalence ratio female:male and male:female by age
+                # ________________________________________________________
+
                 tmp <- cbind( re$p_predict_00, re$p_predict_10, re$p_predict_01, re$p_predict_11)
                 rp <- as.data.table(reshape2::melt(tmp))
                 tmp <- as.data.table(expand.grid(AGE_LABEL=stan.data$x_predict, SEX=c(0,1), LOC=c(0,1)))
@@ -398,11 +380,8 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                         labs(x='\nage at visit (years)', 
                              y='female to male HIV prevalence ratio\n(95% credibility interval)\n')
 
-                filename=file.path(outdir, paste0('220829_hivprevalenceratio_vs_age_by_fishinland_stan_round',round,'.pdf'))
-                cat('Saving', filename, '...\n')
-                filename2 <- gsub('pdf$','png',filename)
-                ggsave(p, filename=filename2, w=8, h=5)
-                ggsave(p, filename=filename, w=8, h=5)
+                filename=paste0('220829_hivprevalenceratio_vs_age_by_fishinland_stan_round',round,'.pdf')
+                ggsave2(p, file=filename, w=8, h=5)
 
                 #	extract if difference in female:male prevalence risk ratio in fishing vs inland
                 tmp <- cbind( re$p_predict_00, re$p_predict_10, re$p_predict_01, re$p_predict_11)
@@ -458,10 +437,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                 .combine='c'
         ) %dopar% {
                 cat('Running Round', r, '\n')
-                .fit.stan.and.plot.by.round(vla[ ROUND ==r, ], 
-                                            iter=2e3, warmup=5e2, chains=1,
-                                            control=list()# max_treedepth= 15, adapt_delta= 0.999)
-                                            )
+                .fit.stan.and.plot.by.round(vla[ ROUND ==r, ], iter=2e3)
         } -> tmp
 
         return(tmp)
@@ -929,10 +905,12 @@ vl.suppofinfected.by.gender.loc.age.icar<- function()
 
                 p <- ggplot(tmp) + 		
                         geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=interaction(SEX_LABEL,LOC_LABEL)), alpha=0.2) +
+                        # Do we need the interaction above?
                         geom_line(aes(x=AGE_LABEL, y=M, colour=SEX_LABEL)) +
                         scale_x_continuous( expand=c(0,0) ) + 
                         scale_y_continuous(label=scales:::percent) +
                         scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
+                        # scale_fill_manual(values=c('M'='royalblue3','F'='deeppink2')) +
                         facet_wrap(~LOC_LABEL, ncol=2) +
                         theme_bw() +
                         labs(x='\nage at visit (years)', 
