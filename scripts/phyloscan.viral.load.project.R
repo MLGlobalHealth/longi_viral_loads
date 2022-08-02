@@ -135,6 +135,8 @@ vl.vlprops.by.comm.gender.loc<- function(DT, write.csv=FALSE)
                      colour='location')
 
         filename <- file.path(out.dir,'220829_hivnotsuppofhiv_vs_hivprev_by_round_gender_fishinland.pdf')
+        filename2 <- gsub('pdf$','png',filename)
+        ggsave(p, filename=filename2, w=9, h=12)
         ggsave(p, filename=filename, w=9, h=12)
 		
         if(write.csv)
@@ -159,7 +161,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
         tmp1 <- DT[, sort(unique(ROUND))]
 	vla <- as.data.table(expand.grid(ROUND=tmp1, FC=c('fishing','inland'), SEX=c('M','F'), AGEYRS=tmp))
 	vla <- vla[, {
-                z <- which(DT$FC==FC & DT$SEX==SEX & DT$AGEYRS==AGEYRS)	
+                z <- which(DT$ROUND==ROUND & DT$FC==FC & DT$SEX==SEX & DT$AGEYRS==AGEYRS)	
                 list(N = length(z),
                      HIV_N= length(which(DT$HIV_STATUS[z]==1)),
                      VLNS_N= length(which(DT$VLNS[z]==1)),
@@ -245,7 +247,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                 tmp[, GP_hyper_par := gsub('^([a-z]+)_([0-9])([0-9])','\\1',GP_hyper_par)]
                 tmp <- dcast.data.table(tmp, LOC+SEX+GP_hyper_par~Var1, value.var='value')
                 prev.hiv.gp.pars <- merge(unique(subset(DT, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL))), tmp, by=c('SEX','LOC'))
-                ggplot(prev.hiv.gp.pars, aes(x= paste0(GP_hyper_par, ' ', LOC_LABEL, ' ', SEX_LABEL))) +
+                p <- ggplot(prev.hiv.gp.pars, aes(x= paste0(GP_hyper_par, ' ', LOC_LABEL, ' ', SEX_LABEL))) +
                                 geom_point(aes(y=M)) +
                                 geom_errorbar(aes(ymin=CL, ymax=CU)) +
                                 coord_flip() +
@@ -254,7 +256,9 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
 
                 filename=file.path(outdir, paste0('220829_hivprevalence_gppars_round',round,'.pdf'))
                 cat('Saving', filename, '...\n')
-                ggsave(filename=filename, w=6, h=3)
+                filename2 <- gsub('pdf$','png',filename)
+                ggsave(p, filename=filename2, w=6, h=3)
+                ggsave(p, filename=filename, w=6, h=3)
 
                 # make prevalence plot by age
                 .f <- function(x) apply(x, 2, quantile, probs=ps)
@@ -266,21 +270,24 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                 tmp <- as.data.table(expand.grid(AGE_LABEL=stan.data$x_predict, SEX=c(0,1), LOC=c(0,1)))
                 prev.hiv.by.age <- cbind(tmp, prev.hiv.by.age) 
                 prev.hiv.by.age <- merge(unique(subset(DT, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL))), prev.hiv.by.age, by=c('SEX','LOC'))
-                ggplot(prev.hiv.by.age) + 		
-                                geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=interaction(SEX_LABEL,LOC_LABEL)), alpha=0.2) +
-                                geom_line(aes(x=AGE_LABEL, y=M, colour=SEX_LABEL)) +
-                                scale_x_continuous( expand=c(0,0) ) + 
-                                scale_y_continuous(labels=scales:::percent) +
-                                scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-                                facet_wrap(~LOC_LABEL, ncol=2) +
-                                theme_bw() +
-                                labs(x='\nage at visit (years)', 
-                                                y='HIV prevalence (95% credibility interval)\n', 
-                                                colour='gender', 
-                                                linetype='location')
-                filename=file.path(outdir, paste0('220829_hivprevalence_vs_age_by_gender_fishinland_stan_round',round,'.pdf'))
+                p <- ggplot(prev.hiv.by.age) + 		
+                        geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=interaction(SEX_LABEL,LOC_LABEL)), alpha=0.2) +
+                        geom_line(aes(x=AGE_LABEL, y=M, colour=SEX_LABEL)) +
+                        scale_x_continuous( expand=c(0,0) ) + 
+                        scale_y_continuous(labels=scales:::percent) +
+                        scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
+                        facet_wrap(~LOC_LABEL, ncol=2) +
+                        theme_bw() +
+                        labs(x='\nage at visit (years)', 
+                             y='HIV prevalence (95% credibility interval)\n', 
+                             colour='gender', 
+                             linetype='location')
+                        filename=file.path(outdir, paste0('220829_hivprevalence_vs_age_by_gender_fishinland_stan_round',round,'.pdf'))
+
                 cat('Saving', filename, '...\n')
-                ggsave(filename=filename, w=6, h=5)
+                filename2 <- gsub('pdf$','png',filename)
+                ggsave(p, filename=filename2, w=6, h=5)
+                ggsave(p, filename=filename, w=6, h=5)
 
 
 
@@ -337,20 +344,22 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT)
                 rp <- melt(rp, id.vars=c('LOC_LABEL','AGE_LABEL','iterations'), measure.vars=c('PR_FM','PR_MF'))[, list(Q= quantile(value, probs=ps), P=c('CL','M','CU')), by=c('LOC_LABEL','AGE_LABEL','variable')]
                 rp <- dcast.data.table(rp, LOC_LABEL+AGE_LABEL+variable~P, value.var='Q')
                 prevratio.hiv.by.loc.age <- copy(rp)
-                ggplot(subset(prevratio.hiv.by.loc.age, variable=='PR_FM')) + 	
-                                geom_hline(yintercept=1, linetype=2) +
-                                geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=LOC_LABEL), alpha=0.2) +
-                                geom_line(aes(x=AGE_LABEL, y=M)) +
-                                scale_x_continuous( expand=c(0,0) ) +
-                                scale_y_log10() +
-                                facet_wrap(~LOC_LABEL, ncol=2) +
-                                theme_bw() +
-                                labs(x='\nage at visit (years)', 
-                                                y='female to male HIV prevalence ratio\n(95% credibility interval)\n')
+                p <- ggplot(subset(prevratio.hiv.by.loc.age, variable=='PR_FM')) + 	
+                        geom_hline(yintercept=1, linetype=2) +
+                        geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=LOC_LABEL), alpha=0.2) +
+                        geom_line(aes(x=AGE_LABEL, y=M)) +
+                        scale_x_continuous( expand=c(0,0) ) +
+                        scale_y_log10() +
+                        facet_wrap(~LOC_LABEL, ncol=2) +
+                        theme_bw() +
+                        labs(x='\nage at visit (years)', 
+                             y='female to male HIV prevalence ratio\n(95% credibility interval)\n')
 
                 filename=file.path(outdir, paste0('220829_hivprevalenceratio_vs_age_by_fishinland_stan_round',round,'.pdf'))
                 cat('Saving', filename, '...\n')
-                ggsave(filename=filename, w=8, h=5)
+                filename2 <- gsub('pdf$','png',filename)
+                ggsave(p, filename=filename2, w=8, h=5)
+                ggsave(p, filename=filename, w=8, h=5)
 
                 #	extract if difference in female:male prevalence risk ratio in fishing vs inland
                 tmp <- cbind( re$p_predict_00, re$p_predict_10, re$p_predict_01, re$p_predict_11)
@@ -430,7 +439,7 @@ vl.prevalence.by.gender.loc.age.icar<- function(DT)
                                          SEX=c('M','F'),
                                          AGEYRS=tmp))
 	vla <- vla[, { 
-                z<- which(DT$FC==FC & DT$SEX==SEX & DT$AGEYRS==AGEYRS)	
+                z<- which(DT$ROUND==ROUND, DT$FC==FC & DT$SEX==SEX & DT$AGEYRS==AGEYRS)	
                 list(N      = length(z),
                      HIV_N  = sum(DT$HIV_STATUS[z]==1),
                      VLNS_N = sum(DT$VLNS[z]==1),
@@ -505,23 +514,25 @@ vl.prevalence.by.gender.loc.age.icar<- function(DT)
                 tmp <- as.data.table(reshape2::melt(tmp))	
                 prev.hiv.by.age <- cbind(vla, dcast.data.table(tmp, Var2~Var1, value.var='value'))	
 
-                ggplot(prev.hiv.by.age) + 		
-                                geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=interaction(SEX_LABEL,LOC_LABEL)), alpha=0.2) +
-                                geom_line(aes(x=AGE_LABEL, y=M, colour=SEX_LABEL)) +
-                                scale_x_continuous( expand=c(0,0) ) + 
-                                scale_y_continuous(label=scales:::percent) +
-                                scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-                                facet_wrap(~LOC_LABEL, ncol=2) +
-                                theme_bw() +
-                                labs(x='\nage at visit (years)', 
-                                                y='HIV prevalence (95% credibility interval)\n', 
-                                                colour='gender', 
-                                                linetype='location')
+                p <- ggplot(prev.hiv.by.age) + 		
+                        geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=interaction(SEX_LABEL,LOC_LABEL)), alpha=0.2) +
+                        geom_line(aes(x=AGE_LABEL, y=M, colour=SEX_LABEL)) +
+                        scale_x_continuous( expand=c(0,0) ) + 
+                        scale_y_continuous(label=scales:::percent) +
+                        scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
+                        facet_wrap(~LOC_LABEL, ncol=2) +
+                        theme_bw() +
+                        labs(x='\nage at visit (years)', 
+                             y='HIV prevalence (95% credibility interval)\n', 
+                             colour='gender', 
+                             linetype='location')
 
                 filename=paste0('220829_hivprevalence_vs_age_by_gender_fishinland_icar_round',round,'.pdf')
                 filename=file.path(outdir, filename)
                 cat('Saving', filename, '...\n')
-                ggsave(filename=filename, w=6, h=5)
+                filename2 <- gsub('pdf$','png',filename)
+                ggsave(p, filename=filename2, w=6, h=5)
+                ggsave(p, filename=filename, w=6, h=5)
 
                 # extract basic prevalence estimates
                 # __________________________________
@@ -574,19 +585,21 @@ vl.prevalence.by.gender.loc.age.icar<- function(DT)
                 rp <- melt(rp, id.vars=c('LOC_LABEL','AGE_LABEL','iterations'), measure.vars=c('PR_FM','PR_MF'))[, list(Q= quantile(value, probs=ps), P=c('CL','M','CU')), by=c('LOC_LABEL','AGE_LABEL','variable')]
                 rp <- dcast.data.table(rp, LOC_LABEL+AGE_LABEL+variable~P, value.var='Q')
                 prevratio.hiv.by.loc.age <- copy(rp)
-                ggplot(subset(prevratio.hiv.by.loc.age, variable=='PR_FM')) + 	
-                                geom_hline(yintercept=1, linetype=2) +
-                                geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=LOC_LABEL), alpha=0.2) +
-                                geom_line(aes(x=AGE_LABEL, y=M)) +
-                                scale_x_continuous( expand=c(0,0) ) + 			
-                                facet_wrap(~LOC_LABEL, ncol=2) +
-                                theme_bw() +
-                                labs(x='\nage at visit (years)', 
-                                                y='female to male HIV prevalence ratio\n(95% credibility interval)\n')
+                p <- ggplot(subset(prevratio.hiv.by.loc.age, variable=='PR_FM')) + 	
+                        geom_hline(yintercept=1, linetype=2) +
+                        geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=LOC_LABEL), alpha=0.2) +
+                        geom_line(aes(x=AGE_LABEL, y=M)) +
+                        scale_x_continuous( expand=c(0,0) ) + 			
+                        facet_wrap(~LOC_LABEL, ncol=2) +
+                        theme_bw() +
+                        labs(x='\nage at visit (years)', 
+                             y='female to male HIV prevalence ratio\n(95% credibility interval)\n')
                 filename=paste0('220829_hivprevalenceration_vs_age_by_fishinland_icar_round',round,'.pdf') 
                 filename=file.path(outdir, filename)
                 cat('Saving', filename, '...\n')
-                ggsave(filename=filename, w=10, h=5)
+                filename2 <- gsub('pdf$','png',filename)
+                ggsave(p, filename=filename2, w=10, h=5)
+                ggsave(p, filename=filename, w=10, h=5)
 
                 # extract if difference in female:male prevalence risk ratio in fishing vs inland
                 #________________________________________________________________________________
@@ -643,7 +656,7 @@ vl.meanviralload.by.gender.loc.age.icar<- function(DT)
                                          SEX=c('M','F'),
                                          AGEYRS=tmp))
 	vla <- vla[, {	
-                z <- which(DT$FC==FC & DT$SEX==SEX & DT$AGEYRS==AGEYRS)	
+                z <- which(DT$ROUND==ROUND, DT$FC==FC & DT$SEX==SEX & DT$AGEYRS==AGEYRS)	
                 list(N          = length(z),
                      VL_MEAN    = mean(DT$VLC[z]),
                      VL_SD      = sd(DT$VLC[z]),
@@ -659,23 +672,25 @@ vl.meanviralload.by.gender.loc.age.icar<- function(DT)
 	vla[, AGE:= AGE_LABEL-14L]
 	vla[, ROW_ID:= seq_len(nrow(vla))]
 	
-	ggplot(vla, aes(x=AGE_LABEL, fill=SEX_LABEL, color=SEX_LABEL) ) + 		
-			geom_ribbon(aes(x=AGE_LABEL, ymin=VL_MEAN-2*VL_MEAN_SD, ymax=VL_MEAN+2*VL_MEAN_SD, group=interaction(SEX_LABEL,LOC_LABEL)), alpha=0.2, colour=NA) +
-			geom_line(aes(x=AGE_LABEL, y=VL_MEAN, colour=SEX_LABEL)) +
-			scale_x_continuous( expand=c(0,0) ) + 
-			scale_y_log10() +
-			scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-			scale_fill_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-			facet_grid(ROUND~LOC_LABEL, scales='free') +
-			theme_bw() +
-			labs(x='\nage at visit (years)', 
-					y='mean viral load\n(95% credibility interval)\n', 
-					colour='gender', fill='gender',
-					linetype='location')
+	p <- ggplot(vla, aes(x=AGE_LABEL, fill=SEX_LABEL, color=SEX_LABEL) ) + 		
+                geom_ribbon(aes(x=AGE_LABEL, ymin=VL_MEAN-2*VL_MEAN_SD, ymax=VL_MEAN+2*VL_MEAN_SD, group=interaction(SEX_LABEL,LOC_LABEL)), alpha=0.2, colour=NA) +
+                geom_line(aes(x=AGE_LABEL, y=VL_MEAN, colour=SEX_LABEL)) +
+                scale_x_continuous( expand=c(0,0) ) + 
+                scale_y_log10() +
+                scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
+                scale_fill_manual(values=c('M'='royalblue3','F'='deeppink2')) +
+                facet_grid(ROUND~LOC_LABEL, scales='free') +
+                theme_bw() +
+                labs(x='\nage at visit (years)', 
+                     y='mean viral load\n(95% credibility interval)\n', 
+                     colour='gender', fill='gender', linetype='location')
 
-        filename= '220729d_mvl_vs_age_by_gender_fishinland_raw.pdf'
-        filename=file.path(outdir, filename)
-	ggsave(file=filename, w=6, h=10)
+        filename = '220729d_mvl_vs_age_by_gender_fishinland_raw.pdf'
+        filename = file.path(outdir, filename)
+        cat('Saving', filename, '...\n')
+        filename2 <- gsub('pdf$','png',filename)
+        ggsave(p, filename=filename2, w=6, h=10)
+	ggsave(p, filename=filename, w=6, h=10)
 
         # Stan file locations
         file.stan.1 <- file.path(path.stan, 'vl_meanviralload_by_gender_loc_age_icar.stan')
@@ -738,9 +753,11 @@ vl.meanviralload.by.gender.loc.age.icar<- function(DT)
                              colour='gender', 
                              linetype='location')
 
-                filename=paste0('2207289_mvl_vs_age_by_gender_fishinland_stan_round_',round,'.pdf')
-                cat('Saving', filename, '...\n')
-	        ggsave(p, file=file.path(outdir,filename), w=6, h=5)
+                filename=paste0('2207289_mvl_vs_age_by_gender_fishinland_stan_round',round,'.pdf')
+                filename=file.path(outdir, filename)
+                filename2 <- gsub('pdf$','png',filename)
+                ggsave(p, filename=filename2, w=6, h=5)
+	        ggsave(p, filename=filename, w=6, h=5)
 
                 TRUE
         }
@@ -771,7 +788,7 @@ vl.suppofinfected.by.gender.loc.age.icar<- function()
                                          AGEYRS=tmp))
 
 	vla <- vla[, {		
-                z <- which(DT$FC==FC & DT$SEX==SEX & DT$AGEYRS==AGEYRS)	
+                z <- which(DT$ROUND==ROUND & DT$FC==FC & DT$SEX==SEX & DT$AGEYRS==AGEYRS)	
                 list(N          = length(z),
                      HIV_N      = sum(DT$HIV_STATUS[z]==1),
                      VLNS_N     = sum(DT$VLNS[z]==1),
@@ -787,9 +804,9 @@ vl.suppofinfected.by.gender.loc.age.icar<- function()
 	
         # Stan file locations
         file.stan.1 <- file.path(path.stan, 'vl_suppofinfected_by_gender_loc_age_icar_1.stan')
-        file.stan.2 <- file.path(path.stan, 'vl_suppofinfected_by_gender_loc_age_icar_2.stan')
 	
-	stan.model2 <- stan_model(file.stan.2, model_name= 'icar_age_interactions')
+        list.files(path.stan, pattern='suppofinfected')
+	stan.model1 <- stan_model(file.stan.1, model_name= 'icar_age_interactions')
 
 	.fit.stan.and.plot.by.round <- function(DT , iter=20e3, warmup=5e2, chains=1, control = list(max_treedepth= 15, adapt_delta= 0.999))
         {
@@ -816,11 +833,11 @@ vl.suppofinfected.by.gender.loc.age.icar<- function()
                         node2 = node2[tmp],
                         N_edges =  length(node1)
                 )
-                fit <- sampling(stan.model2, data=stan.data, iter=iter, warmup=warmup, chains=chains, control=control) 
+                fit <- sampling(stan.model, data=stan.data, iter=iter, warmup=warmup, chains=chains, control=control) 
                 # trends by age quite rough, using Cauchy prior on sigma
                 # trends by age still quite rough, using N(0,0.1) prior on sigma
 
-                filename=paste0('notsuppAmongInfected_icar_stan_round_,'round',_220729.rds')
+                filename=paste0('notsuppAmongInfected_icar_stan_round',round,'_220729.rds')
                 saveRDS(fit, file=file.path(outdir,filename))
 
                 # second order RW prior
@@ -840,9 +857,9 @@ vl.suppofinfected.by.gender.loc.age.icar<- function()
                         node2 = node2[tmp],
                         N_edges =  length(node1)
                 )
-                fit2 <- sampling(stan.model2, data=stan.data, iter=iter, warmup=warmup, chains=chains, control=control)	
+                fit2 <- sampling(stan.model, data=stan.data, iter=iter, warmup=warmup, chains=chains, control=control)	
 
-                filename=paste0('notARVAmongInfected_icar_stan_round_,'round',_220729.rds')
+                filename=paste0('notARVAmongInfected_icar_stan_round',round,'_220729.rds')
                 save(fit2, file=file.path(outdir,filename))
 
                 
@@ -879,8 +896,10 @@ vl.suppofinfected.by.gender.loc.age.icar<- function()
                              y='HIV+ individuals with unsuppressed viral load\n(95% credibility interval)\n', 
                              colour='gender')
                 
-                filename <- paste0('220729d_notsuppAmongInfected_vs_age_by_gender_fishinland_v1_round_',round,'.pdf')
+                filename <- paste0('220729d_notsuppAmongInfected_vs_age_by_gender_fishinland_v1_round',round,'.pdf')
                 cat('Saving', filename, '...\n')
+                filename2 <- gsub('pdf$','png',filename)
+                ggsave(p, file=file.path(out.dir, filename2), w=6, h=5)
                 ggsave(p, file=file.path(out.dir, filename), w=6, h=5)	
 
                 p <- ggplot(tmp) + 		
@@ -899,6 +918,8 @@ vl.suppofinfected.by.gender.loc.age.icar<- function()
                 
                 filename <- paste0('220729d_notsuppAmongInfected_vs_age_by_gender_fishinland_v2_round',round,'.pdf')
                 cat('Saving', filename, '...\n')
+                filename2 <- gsub('pdf$','png',filename)
+                ggsave(p, file=file.path(out.dir, filename2), w=6, h=5)
                 ggsave(p, file=file.path(out.dir,filename), w=6, h=5)	
 
                 p <- ggplot(tmp) + 		
@@ -914,8 +935,11 @@ vl.suppofinfected.by.gender.loc.age.icar<- function()
                         labs(x='\nage at visit (years)', 
                              y='HIV+ individuals with suppressed viral load\n(95% credibility interval)\n', 
                              colour='gender')
-                
-                ggsave(p, file=file.path(prjdir,'results_200220','200428d_suppAmongInfected_vs_age_by_gender_fishinland_stan_v2.pdf'), w=6, h=5)
+                filename <- paste0('220729d_suppAmongInfected_vs_age_by_gender_fishinland_stan_v2_round',round,'.pdf')
+                cat('Saving', filename, '...\n')
+                filename2 <- gsub('pdf$','png',filename)
+                ggsave(p, file=file.path(out.dir, filename2), w=6, h=5)
+                ggsave(p, file=file.path(out.dir,filename), w=6, h=5)
 
                 tmp <- rbind(nsprev.by.age, naprev.by.age, fill=TRUE)
                 
@@ -934,6 +958,8 @@ vl.suppofinfected.by.gender.loc.age.icar<- function()
                 
                 filename <- paste0('220729d_notsuppAmongInfected_vs_age_by_gender_fishinland_v3_round',round,'.pdf')
                 cat('Saving', filename, '...\n')
+                filename2 <- gsub('pdf$','png',filename)
+                ggsave(p, file=file.path(out.dir, filename2), w=9, h=8)
                 ggsave(p, file=file.path(out.dir,filename), w=9, h=8)
 
                 p <- ggplot(tmp) + 		
@@ -951,6 +977,8 @@ vl.suppofinfected.by.gender.loc.age.icar<- function()
                 
                 filename <- paste0('220729d_notsuppAmongInfected_vs_age_by_gender_fishinland_v4_round',round,'.pdf')
                 cat('Saving', filename, '...\n')
+                filename2 <- gsub('pdf$','png',filename)
+                ggsave(p, file=file.path(out.dir, filename2), w=9, h=8)
                 ggsave(p, file=file.path(out.dir,filename), w=9, h=8)
                 
 
@@ -1018,7 +1046,7 @@ vl.suppofinfected.by.gender.loc.age.icar<- function()
                 rp[, PR_FM_D:= fishing-inland]	
                 rp[, list(Q= quantile(PR_FM_D, probs=ps), P=c('CL','M','CU'))]
 
-                filename <- file.path(out.dir, paste0("notsuppamonginfected_220729_round_",round,".rda"))
+                filename <- file.path(out.dir, paste0("notsuppamonginfected_220729_round",round,".rda"))
                 save(DT, re, 
                      sprev.ratio.by.loc.age,
                      nsprev.by.age, naprev.by.age,
@@ -1038,7 +1066,7 @@ vl.suppofinfected.by.gender.loc.age.icar<- function()
                 setnames(tmp, 'LABEL2', 'PR_MF')
                 dt <- merge(dt, tmp, by=c('LOC_LABEL','AGE_LABEL'))
 
-                filename <- file.path(outdir, paste0("notsuppamonginfected_round_",round,"_220729.csv"))
+                filename <- file.path(outdir, paste0("notsuppamonginfected_round",round,"_220729.csv"))
                 fwrite(dt, row.names=FALSE, file=file.path(outdir,filename))
                         
                 #	make table version suppressed
@@ -1053,7 +1081,7 @@ vl.suppofinfected.by.gender.loc.age.icar<- function()
                 setnames(tmp, 'LABEL2', 'PR_MF')
                 dt <- merge(dt, tmp, by=c('LOC_LABEL','AGE_LABEL'))
 
-                filename <- file.path(outdir, paste0("suppamonginfected_round_",round,"_220729.csv"))
+                filename <- file.path(outdir, paste0("suppamonginfected_round",round,"_220729.csv"))
                 fwrite(dt, row.names=FALSE, file=filename)
 
                 TRUE
@@ -1071,452 +1099,381 @@ vl.suppofinfected.by.gender.loc.age.icar<- function()
         return(tmp)
 }
 
-# vl.suppofinfected.by.gender.loc.age.gp<- function()
-# {
-# 	require(Hmisc)
-# 	require(data.table)
-# 	require(ggplot2)
-# 	require(rstan)
-# 	VL_DETECTABLE <- 4e2
-# 	VIREMIC_VIRAL_LOAD <- 1e3
-# 	
-# 	
-# 	require(data.table)
-# 	prjdir	<- '~/Box/OR_Work/2018/2018_RakaiViralLoad'
-# 	infile	<- file.path(prjdir,'data','191101_data_round17_vl_gps.rda')
-# 	outdir <- file.path(prjdir,'results_200220')
-# 	load( infile )
-# 	setalloccol(ds)
-# 	
-# 	# remove HIV+ individuals with missing VLs
-# 	ds <- subset(ds, HIV_STATUS==0 | HIV_AND_VL==1)
-# 	# consider only ARVMED for infected
-# 	set(ds, ds[, which(ARVMED==1 & HIV_STATUS==0)], 'ARVMED', 0) 
-# 	
-# 	# define VL_COPIES for uninfected
-# 	set(ds, NULL, 'VLC', ds$VL_COPIES)
-# 	set(ds, ds[,which(HIV_STATUS==0)], 'VLC', 0)
-# 	
-# 	# define undetectable VL (machine-undetectable)
-# 	# define suppressed VL (according to WHO criteria)	
-# 	set(ds, NULL, 'VLU', ds[, as.integer(VLC<VL_DETECTABLE)])
-# 	set(ds, NULL, 'VLS', ds[, as.integer(VLC<VIREMIC_VIRAL_LOAD)])
-# 	set(ds, NULL, 'VLD', ds[, as.integer(VLC>=VL_DETECTABLE)])
-# 	set(ds, NULL, 'VLNS', ds[, as.integer(VLC>=VIREMIC_VIRAL_LOAD)])
-# 	set(ds, NULL, 'HIV_AND_VLD', ds[, as.integer(VLD==1 & HIV_AND_VL==1)])
-# 	
-# 	# reset VLC below machine detectable to 0
-# 	set(ds, ds[, which(HIV_AND_VL==1 & VLU==1)], 'VLC', 0)
-# 	setkey(ds, FC, SEX, AGEYRS)
-# 	
-# 	subset(ds, FC=='inland' & SEX=='F' & AGEYRS==25)
-# 	
-# 	tmp <- seq.int(min(ds$AGEYRS), max(ds$AGEYRS))
-# 	vla <- as.data.table(expand.grid(FC=c('fishing','inland'), SEX=c('M','F'), AGEYRS=tmp))
-# 	vla <- vla[, {		
-# 				z <- which(ds$FC==FC & ds$SEX==SEX & ds$AGEYRS==AGEYRS)	
-# 				list(	N= length(z),
-# 						HIV_N= length(which(ds$HIV_STATUS[z]==1)),
-# 						VLNS_N= length(which(ds$VLNS[z]==1)),
-# 						ARV_N= length(which(ds$ARVMED[z]==0 & ds$HIV_STATUS[z]==1 & !is.na(ds$ARVMED[z])))
-# 				)				
-# 			}, by=c('FC','SEX','AGEYRS')]
-# 	setnames(vla, c('FC','SEX','AGEYRS'), c('LOC_LABEL','SEX_LABEL','AGE_LABEL'))
-# 	vla[, LOC:= as.integer(LOC_LABEL=='fishing')]
-# 	vla[, SEX:= as.integer(SEX_LABEL=='M')]
-# 	vla[, AGE:= AGE_LABEL-14L]
-# 	vla[, ROW_ID:= seq_len(nrow(vla))]
-# 	
-# 	stan.code2 <- "
-# data{	
-# 	int<lower=1> N_predict;
-#   	real x_predict[N_predict];
-#   	int<lower=1> N_observed;
-#   	int<lower=1, upper=N_predict> observed_idx[N_observed];
-#   	int y_observed_00[N_observed];
-# 	int y_observed_10[N_observed];
-# 	int y_observed_01[N_observed];	
-# 	int y_observed_11[N_observed];	
-# 	int total_observed_00[N_observed];
-# 	int total_observed_10[N_observed];
-# 	int total_observed_01[N_observed];
-# 	int total_observed_11[N_observed];
-#   	real<lower=0> rho_hyper_par_00;
-# 	real<lower=0> rho_hyper_par_10;
-# 	real<lower=0> rho_hyper_par_01;
-# 	real<lower=0> rho_hyper_par_11;  	
-#   	real<lower=0> alpha_hyper_par_00;
-# 	real<lower=0> alpha_hyper_par_10;
-# 	real<lower=0> alpha_hyper_par_01;
-# 	real<lower=0> alpha_hyper_par_11;
-# }
-# 
-# parameters {
-# 	real<lower=0> rho_00;
-# 	real<lower=0> rho_10;
-# 	real<lower=0> rho_01;
-# 	real<lower=0> rho_11;
-# 	real<lower=0> alpha_00;
-# 	real<lower=0> alpha_10;
-# 	real<lower=0> alpha_01;
-# 	real<lower=0> alpha_11;
-# 	real sex0_loc0;
-# 	real sex1_loc0;
-# 	real sex0_loc1;
-# 	real sex1_loc1;  	
-#   	vector[N_predict] f_tilde_00;
-# 	vector[N_predict] f_tilde_10;
-# 	vector[N_predict] f_tilde_01;
-# 	vector[N_predict] f_tilde_11;
-# }
-# 
-# transformed parameters {
-#   	matrix[N_predict, N_predict] L_cov;
-#   	vector[N_predict] logit_p_predict_00;
-# 	vector[N_predict] logit_p_predict_10;
-# 	vector[N_predict] logit_p_predict_01;
-# 	vector[N_predict] logit_p_predict_11;
-# 	// GP for 00 and 01 (women)
-# 	L_cov = cholesky_decompose(cov_exp_quad(x_predict, alpha_00, rho_00) + diag_matrix(rep_vector(1e-10, N_predict)));
-# 	logit_p_predict_00 = sex0_loc0 + L_cov * f_tilde_00;
-# 	L_cov = cholesky_decompose(cov_exp_quad(x_predict, alpha_01, rho_01) + diag_matrix(rep_vector(1e-10, N_predict)));
-# 	logit_p_predict_01 = sex0_loc1 + L_cov * f_tilde_01;
-# 	// GP for 10 and 10 (men)
-# 	L_cov = cholesky_decompose(cov_exp_quad(x_predict, alpha_10, rho_10) + diag_matrix(rep_vector(1e-10, N_predict)));
-# 	logit_p_predict_10 = sex1_loc0 + L_cov * f_tilde_10;
-# 	L_cov = cholesky_decompose(cov_exp_quad(x_predict, alpha_11, rho_11) + diag_matrix(rep_vector(1e-10, N_predict)));
-# 	logit_p_predict_11 = sex1_loc1 + L_cov * f_tilde_11;
-# }
-# 
-# model {
-# 	rho_00 ~ normal(0, rho_hyper_par_00);
-# 	rho_10 ~ normal(0, rho_hyper_par_10);
-# 	rho_01 ~ normal(0, rho_hyper_par_01);
-# 	rho_11 ~ normal(0, rho_hyper_par_11);  	
-#   	alpha_00 ~ normal(0, alpha_hyper_par_00);
-# 	alpha_10 ~ normal(0, alpha_hyper_par_10);
-# 	alpha_01 ~ normal(0, alpha_hyper_par_01);
-# 	alpha_11 ~ normal(0, alpha_hyper_par_11);
-#   	sex0_loc0 ~ normal( 0 , 10 );
-# 	sex0_loc1 ~ normal( 0 , 10 );
-# 	sex1_loc0 ~ normal( 0 , 10 );
-# 	sex1_loc1 ~ normal( 0 , 10 );
-#   	f_tilde_00 ~ normal(0, 1);
-# 	f_tilde_01 ~ normal(0, 1);
-# 	f_tilde_10 ~ normal(0, 1);
-# 	f_tilde_11 ~ normal(0, 1);
-#   	y_observed_00 ~ binomial_logit(total_observed_00, logit_p_predict_00[observed_idx] );
-# 	y_observed_01 ~ binomial_logit(total_observed_01, logit_p_predict_01[observed_idx] );
-# 	y_observed_10 ~ binomial_logit(total_observed_10, logit_p_predict_10[observed_idx] );
-# 	y_observed_11 ~ binomial_logit(total_observed_11, logit_p_predict_11[observed_idx] );
-# }
-# 
-# generated quantities {
-#   	vector[N_predict] p_predict_00;
-# 	vector[N_predict] p_predict_01;
-# 	vector[N_predict] p_predict_10;
-# 	vector[N_predict] p_predict_11;
-# 	p_predict_00 = inv_logit(logit_p_predict_00);
-# 	p_predict_01 = inv_logit(logit_p_predict_01);  
-# 	p_predict_10 = inv_logit(logit_p_predict_10);
-# 	p_predict_11 = inv_logit(logit_p_predict_11);
-# }			
-# "
-# 		
-# 	stan.model <- stan_model(model_name= 'gp_all',model_code = gsub('\t',' ',stan.code2))	
-# 	stan.data <- list()
-# 	stan.data$x_predict <- seq(vla[, min(AGE_LABEL)], vla[, max(AGE_LABEL)+1], 0.5)
-# 	stan.data$N_predict <- length(stan.data$x_predict)
-# 	stan.data$observed_idx <- which(stan.data$x_predict%%1==0.5)
-# 	stan.data$N_observed <- length(stan.data$observed_idx)
-# 	stan.data$y_observed_00 <- vla[SEX==0 & LOC==0, HIV_N-VLNS_N]
-# 	stan.data$y_observed_10 <- vla[SEX==1 & LOC==0, HIV_N-VLNS_N]
-# 	stan.data$y_observed_01 <- vla[SEX==0 & LOC==1, HIV_N-VLNS_N]
-# 	stan.data$y_observed_11 <- vla[SEX==1 & LOC==1, HIV_N-VLNS_N]
-# 	stan.data$total_observed_00 <- vla[SEX==0 & LOC==0, HIV_N]
-# 	stan.data$total_observed_10 <- vla[SEX==1 & LOC==0, HIV_N]
-# 	stan.data$total_observed_01 <- vla[SEX==0 & LOC==1, HIV_N]
-# 	stan.data$total_observed_11 <- vla[SEX==1 & LOC==1, HIV_N]
-# 	stan.data$rho_hyper_par_00 <- diff(range(stan.data$x_predict))/3
-# 	stan.data$rho_hyper_par_10 <- diff(range(stan.data$x_predict))/3
-# 	stan.data$rho_hyper_par_01 <- diff(range(stan.data$x_predict))/3
-# 	stan.data$rho_hyper_par_11 <- diff(range(stan.data$x_predict))/3
-# 	stan.data$alpha_hyper_par_00 <- 2
-# 	stan.data$alpha_hyper_par_10 <- 2
-# 	stan.data$alpha_hyper_par_01 <- 2
-# 	stan.data$alpha_hyper_par_11 <- 2
-# 	fit <- sampling(stan.model, data=stan.data, iter=10e3, warmup=5e2, chains=1, control = list(max_treedepth= 15, adapt_delta= 0.999))
-# 	save(fit, file=file.path(outdir, "200428f_notsuppAmongInfected_gp_stanfit.rda"))
-# 	
-# 	
-# 	#
-# 	#	compare to self-report
-# 	#
-# 	stan.data <- list()
-# 	stan.data$x_predict <- seq(vla[, min(AGE_LABEL)], vla[, max(AGE_LABEL)+1], 0.5)
-# 	stan.data$N_predict <- length(stan.data$x_predict)
-# 	stan.data$observed_idx <- which(stan.data$x_predict%%1==0.5)
-# 	stan.data$N_observed <- length(stan.data$observed_idx)
-# 	stan.data$y_observed_00 <- vla[SEX==0 & LOC==0, HIV_N-ARV_N]
-# 	stan.data$y_observed_10 <- vla[SEX==1 & LOC==0, HIV_N-ARV_N]
-# 	stan.data$y_observed_01 <- vla[SEX==0 & LOC==1, HIV_N-ARV_N]
-# 	stan.data$y_observed_11 <- vla[SEX==1 & LOC==1, HIV_N-ARV_N]
-# 	stan.data$total_observed_00 <- vla[SEX==0 & LOC==0, HIV_N]
-# 	stan.data$total_observed_10 <- vla[SEX==1 & LOC==0, HIV_N]
-# 	stan.data$total_observed_01 <- vla[SEX==0 & LOC==1, HIV_N]
-# 	stan.data$total_observed_11 <- vla[SEX==1 & LOC==1, HIV_N]
-# 	stan.data$rho_hyper_par_00 <- diff(range(stan.data$x_predict))/3
-# 	stan.data$rho_hyper_par_10 <- diff(range(stan.data$x_predict))/3
-# 	stan.data$rho_hyper_par_01 <- diff(range(stan.data$x_predict))/3
-# 	stan.data$rho_hyper_par_11 <- diff(range(stan.data$x_predict))/3
-# 	stan.data$alpha_hyper_par_00 <- 2
-# 	stan.data$alpha_hyper_par_10 <- 2
-# 	stan.data$alpha_hyper_par_01 <- 2
-# 	stan.data$alpha_hyper_par_11 <- 2
-# 	fit2 <- sampling(stan.model, data=stan.data, iter=10e3, warmup=5e2, chains=1, control = list(max_treedepth= 15, adapt_delta= 0.999))
-# 	save(fit2, file=file.path(outdir, "200428f_notARVAmongInfected_icar_stanfit.rda"))
-# 	
-# 	
-# 	re <- rstan::extract(fit)
-# 	re2 <- rstan::extract(fit2)
-# 	ps <- c(0.025,0.5,0.975)
-# 	tmp <- summary(fit)$summary
-# 	tmp[grepl('^p_predict_',rownames(tmp)),]
-# 	
-# 	#
-# 	#	extract hyperparams rho
-# 	ps <- c(0.025,0.25,0.5,0.75,0.975)
-# 	tmp <- cbind( quantile(re$rho_00, probs=ps),
-# 			quantile(re$rho_10, probs=ps),
-# 			quantile(re$rho_01, probs=ps),
-# 			quantile(re$rho_11, probs=ps),
-# 			quantile(re$alpha_00, probs=ps),
-# 			quantile(re$alpha_10, probs=ps),
-# 			quantile(re$alpha_01, probs=ps),
-# 			quantile(re$alpha_11, probs=ps) )			
-# 	colnames(tmp) <- c('rho_00','rho_10','rho_01','rho_11','alpha_00','alpha_10','alpha_01','alpha_11')
-# 	rownames(tmp) <- c('CL','IL','M','IU','CU')
-# 	tmp <- as.data.table(reshape2::melt(tmp))
-# 	setnames(tmp, 'Var2', 'GP_hyper_par')
-# 	tmp[, SEX:= as.integer(gsub('^([a-z]+)_([0-9])([0-9])','\\2',GP_hyper_par))]
-# 	tmp[, LOC:= as.integer(gsub('^([a-z]+)_([0-9])([0-9])','\\3',GP_hyper_par))]
-# 	tmp[, GP_hyper_par:= gsub('^([a-z]+)_([0-9])([0-9])','\\1',GP_hyper_par)]
-# 	tmp <- dcast.data.table(tmp, LOC+SEX+GP_hyper_par~Var1, value.var='value')
-# 	nsinf.gp.pars <- merge(unique(subset(vla, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL))), tmp, by=c('SEX','LOC'))
-# 	ggplot(nsinf.gp.pars, aes(x= paste0(GP_hyper_par, ' ', LOC_LABEL, ' ', SEX_LABEL))) +
-# 			geom_point(aes(y=M)) +
-# 			geom_errorbar(aes(ymin=CL, ymax=CU)) +
-# 			coord_flip() +
-# 			theme_bw() +
-# 			labs(x='GP hyperparameter\n', y='')
-# 	ggsave(file=file.path(prjdir,'results_200220','200428f_notsuppAmongInfected_gppars.pdf'), w=6, h=3)
-# 	
-# 	
-# 	#
-# 	#	make prevalence plot by age
-# 	tmp <- cbind( apply(re$p_predict_00, 2, quantile, probs=ps),
-# 			apply(re$p_predict_10, 2, quantile, probs=ps),
-# 			apply(re$p_predict_01, 2, quantile, probs=ps),
-# 			apply(re$p_predict_11, 2, quantile, probs=ps)
-# 			)
-# 	rownames(tmp) <- c('CL','IL','M','IU','CU')
-# 	tmp <- as.data.table(reshape2::melt(tmp))
-# 	nsinf.by.age <- dcast.data.table(tmp, Var2~Var1, value.var='value')
-# 	tmp <- as.data.table(expand.grid(AGE_LABEL=stan.data$x_predict, SEX=c(0,1), LOC=c(0,1)))
-# 	nsinf.by.age <- cbind(tmp, nsinf.by.age) 
-# 	nsinf.by.age <- merge(unique(subset(vla, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL))), nsinf.by.age, by=c('SEX','LOC'))
-# 	nsinf.by.age[, STAT:='VLNS']
-# 	
-# 	tmp <- cbind( apply(re2$p_predict_00, 2, quantile, probs=ps),
-# 			apply(re2$p_predict_10, 2, quantile, probs=ps),
-# 			apply(re2$p_predict_01, 2, quantile, probs=ps),
-# 			apply(re2$p_predict_11, 2, quantile, probs=ps)
-# 			)
-# 	rownames(tmp) <- c('CL','IL','M','IU','CU')
-# 	tmp <- as.data.table(reshape2::melt(tmp))
-# 	nainf.by.age <- dcast.data.table(tmp, Var2~Var1, value.var='value')
-# 	tmp <- as.data.table(expand.grid(AGE_LABEL=stan.data$x_predict, SEX=c(0,1), LOC=c(0,1)))
-# 	nainf.by.age <- cbind(tmp, nainf.by.age) 
-# 	nainf.by.age <- merge(unique(subset(vla, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL))), nainf.by.age, by=c('SEX','LOC'))
-# 	nainf.by.age[, STAT:='VLNA']
-# 	tmp <- subset(nainf.by.age, select=c(SEX, LOC, AGE_LABEL, M, CL, CU))
-# 	setnames(tmp, c('M','CL','CU'), c('M2','CL2','CU2'))
-# 	tmp <- merge(nsinf.by.age, tmp, by=c('SEX','LOC','AGE_LABEL'))			
-# 	ggplot(tmp) + 		
-# 			geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=interaction(SEX_LABEL,LOC_LABEL)), alpha=0.2) +
-# 			geom_hline(yintercept=c(0.9^3, 0.95^3)) +
-# 			geom_line(aes(x=AGE_LABEL, y=M, colour=SEX_LABEL)) +
-# 			scale_x_continuous( expand=c(0,0) ) + 
-# 			scale_y_continuous(label=scales:::percent) +
-# 			scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-# 			facet_wrap(~LOC_LABEL, ncol=2) +
-# 			theme_bw() +
-# 			labs(x='\nage at visit (years)', 
-# 					y='HIV+ individuals with suppressed viral load\n(95% credibility interval)\n', 
-# 					colour='gender', 
-# 					linetype='location')
-# 	ggsave(file=file.path(prjdir,'results_200220','200428f_suppAmongInfected_vs_age_by_gender_fishinland_stan.pdf'), w=6, h=5)		
-# 	ggplot(tmp) + 		
-# 			geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=interaction(SEX_LABEL,LOC_LABEL)), alpha=0.2) +
-# 			geom_hline(yintercept=c(0.9^3, 0.95^3)) +
-# 			geom_line(aes(x=AGE_LABEL, y=M, colour=SEX_LABEL)) +
-# 			geom_line(aes(x=AGE_LABEL, y=M2, colour=SEX_LABEL), linetype=2) +
-# 			scale_x_continuous( expand=c(0,0) ) + 
-# 			scale_y_continuous(label=scales:::percent) +
-# 			scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-# 			facet_wrap(~LOC_LABEL, ncol=2) +
-# 			theme_bw() +
-# 			labs(x='\nage at visit (years)', 
-# 					y='HIV+ individuals with suppressed viral load\n(95% credibility interval)\n', 
-# 					colour='gender')
-# 	ggsave(file=file.path(prjdir,'results_200220','200428f_suppAmongInfected_vs_age_by_gender_fishinland_stan_v2.pdf'), w=6, h=5)	
-# 	tmp <- rbind(nsinf.by.age, nainf.by.age, fill=TRUE)
-# 	ggplot(tmp) + 		
-# 			geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=interaction(SEX_LABEL,LOC_LABEL,STAT)), alpha=0.2) +
-# 			geom_line(aes(x=AGE_LABEL, y=M, colour=SEX_LABEL, linetype=STAT)) +
-# 			scale_x_continuous( expand=c(0,0) ) + 
-# 			scale_y_continuous(label=scales:::percent) +
-# 			scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-# 			scale_linetype_manual(values=c('VLNS'='solid','VLNA'='dotdash')) +
-# 			facet_grid(SEX_LABEL~LOC_LABEL) +
-# 			theme_bw() +
-# 			labs(x='\nage at visit (years)', 
-# 					y='HIV+ individuals with unsuppressed viral load\n(95% credibility interval)\n', 
-# 					colour='gender')
-# 	ggsave(file=file.path(prjdir,'results_200220','200428f_suppAmongInfected_vs_age_by_gender_fishinland_stan_v3.pdf'), w=9, h=8)
-# 	
-# 	
-# 	#	extract basic not supp estimates
-# 	vla[, list(N=sum(VLNS_N), P=sum(VLNS_N) / sum(HIV_N), N2=sum(HIV_N)-sum(VLNS_N), P2= 1-sum(VLNS_N) / sum(HIV_N)), by=c('LOC_LABEL','SEX_LABEL')]
-# 	#   LOC_LABEL SEX_LABEL   N         P   N2        P2
-# 	#1:   fishing         M 296 0.4314869  390 0.5685131
-# 	#2:    inland         M 203 0.3338816  405 0.6661184
-# 	#3:   fishing         F 198 0.2307692  660 0.7692308
-# 	#4:    inland         F 279 0.2121673 1036 0.7878327
-# 	
-# 
-# 	ps <- c(0.025,0.5,0.975)
-# 	tmp <- cbind( re$p_predict_00, re$p_predict_10, re$p_predict_01, re$p_predict_11)
-# 	rp <- as.data.table(reshape2::melt( tmp ))
-# 	setnames(rp, 1:3, c('iterations','ROW_ID','P')) 
-# 	tmp <- as.data.table(expand.grid(AGE_LABEL=stan.data$x_predict, SEX=c(0,1), LOC=c(0,1)))
-# 	tmp[, ROW_ID:= seq_len(nrow(tmp))]
-# 	tmp <- merge(subset(vla, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL,AGE_LABEL,N)), tmp, by=c('SEX','LOC','AGE_LABEL'), all=TRUE)
-# 	set(tmp, tmp[, which(is.na(N))], 'N', tmp[which(is.na(N))-1L, N]) 
-# 	set(tmp, tmp[, which(is.na(N))], 'N', tmp[which(is.na(N))-1L, N])
-# 	set(tmp, tmp[, which(is.na(SEX_LABEL))], 'SEX_LABEL', tmp[which(is.na(SEX_LABEL))-1L, SEX_LABEL])
-# 	set(tmp, tmp[, which(is.na(SEX_LABEL))], 'SEX_LABEL', tmp[which(is.na(SEX_LABEL))-1L, SEX_LABEL])
-# 	set(tmp, tmp[, which(is.na(LOC_LABEL))], 'LOC_LABEL', tmp[which(is.na(LOC_LABEL))-1L, LOC_LABEL])
-# 	set(tmp, tmp[, which(is.na(LOC_LABEL))], 'LOC_LABEL', tmp[which(is.na(LOC_LABEL))-1L, LOC_LABEL])	
-# 	rp <- merge(tmp, rp, by=c('ROW_ID'))	
-# 	rp <- rp[, list(P= sum(P*N)/sum(N) ), by=c('LOC_LABEL','SEX_LABEL','iterations')]
-# 	rp <- rp[, list(Q= quantile(P, probs=ps), P=c('CL','M','CU')), by=c('LOC_LABEL','SEX_LABEL')]
-# 	rp <- dcast.data.table(rp, LOC_LABEL+SEX_LABEL~P, value.var='Q')
-# 	rp[, LABEL:= paste0(round(M*100, d=2),'% (',round(CL*100, d=2),'% - ',round(CU*100,d=2),'%)') ]
-# 	nsinf.by.sex.loc <- copy(rp)
-# 	# LOC_LABEL SEX_LABEL        CL        CU         M                    LABEL
-# 	#	fishing         M 0.4562322 0.5536721 0.5018376 50.18% (45.62% - 55.37%)
-# 	#2: fishing         F 0.7134543 0.7781516 0.7469707  74.7% (71.35% - 77.82%)
-# 	#3: inland         M 0.4910456 0.6555350 0.5703211  57.03% (49.1% - 65.55%)
-# 	#4: inland         F 0.6939593 0.7646014 0.7308165  73.08% (69.4% - 76.46%)
-# 
-# 
-# 
-# 	#	extract risk ratio of suppressed VL female:male and male:female
-# 	tmp <- cbind( re$p_predict_00, re$p_predict_10, re$p_predict_01, re$p_predict_11)
-# 	rp <- as.data.table(reshape2::melt( tmp ))
-# 	setnames(rp, 1:3, c('iterations','ROW_ID','P')) 
-# 	tmp <- as.data.table(expand.grid(AGE_LABEL=stan.data$x_predict, SEX=c(0,1), LOC=c(0,1)))
-# 	tmp[, ROW_ID:= seq_len(nrow(tmp))]
-# 	tmp <- merge(subset(vla, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL,AGE_LABEL,N)), tmp, by=c('SEX','LOC','AGE_LABEL'), all=TRUE)
-# 	set(tmp, tmp[, which(is.na(N))], 'N', tmp[which(is.na(N))-1L, N]) 
-# 	set(tmp, tmp[, which(is.na(N))], 'N', tmp[which(is.na(N))-1L, N])
-# 	set(tmp, tmp[, which(is.na(SEX_LABEL))], 'SEX_LABEL', tmp[which(is.na(SEX_LABEL))-1L, SEX_LABEL])
-# 	set(tmp, tmp[, which(is.na(SEX_LABEL))], 'SEX_LABEL', tmp[which(is.na(SEX_LABEL))-1L, SEX_LABEL])
-# 	set(tmp, tmp[, which(is.na(LOC_LABEL))], 'LOC_LABEL', tmp[which(is.na(LOC_LABEL))-1L, LOC_LABEL])
-# 	set(tmp, tmp[, which(is.na(LOC_LABEL))], 'LOC_LABEL', tmp[which(is.na(LOC_LABEL))-1L, LOC_LABEL])	
-# 	rp <- merge(tmp, rp, by=c('ROW_ID'))	
-# 	rp <- rp[, list(P= sum(P*N)/sum(N) ), by=c('LOC_LABEL','SEX_LABEL','iterations')]
-# 	rp <- dcast.data.table(rp, LOC_LABEL+iterations~SEX_LABEL, value.var='P')
-# 	rp <- rp[, list(PR_FM= F/M, PR_MF=M/F), by=c('LOC_LABEL','iterations')]
-# 	rp <- melt(rp, id.vars=c('LOC_LABEL','iterations'))
-# 	rp <- rp[, list(Q= quantile(value, probs=ps), P=c('CL','M','CU')), by=c('LOC_LABEL','variable')]
-# 	rp <- dcast.data.table(rp, LOC_LABEL+variable~P, value.var='Q')
-# 	rp[, LABEL:= paste0(round(M, d=2),' (',round(CL, d=2),' - ',round(CU,d=2),')') ]	
-# 	nsinf.by.loc <- copy(rp)	
-# 	#   LOC_LABEL variable        CL        CU         M              LABEL
-# 	#1:   fishing    PR_FM 1.3365856 1.6508029 1.4873708 1.49 (1.34 - 1.65)
-# 	#2:   fishing    PR_MF 0.6057659 0.7481750 0.6723273 0.67 (0.61 - 0.75)
-# 	#3:    inland    PR_FM 1.1015949 1.4994209 1.2811266   1.28 (1.1 - 1.5)
-# 	#4:    inland    PR_MF 0.6669241 0.9077748 0.7805630 0.78 (0.67 - 0.91)
-# 	
-# 	
-# 	#	extract risk ratio of unsuppressed VL female:male and male:female by age
-# 	tmp <- cbind( re$p_predict_00, re$p_predict_10, re$p_predict_01, re$p_predict_11)
-# 	rp <- as.data.table(reshape2::melt( tmp ))
-# 	setnames(rp, 1:3, c('iterations','ROW_ID','P')) 
-# 	tmp <- as.data.table(expand.grid(AGE_LABEL=stan.data$x_predict, SEX=c(0,1), LOC=c(0,1)))
-# 	tmp[, ROW_ID:= seq_len(nrow(tmp))]
-# 	tmp <- merge(subset(vla, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL,AGE_LABEL,N)), tmp, by=c('SEX','LOC','AGE_LABEL'), all=TRUE)
-# 	set(tmp, tmp[, which(is.na(N))], 'N', tmp[which(is.na(N))-1L, N]) 
-# 	set(tmp, tmp[, which(is.na(N))], 'N', tmp[which(is.na(N))-1L, N])
-# 	set(tmp, tmp[, which(is.na(SEX_LABEL))], 'SEX_LABEL', tmp[which(is.na(SEX_LABEL))-1L, SEX_LABEL])
-# 	set(tmp, tmp[, which(is.na(SEX_LABEL))], 'SEX_LABEL', tmp[which(is.na(SEX_LABEL))-1L, SEX_LABEL])
-# 	set(tmp, tmp[, which(is.na(LOC_LABEL))], 'LOC_LABEL', tmp[which(is.na(LOC_LABEL))-1L, LOC_LABEL])
-# 	set(tmp, tmp[, which(is.na(LOC_LABEL))], 'LOC_LABEL', tmp[which(is.na(LOC_LABEL))-1L, LOC_LABEL])	
-# 	rp <- merge(tmp, rp, by=c('ROW_ID'))	
-# 	rp <- dcast.data.table(rp, LOC_LABEL+iterations+AGE_LABEL~SEX_LABEL, value.var='P')
-# 	rp[, PR_FM:= F/M]
-# 	rp[, PR_MF:=M/F]
-# 	rp <- melt(rp, id.vars=c('LOC_LABEL','AGE_LABEL','iterations'), measure.vars=c('PR_FM','PR_MF'))
-# 	rp <- rp[, list(Q= quantile(value, probs=ps), P=c('CL','M','CU')), by=c('LOC_LABEL','AGE_LABEL','variable')]	
-# 	rp <- dcast.data.table(rp, LOC_LABEL+AGE_LABEL+variable~P, value.var='Q')
-# 	rp[, LABEL:= paste0(round(M, d=2),' (',round(CL, d=2),' - ',round(CU,d=2),')') ]	
-# 	nsinf.ratio.by.loc.age <- copy(rp)
-# 	
-# 	
-# 	#	extract if difference in female:male risk ratio of unsuppressed VL is different in fishing vs inland
-# 	tmp <- cbind( re$p_predict_00, re$p_predict_10, re$p_predict_01, re$p_predict_11)
-# 	rp <- as.data.table(reshape2::melt( tmp ))
-# 	setnames(rp, 1:3, c('iterations','ROW_ID','P')) 
-# 	tmp <- as.data.table(expand.grid(AGE_LABEL=stan.data$x_predict, SEX=c(0,1), LOC=c(0,1)))
-# 	tmp[, ROW_ID:= seq_len(nrow(tmp))]
-# 	tmp <- merge(subset(vla, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL,AGE_LABEL,N)), tmp, by=c('SEX','LOC','AGE_LABEL'), all=TRUE)
-# 	set(tmp, tmp[, which(is.na(N))], 'N', tmp[which(is.na(N))-1L, N]) 
-# 	set(tmp, tmp[, which(is.na(N))], 'N', tmp[which(is.na(N))-1L, N])
-# 	set(tmp, tmp[, which(is.na(SEX_LABEL))], 'SEX_LABEL', tmp[which(is.na(SEX_LABEL))-1L, SEX_LABEL])
-# 	set(tmp, tmp[, which(is.na(SEX_LABEL))], 'SEX_LABEL', tmp[which(is.na(SEX_LABEL))-1L, SEX_LABEL])
-# 	set(tmp, tmp[, which(is.na(LOC_LABEL))], 'LOC_LABEL', tmp[which(is.na(LOC_LABEL))-1L, LOC_LABEL])
-# 	set(tmp, tmp[, which(is.na(LOC_LABEL))], 'LOC_LABEL', tmp[which(is.na(LOC_LABEL))-1L, LOC_LABEL])	
-# 	rp <- merge(tmp, rp, by=c('ROW_ID'))	
-# 	rp <- rp[, list(P= sum(P*N)/sum(N) ), by=c('LOC_LABEL','SEX_LABEL','iterations')]
-# 	rp <- dcast.data.table(rp, LOC_LABEL+iterations~SEX_LABEL, value.var='P')
-# 	rp <- rp[, list(PR_FM= F/M, PR_MF=M/F), by=c('LOC_LABEL','iterations')]
-# 	rp <- dcast.data.table(rp, iterations~LOC_LABEL, value.var='PR_FM')
-# 	rp[, PR_FM_D:= fishing-inland]	
-# 	rp[, list(Q= quantile(PR_FM_D, probs=ps), P=c('CL','M','CU'))]
-# 	#	            Q  P
-# 	#1: 1: -0.05655754 CL
-# 	#2:  0.20449222  M
-# 	#3:  0.45032189 CU
-# 	
-# 	
-# 	save(vla, re, re2, nainf.by.age, nsinf.by.age, nsinf.by.sex.loc, nsinf.by.loc, nsinf.ratio.by.loc.age, file=file.path(outdir, "200428f_suppAmongInfected.rda"))
-# 	
-# 	
-# 	#	make table version suppressed
-# 	nsinf.by.age[, LABEL:= paste0(sprintf('%2.1f',M*100),' (',sprintf('%2.1f',CL*100),' - ',sprintf('%2.1f',CU*100),')') ]
-# 	set(nsinf.by.age, NULL, 'SEX_LABEL', nsinf.by.age[, factor(as.character(SEX_LABEL), levels=c('F','M'))])	
-# 	nsinf.ratio.by.loc.age[, LABEL2:= paste0(sprintf('%2.2f',M),' (',sprintf('%2.2f',CL),' - ',sprintf('%2.2f',CU),')') ]
-# 	dt <- subset(nsinf.by.age, AGE_LABEL%in%c(20.5,25.5,30.5,35.5,40.5,45.5))	
-# 	dt <- dcast.data.table(dt, LOC_LABEL+AGE_LABEL~SEX_LABEL, value.var='LABEL')
-# 	tmp <- subset(nsinf.ratio.by.loc.age, variable=="PR_FM" & AGE_LABEL%in%c(20.5,25.5,30.5,35.5,40.5,45.5), c(LOC_LABEL, AGE_LABEL, LABEL2))
-# 	dt <- merge(dt, tmp, by=c('LOC_LABEL','AGE_LABEL'))
-# 	tmp <- subset(nsinf.ratio.by.loc.age, variable=="PR_MF" & AGE_LABEL%in%c(20.5,25.5,30.5,35.5,40.5,45.5), c(LOC_LABEL, AGE_LABEL, LABEL2))
-# 	setnames(tmp, 'LABEL2', 'PR_MF')
-# 	dt <- merge(dt, tmp, by=c('LOC_LABEL','AGE_LABEL'))
-# 	write.csv(dt, row.names=FALSE, file=file.path(outdir, "200428f_suppamonginfected.csv"))	
-# }
+vl.suppofinfected.by.gender.loc.age.gp<- function(DT)
+{
+	
+        # DT <- copy(dall)
+	outdir <- file.path(out.dir)
+        DT <- .preprocess.ds.oli(DT)
+	require(data.table)
+	
+	tmp <- seq.int(min(DT$AGEYRS), max(DT$AGEYRS))
+        tmp1 <- DT[, sort(unique(ROUND))]
+	vla <- as.data.table(expand.grid(ROUND=tmp1,
+                                         FC=c('fishing','inland'),
+                                         SEX=c('M','F'),
+                                         AGEYRS=tmp))
+	vla <- vla[, {		
+				z <- which(DT$ROUND==ROUND & DT$FC==FC & DT$SEX==SEX & DT$AGEYRS==AGEYRS)	
+				list(N          = length(z),
+                                     HIV_N      = sum(DT$HIV_STATUS[z]==1),
+                                     VLNS_N     = sum(DT$VLNS[z]==1),
+                                     ARV_N      = sum(DT$ARVMED[z]==0 & DT$HIV_STATUS[z]==1 & !is.na(DT$ARVMED[z]))
+                                )				
+			}, by=names(vla)]
+
+	setnames(vla, c('FC','SEX','AGEYRS'), c('LOC_LABEL','SEX_LABEL','AGE_LABEL'))
+	vla[, LOC:= as.integer(LOC_LABEL=='fishing')]
+	vla[, SEX:= as.integer(SEX_LABEL=='M')]
+	vla[, AGE:= AGE_LABEL-14L]
+	vla[, ROW_ID:= seq_len(nrow(vla))]
+	
+
+        file.stan.1 <- file.path(path.stan, 'vl_suppofinfected_by_gender_loc_age_gp.stan')
+	stan.model <- stan_model(file.stan.1, model_name='gp_all')	
+		
+	.fit.stan.and.plot.by.round <- function(DT , iter=10e3, warmup=5e2, chains=1, control = list(max_treedepth= 15, adapt_delta= 0.999))
+        {
+                # DT <- copy(DT[ROUND == 16] )
+                round <- DT[, unique(ROUND)]
+                stopifnot(length(round) == 1)
+                cat('Fitting stan model for round ', round, '\n')
+
+                stan.data <- list(
+                        x_predict = seq(DT[, min(AGE_LABEL)], DT[, max(AGE_LABEL)+1], 0.5),
+                        y_observed_00 = DT[SEX==0 & LOC==0, HIV_N-VLNS_N],
+                        y_observed_10 = DT[SEX==1 & LOC==0, HIV_N-VLNS_N],
+                        y_observed_01 = DT[SEX==0 & LOC==1, HIV_N-VLNS_N],
+                        y_observed_11 = DT[SEX==1 & LOC==1, HIV_N-VLNS_N],
+                        total_observed_00 = DT[SEX==0 & LOC==0, HIV_N],
+                        total_observed_10 = DT[SEX==1 & LOC==0, HIV_N],
+                        total_observed_01 = DT[SEX==0 & LOC==1, HIV_N],
+                        total_observed_11 = DT[SEX==1 & LOC==1, HIV_N],
+                        alpha_hyper_par_00 = 2,
+                        alpha_hyper_par_10 = 2,
+                        alpha_hyper_par_01 = 2,
+                        alpha_hyper_par_11 = 2
+                )
+                stan.data$N_predict <- length(stan.data$x_predict)
+                stan.data$observed_idx <- which(stan.data$x_predict%%1==0.5)
+                stan.data$N_observed <- length(stan.data$observed_idx)
+                stan.data$rho_hyper_par_00 <- diff(range(stan.data$x_predict))/3
+                stan.data$rho_hyper_par_10 <- diff(range(stan.data$x_predict))/3
+                stan.data$rho_hyper_par_01 <- diff(range(stan.data$x_predict))/3
+                stan.data$rho_hyper_par_11 <- diff(range(stan.data$x_predict))/3
+                
+                fit <- sampling(stan.model, data=stan.data, iter=iter, warmup=warmup, chains=chains, control=control)
+                filename <- paste0( '220729f_notsuppAmongInfected_gp_stan_round',round,'.rds')
+                saveRDS(fit, file=file.path(outdir,filename))
+                
+                
+                # compare to self-report
+                # ______________________
+
+                stan.data <- list(
+                        x_predict = seq(DT[, min(AGE_LABEL)], DT[, max(AGE_LABEL)+1], 0.5),
+                        y_observed_00 = DT[SEX==0 & LOC==0, HIV_N-ARV_N],
+                        y_observed_10 = DT[SEX==1 & LOC==0, HIV_N-ARV_N],
+                        y_observed_01 = DT[SEX==0 & LOC==1, HIV_N-ARV_N],
+                        y_observed_11 = DT[SEX==1 & LOC==1, HIV_N-ARV_N],
+                        total_observed_00 = DT[SEX==0 & LOC==0, HIV_N],
+                        total_observed_10 = DT[SEX==1 & LOC==0, HIV_N],
+                        total_observed_01 = DT[SEX==0 & LOC==1, HIV_N],
+                        total_observed_11 = DT[SEX==1 & LOC==1, HIV_N],
+                        alpha_hyper_par_00 = 2,
+                        alpha_hyper_par_10 = 2,
+                        alpha_hyper_par_01 = 2,
+                        alpha_hyper_par_11 = 2
+                )
+                stan.data$N_predict <- length(stan.data$x_predict)
+                stan.data$observed_idx <- which(stan.data$x_predict%%1==0.5)
+                stan.data$N_observed <- length(stan.data$observed_idx)
+                stan.data$rho_hyper_par_00 <- diff(range(stan.data$x_predict))/3
+                stan.data$rho_hyper_par_10 <- diff(range(stan.data$x_predict))/3
+                stan.data$rho_hyper_par_01 <- diff(range(stan.data$x_predict))/3
+                stan.data$rho_hyper_par_11 <- diff(range(stan.data$x_predict))/3
+
+                fit2 <- sampling(stan.model, data=stan.data, iter=iter, warmup=warmup, chains=chains, control=control)
+                filename <- paste0('200428f_notARVAmongInfected_icar_stan_round',round,'.rds')
+                saveRDS(fit2, file=file.path(outdir,filename))
+                
+                # Analyse posterior
+                # _________________
+
+                re <- rstan::extract(fit)
+                re2 <- rstan::extract(fit2)
+                ps <- c(0.025,0.5,0.975)
+                tmp <- summary(fit)$summary
+                tmp[grepl('^p_predict_',rownames(tmp)),]
+                
+                #
+                #	extract hyperparams rho
+                ps <- c(0.025,0.25,0.5,0.75,0.975)
+                tmp <- cbind(quantile(re$rho_00, probs=ps),
+                             quantile(re$rho_10, probs=ps),
+                             quantile(re$rho_01, probs=ps),
+                             quantile(re$rho_11, probs=ps),
+                             quantile(re$alpha_00, probs=ps),
+                             quantile(re$alpha_10, probs=ps),
+                             quantile(re$alpha_01, probs=ps),
+                             quantile(re$alpha_11, probs=ps) )			
+
+                colnames(tmp) <- c('rho_00','rho_10','rho_01','rho_11','alpha_00','alpha_10','alpha_01','alpha_11')
+                rownames(tmp) <- c('CL','IL','M','IU','CU')
+                tmp <- as.data.table(reshape2::melt(tmp))
+                setnames(tmp, 'Var2', 'GP_hyper_par')
+                tmp[, SEX:= as.integer(gsub('^([a-z]+)_([0-9])([0-9])','\\2',GP_hyper_par))]
+                tmp[, LOC:= as.integer(gsub('^([a-z]+)_([0-9])([0-9])','\\3',GP_hyper_par))]
+                tmp[, GP_hyper_par:= gsub('^([a-z]+)_([0-9])([0-9])','\\1',GP_hyper_par)]
+                tmp <- dcast.data.table(tmp, LOC+SEX+GP_hyper_par~Var1, value.var='value')
+                nsinf.gp.pars <- merge(unique(subset(DT, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL))), tmp, by=c('SEX','LOC'))
+                # Make plots
+                # __________
+
+                p <- ggplot(nsinf.gp.pars, aes(x= paste0(GP_hyper_par, ' ', LOC_LABEL, ' ', SEX_LABEL))) +
+                        geom_point(aes(y=M)) +
+                        geom_errorbar(aes(ymin=CL, ymax=CU)) +
+                        coord_flip() +
+                        theme_bw() +
+                        labs(x='GP hyperparameter\n', y='')
+
+                filename <- paste0('220729f_notsuppAmongInfected_gppars_round',round,'.pdf')
+                cat('Saving', filename, '...\n')
+                filename2 <- gsub('pdf$','png',filename)
+                ggsave(p, file=file.path(out.dir, filename2), w=6, h=3)
+                ggsave(p, file=file.path(outdir, filename), w=6, h=3)
+                
+                
+                #	make prevalence plot by age
+                tmp <- cbind(apply(re$p_predict_00, 2, quantile, probs=ps),
+                             apply(re$p_predict_10, 2, quantile, probs=ps),
+                             apply(re$p_predict_01, 2, quantile, probs=ps),
+                             apply(re$p_predict_11, 2, quantile, probs=ps))
+
+                rownames(tmp) <- c('CL','IL','M','IU','CU')
+                tmp <- as.data.table(reshape2::melt(tmp))
+                nsinf.by.age <- dcast.data.table(tmp, Var2~Var1, value.var='value')
+                tmp <- as.data.table(expand.grid(AGE_LABEL=stan.data$x_predict, SEX=c(0,1), LOC=c(0,1)))
+                nsinf.by.age <- cbind(tmp, nsinf.by.age) 
+                nsinf.by.age <- merge(unique(subset(DT, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL))), nsinf.by.age, by=c('SEX','LOC'))
+                nsinf.by.age[, STAT:='VLNS']
+                
+                tmp <- cbind( apply(re2$p_predict_00, 2, quantile, probs=ps),
+                                apply(re2$p_predict_10, 2, quantile, probs=ps),
+                                apply(re2$p_predict_01, 2, quantile, probs=ps),
+                                apply(re2$p_predict_11, 2, quantile, probs=ps)
+                                )
+                rownames(tmp) <- c('CL','IL','M','IU','CU')
+                tmp <- as.data.table(reshape2::melt(tmp))
+                nainf.by.age <- dcast.data.table(tmp, Var2~Var1, value.var='value')
+                tmp <- as.data.table(expand.grid(AGE_LABEL=stan.data$x_predict, SEX=c(0,1), LOC=c(0,1)))
+                nainf.by.age <- cbind(tmp, nainf.by.age) 
+                nainf.by.age <- merge(unique(subset(DT, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL))), nainf.by.age, by=c('SEX','LOC'))
+                nainf.by.age[, STAT:='VLNA']
+                tmp <- subset(nainf.by.age, select=c(SEX, LOC, AGE_LABEL, M, CL, CU))
+                setnames(tmp, c('M','CL','CU'), c('M2','CL2','CU2'))
+                tmp <- merge(nsinf.by.age, tmp, by=c('SEX','LOC','AGE_LABEL'))			
+                p <- ggplot(tmp) + 		
+                        geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=interaction(SEX_LABEL,LOC_LABEL)), alpha=0.2) +
+                        geom_hline(yintercept=c(0.9^3, 0.95^3)) +
+                        geom_line(aes(x=AGE_LABEL, y=M, colour=SEX_LABEL)) +
+                        scale_x_continuous( expand=c(0,0) ) + 
+                        scale_y_continuous(label=scales:::percent) +
+                        scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
+                        facet_wrap(~LOC_LABEL, ncol=2) +
+                        theme_bw() +
+                        labs(x='\nage at visit (years)', 
+                             y='HIV+ individuals with suppressed viral load\n(95% credibility interval)\n', 
+                             colour='gender', 
+                             linetype='location')
+
+                filename <- paste0('220729f_suppAmongInfected_vs_age_by_gender_fishinland_stan_round',round,'.pdf')
+                cat('Saving', filename, '...\n')
+                filename2 <- gsub('pdf$','png',filename)
+                ggsave(p, file=file.path(out.dir, filename2), w=6, h=5)
+                ggsave(p, file=file.path(out.dir,filename), w=6, h=5)		
+
+                p <- ggplot(tmp) + 		
+                        geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=interaction(SEX_LABEL,LOC_LABEL)), alpha=0.2) +
+                        geom_hline(yintercept=c(0.9^3, 0.95^3)) +
+                        geom_line(aes(x=AGE_LABEL, y=M, colour=SEX_LABEL)) +
+                        geom_line(aes(x=AGE_LABEL, y=M2, colour=SEX_LABEL), linetype=2) +
+                        scale_x_continuous( expand=c(0,0) ) + 
+                        scale_y_continuous(label=scales:::percent) +
+                        scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
+                        facet_wrap(~LOC_LABEL, ncol=2) +
+                        theme_bw() +
+                        labs(x='\nage at visit (years)', 
+                             y='HIV+ individuals with suppressed viral load\n(95% credibility interval)\n', 
+                             colour='gender')
+
+                filename <- paste0('220729f_suppAmongInfected_vs_age_by_gender_fishinland_stan_v2_round',round,'.pdf')
+                cat('Saving', filename, '...\n')
+                filename2 <- gsub('pdf$','png',filename)
+                ggsave(p, file=file.path(out.dir, filename2), w=9, h=8)
+                ggsave(p, file=file.path(outdir,filename), w=6, h=5)	
+
+                tmp <- rbind(nsinf.by.age, nainf.by.age, fill=TRUE)
+                p <- ggplot(tmp) + 		
+                        geom_ribbon(aes(x=AGE_LABEL, ymin=CL, ymax=CU, group=interaction(SEX_LABEL,LOC_LABEL,STAT)), alpha=0.2) +
+                        geom_line(aes(x=AGE_LABEL, y=M, colour=SEX_LABEL, linetype=STAT)) +
+                        scale_x_continuous( expand=c(0,0) ) + 
+                        scale_y_continuous(label=scales:::percent) +
+                        scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
+                        scale_linetype_manual(values=c('VLNS'='solid','VLNA'='dotdash')) +
+                        facet_grid(SEX_LABEL~LOC_LABEL) +
+                        theme_bw() +
+                        labs(x='\nage at visit (years)', 
+                             y='HIV+ individuals with unsuppressed viral load\n(95% credibility interval)\n', 
+                             colour='gender')
+
+                filename <- paste0('220729f_suppAmongInfected_vs_age_by_gender_fishinland_stan_v3_round',round,'.pdf')
+                cat('Saving', filename, '...\n')
+                ggsave(file=file.path(outdir,filename), w=9, h=8)
+                
+                
+                # extract basic not supp estimates
+                # ________________________________
+
+                DT[, list(N=sum(VLNS_N), 
+                           P=sum(VLNS_N) / sum(HIV_N),
+                           N2=sum(HIV_N)-sum(VLNS_N), 
+                           P2= 1-sum(VLNS_N) / sum(HIV_N)), by=c('LOC_LABEL','SEX_LABEL')]
+                
+
+                ps <- c(0.025,0.5,0.975)
+                tmp <- cbind( re$p_predict_00, re$p_predict_10, re$p_predict_01, re$p_predict_11)
+                rp <- as.data.table(reshape2::melt( tmp ))
+                setnames(rp, 1:3, c('iterations','ROW_ID','P')) 
+                tmp <- as.data.table(expand.grid(AGE_LABEL=stan.data$x_predict, SEX=c(0,1), LOC=c(0,1)))
+                tmp[, ROW_ID:= seq_len(nrow(tmp))]
+                tmp <- merge(subset(DT, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL,AGE_LABEL,N)), tmp, by=c('SEX','LOC','AGE_LABEL'), all=TRUE)
+                set(tmp, tmp[, which(is.na(N))], 'N', tmp[which(is.na(N))-1L, N]) 
+                set(tmp, tmp[, which(is.na(N))], 'N', tmp[which(is.na(N))-1L, N])
+                set(tmp, tmp[, which(is.na(SEX_LABEL))], 'SEX_LABEL', tmp[which(is.na(SEX_LABEL))-1L, SEX_LABEL])
+                set(tmp, tmp[, which(is.na(SEX_LABEL))], 'SEX_LABEL', tmp[which(is.na(SEX_LABEL))-1L, SEX_LABEL])
+                set(tmp, tmp[, which(is.na(LOC_LABEL))], 'LOC_LABEL', tmp[which(is.na(LOC_LABEL))-1L, LOC_LABEL])
+                set(tmp, tmp[, which(is.na(LOC_LABEL))], 'LOC_LABEL', tmp[which(is.na(LOC_LABEL))-1L, LOC_LABEL])	
+                rp <- merge(tmp, rp, by=c('ROW_ID'))	
+                rp <- rp[, list(P= sum(P*N)/sum(N) ), by=c('LOC_LABEL','SEX_LABEL','iterations')]
+                rp <- rp[, list(Q= quantile(P, probs=ps), P=c('CL','M','CU')), by=c('LOC_LABEL','SEX_LABEL')]
+                rp <- dcast.data.table(rp, LOC_LABEL+SEX_LABEL~P, value.var='Q')
+                rp[, LABEL:= paste0(round(M*100, d=2),'% (',round(CL*100, d=2),'% - ',round(CU*100,d=2),'%)') ]
+                nsinf.by.sex.loc <- copy(rp)
+
+
+                # extract risk ratio of suppressed VL female:male and male:female
+                # _______________________________________________________________
+
+                tmp <- cbind( re$p_predict_00, re$p_predict_10, re$p_predict_01, re$p_predict_11)
+                rp <- as.data.table(reshape2::melt( tmp ))
+                setnames(rp, 1:3, c('iterations','ROW_ID','P')) 
+                tmp <- as.data.table(expand.grid(AGE_LABEL=stan.data$x_predict, SEX=c(0,1), LOC=c(0,1)))
+                tmp[, ROW_ID:= seq_len(nrow(tmp))]
+                tmp <- merge(subset(DT, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL,AGE_LABEL,N)), tmp, by=c('SEX','LOC','AGE_LABEL'), all=TRUE)
+                set(tmp, tmp[, which(is.na(N))], 'N', tmp[which(is.na(N))-1L, N]) 
+                set(tmp, tmp[, which(is.na(N))], 'N', tmp[which(is.na(N))-1L, N])
+                set(tmp, tmp[, which(is.na(SEX_LABEL))], 'SEX_LABEL', tmp[which(is.na(SEX_LABEL))-1L, SEX_LABEL])
+                set(tmp, tmp[, which(is.na(SEX_LABEL))], 'SEX_LABEL', tmp[which(is.na(SEX_LABEL))-1L, SEX_LABEL])
+                set(tmp, tmp[, which(is.na(LOC_LABEL))], 'LOC_LABEL', tmp[which(is.na(LOC_LABEL))-1L, LOC_LABEL])
+                set(tmp, tmp[, which(is.na(LOC_LABEL))], 'LOC_LABEL', tmp[which(is.na(LOC_LABEL))-1L, LOC_LABEL])	
+                rp <- merge(tmp, rp, by=c('ROW_ID'))	
+                rp <- rp[, list(P= sum(P*N)/sum(N) ), by=c('LOC_LABEL','SEX_LABEL','iterations')]
+                rp <- dcast.data.table(rp, LOC_LABEL+iterations~SEX_LABEL, value.var='P')
+                rp <- rp[, list(PR_FM= F/M, PR_MF=M/F), by=c('LOC_LABEL','iterations')]
+                rp <- melt(rp, id.vars=c('LOC_LABEL','iterations'))
+                rp <- rp[, list(Q= quantile(value, probs=ps), P=c('CL','M','CU')), by=c('LOC_LABEL','variable')]
+                rp <- dcast.data.table(rp, LOC_LABEL+variable~P, value.var='Q')
+                rp[, LABEL:= paste0(round(M, d=2),' (',round(CL, d=2),' - ',round(CU,d=2),')') ]	
+                nsinf.by.loc <- copy(rp)	
+                
+                # extract risk ratio of unsuppressed VL female:male and male:female by age
+                # ________________________________________________________________________
+
+                tmp <- cbind( re$p_predict_00, re$p_predict_10, re$p_predict_01, re$p_predict_11)
+                rp <- as.data.table(reshape2::melt( tmp ))
+                setnames(rp, 1:3, c('iterations','ROW_ID','P')) 
+                tmp <- as.data.table(expand.grid(AGE_LABEL=stan.data$x_predict, SEX=c(0,1), LOC=c(0,1)))
+                tmp[, ROW_ID:= seq_len(nrow(tmp))]
+                tmp <- merge(subset(DT, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL,AGE_LABEL,N)), tmp, by=c('SEX','LOC','AGE_LABEL'), all=TRUE)
+                set(tmp, tmp[, which(is.na(N))], 'N', tmp[which(is.na(N))-1L, N]) 
+                set(tmp, tmp[, which(is.na(N))], 'N', tmp[which(is.na(N))-1L, N])
+                set(tmp, tmp[, which(is.na(SEX_LABEL))], 'SEX_LABEL', tmp[which(is.na(SEX_LABEL))-1L, SEX_LABEL])
+                set(tmp, tmp[, which(is.na(SEX_LABEL))], 'SEX_LABEL', tmp[which(is.na(SEX_LABEL))-1L, SEX_LABEL])
+                set(tmp, tmp[, which(is.na(LOC_LABEL))], 'LOC_LABEL', tmp[which(is.na(LOC_LABEL))-1L, LOC_LABEL])
+                set(tmp, tmp[, which(is.na(LOC_LABEL))], 'LOC_LABEL', tmp[which(is.na(LOC_LABEL))-1L, LOC_LABEL])	
+                rp <- merge(tmp, rp, by=c('ROW_ID'))	
+                rp <- dcast.data.table(rp, LOC_LABEL+iterations+AGE_LABEL~SEX_LABEL, value.var='P')
+                rp[, PR_FM:= F/M]
+                rp[, PR_MF:=M/F]
+                rp <- melt(rp, id.vars=c('LOC_LABEL','AGE_LABEL','iterations'), measure.vars=c('PR_FM','PR_MF'))
+                rp <- rp[, list(Q= quantile(value, probs=ps), P=c('CL','M','CU')), by=c('LOC_LABEL','AGE_LABEL','variable')]	
+                rp <- dcast.data.table(rp, LOC_LABEL+AGE_LABEL+variable~P, value.var='Q')
+                rp[, LABEL:= paste0(round(M, d=2),' (',round(CL, d=2),' - ',round(CU,d=2),')') ]	
+                nsinf.ratio.by.loc.age <- copy(rp)
+                
+                
+                # extract if difference in female:male risk ratio of unsuppressed VL is different in fishing vs inland
+                # ____________________________________________________________________________________________________
+
+                tmp <- cbind( re$p_predict_00, re$p_predict_10, re$p_predict_01, re$p_predict_11)
+                rp <- as.data.table(reshape2::melt( tmp ))
+                setnames(rp, 1:3, c('iterations','ROW_ID','P')) 
+                tmp <- as.data.table(expand.grid(AGE_LABEL=stan.data$x_predict, SEX=c(0,1), LOC=c(0,1)))
+                tmp[, ROW_ID:= seq_len(nrow(tmp))]
+                tmp <- merge(subset(DT, select=c(SEX,SEX_LABEL,LOC,LOC_LABEL,AGE_LABEL,N)), tmp, by=c('SEX','LOC','AGE_LABEL'), all=TRUE)
+                set(tmp, tmp[, which(is.na(N))], 'N', tmp[which(is.na(N))-1L, N]) 
+                set(tmp, tmp[, which(is.na(N))], 'N', tmp[which(is.na(N))-1L, N])
+                set(tmp, tmp[, which(is.na(SEX_LABEL))], 'SEX_LABEL', tmp[which(is.na(SEX_LABEL))-1L, SEX_LABEL])
+                set(tmp, tmp[, which(is.na(SEX_LABEL))], 'SEX_LABEL', tmp[which(is.na(SEX_LABEL))-1L, SEX_LABEL])
+                set(tmp, tmp[, which(is.na(LOC_LABEL))], 'LOC_LABEL', tmp[which(is.na(LOC_LABEL))-1L, LOC_LABEL])
+                set(tmp, tmp[, which(is.na(LOC_LABEL))], 'LOC_LABEL', tmp[which(is.na(LOC_LABEL))-1L, LOC_LABEL])	
+                rp <- merge(tmp, rp, by=c('ROW_ID'))	
+                rp <- rp[, list(P= sum(P*N)/sum(N) ), by=c('LOC_LABEL','SEX_LABEL','iterations')]
+                rp <- dcast.data.table(rp, LOC_LABEL+iterations~SEX_LABEL, value.var='P')
+                rp <- rp[, list(PR_FM= F/M, PR_MF=M/F), by=c('LOC_LABEL','iterations')]
+                rp <- dcast.data.table(rp, iterations~LOC_LABEL, value.var='PR_FM')
+                rp[, PR_FM_D:= fishing-inland]	
+                rp[, list(Q= quantile(PR_FM_D, probs=ps), P=c('CL','M','CU'))]
+                
+                
+                filename <- paste0('220729f_suppAmongInfected_round',round,'.rda')
+                save(DT, re, re2, nainf.by.age,
+                     nsinf.by.age, nsinf.by.sex.loc,
+                     nsinf.by.loc, nsinf.ratio.by.loc.age,
+                     file=file.path(outdir,filename))
+                
+                
+                # make table version suppressed
+                # _____________________________
+
+                nsinf.by.age[, LABEL:= paste0(sprintf('%2.1f',M*100),' (',sprintf('%2.1f',CL*100),' - ',sprintf('%2.1f',CU*100),')') ]
+                set(nsinf.by.age, NULL, 'SEX_LABEL', nsinf.by.age[, factor(as.character(SEX_LABEL), levels=c('F','M'))])	
+                nsinf.ratio.by.loc.age[, LABEL2:= paste0(sprintf('%2.2f',M),' (',sprintf('%2.2f',CL),' - ',sprintf('%2.2f',CU),')') ]
+                dt <- subset(nsinf.by.age, AGE_LABEL%in%c(20.5,25.5,30.5,35.5,40.5,45.5))	
+                dt <- dcast.data.table(dt, LOC_LABEL+AGE_LABEL~SEX_LABEL, value.var='LABEL')
+                tmp <- subset(nsinf.ratio.by.loc.age, variable=="PR_FM" & AGE_LABEL%in%c(20.5,25.5,30.5,35.5,40.5,45.5), c(LOC_LABEL, AGE_LABEL, LABEL2))
+                dt <- merge(dt, tmp, by=c('LOC_LABEL','AGE_LABEL'))
+                tmp <- subset(nsinf.ratio.by.loc.age, variable=="PR_MF" & AGE_LABEL%in%c(20.5,25.5,30.5,35.5,40.5,45.5), c(LOC_LABEL, AGE_LABEL, LABEL2))
+                setnames(tmp, 'LABEL2', 'PR_MF')
+                dt <- merge(dt, tmp, by=c('LOC_LABEL','AGE_LABEL'))
+
+                filename <- paste0('220729f_suppamonginfected_round',round,'csv')
+                fwrite(dt, row.names=FALSE, file=file.path(outdir,filename))	
+
+                TRUE
+        }
+
+        foreach(
+                r = vla[, unique(ROUND)],
+                .combine='c'
+        ) %dopar% {
+                cat('Running Round', r, '\n')
+                .fit.stan.and.plot.by.round(vla[ ROUND ==r, ], iter=5e3)
+        } -> tmp
+
+        return(tmp)
+}
 
 
 vl.suppofpop.by.gender.loc.age.gp<- function()
@@ -2492,34 +2449,37 @@ vl.vlrunningprops.by.gender.loc.age<- function()
 	
 	#	HIV unsuppressed viral load
 	ggplot(ans) + 		
-			geom_ribbon(aes(x=AGEYRS, ymin=PVLNS_CL, ymax=PVLNS_CU, group=interaction(SEX,FC)), alpha=0.2) +			
-			geom_line(aes(x=AGEYRS, y=PVLNS_MEAN, colour=SEX)) +
-			scale_x_continuous( expand=c(0,0) ) + 
-			scale_y_continuous(label=scales:::percent) +
-			scale_colour_manual(values=c('men'='royalblue3','women'='deeppink2')) +
-			facet_wrap(~FC, ncol=2) +
-			theme_bw() +
-			labs(x='\nage at visit (years)', 
-					y='proportion unsuppressed HIV (95% CI)\n', 
-					colour='gender', 
-					linetype='location')
-	ggsave(file=file.path(prjdir,'results_200220','200220_hivnotsupp_vs_age_by_gender_fishinland.pdf'), w=6, h=5)
+                geom_ribbon(aes(x=AGEYRS, ymin=PVLNS_CL, ymax=PVLNS_CU, group=interaction(SEX,FC)), alpha=0.2) +			
+                geom_line(aes(x=AGEYRS, y=PVLNS_MEAN, colour=SEX)) +
+                scale_x_continuous( expand=c(0,0) ) + 
+                scale_y_continuous(label=scales:::percent) +
+                scale_colour_manual(values=c('men'='royalblue3','women'='deeppink2')) +
+                facet_wrap(~FC, ncol=2) +
+                theme_bw() +
+                labs(x='\nage at visit (years)', 
+                     y='proportion unsuppressed HIV (95% CI)\n', 
+                     colour='gender', 
+                     linetype='location')
+
+        ggsave(file=file.path(prjdir,'results_200220','200220_hivnotsupp_vs_age_by_gender_fishinland.pdf'), w=6, h=5)
+
 	
 	#	HIV unsuppressed viral load among HIV+
 	ggplot(ans) + 		
-			geom_ribbon(aes(x=AGEYRS, ymin=PVLNSofHIV_CL, ymax=PVLNSofHIV_CU, group=interaction(SEX,FC)), alpha=0.2) +
-			geom_line(aes(x=AGEYRS, y=PARVofHIV_MEAN, colour=SEX), linetype='dotted') +
-			geom_line(aes(x=AGEYRS, y=PVLNSofHIV_MEAN, colour=SEX)) +
-			scale_x_continuous( expand=c(0,0) ) + 
-			scale_y_continuous(label=scales:::percent) +
-			scale_colour_manual(values=c('men'='royalblue3','women'='deeppink2')) +
-			facet_wrap(~FC, ncol=2) +
-			theme_bw() +
-			labs(x='\nage at visit (years)', 
-					y='proportion unsuppressed HIV among infected (95% CI)\n', 
-					colour='gender', 
-					linetype='location')
-	ggsave(file=file.path(prjdir,'results_200220','200220_hivnotsuppofhiv_vs_age_by_gender_fishinland.pdf'), w=6, h=5)
+                geom_ribbon(aes(x=AGEYRS, ymin=PVLNSofHIV_CL, ymax=PVLNSofHIV_CU, group=interaction(SEX,FC)), alpha=0.2) +
+                geom_line(aes(x=AGEYRS, y=PARVofHIV_MEAN, colour=SEX), linetype='dotted') +
+                geom_line(aes(x=AGEYRS, y=PVLNSofHIV_MEAN, colour=SEX)) +
+                scale_x_continuous( expand=c(0,0) ) + 
+                scale_y_continuous(label=scales:::percent) +
+                scale_colour_manual(values=c('men'='royalblue3','women'='deeppink2')) +
+                facet_wrap(~FC, ncol=2) +
+                theme_bw() +
+                labs(x='\nage at visit (years)', 
+                     y='proportion unsuppressed HIV among infected (95% CI)\n', 
+                     colour='gender', 
+                     linetype='location')
+
+        ggsave(file=file.path(prjdir,'results_200220','200220_hivnotsuppofhiv_vs_age_by_gender_fishinland.pdf'), w=6, h=5)
 	
 	
 	#	write results to file
