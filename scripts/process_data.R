@@ -356,7 +356,7 @@ setcolorder(dall, cols)
 # write to file
 filename <- file.path(indir.deepsequence.data, 
          'RCCS_R15_R20', 
-         'all_participants_hivstatus_vl_220829.csv')
+         'all_participants_hivstatus_vl_220729.csv')
 if( ! file.exists(filename) )
         fwrite(dall, filename)
 
