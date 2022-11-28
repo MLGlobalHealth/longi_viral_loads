@@ -104,61 +104,111 @@ make_vl_samplesize_table <- function(DT, excludeR20 = FALSE)
 
 fill_na_vls_with_allpcr_data <- function(file=file.viral.loads2)
 { 
+    cat('===\n Studying ', file, '...\n===\n\n')
+
+    # Warnings about 6 dates prior to 1900, but shouldn t be an issue
+    dvl2 <- suppressWarnings(read_xlsx(file)) 
+    dvl2 <- as.data.table(dvl2)
+    setkey(dvl2, study_id, round)
+    setcolorder(dvl2, c('study_id', 'round'))
+
+    dvl2[, round := gsub('PLA', '', round)] 
+    dvl2[, `:=` (studyid = NULL, round = round2numeric(round))]
+
+    if(0)
+    {
+        cols <- c('study_id', 'round')
+        idx <- dvl[!is.na(round), .(study_id, round, data='first')]
+        idx2 <- dvl[!is.na(round), .(study_id, round, data='second')]
+        tmp <- merge(idx, idx2, all.x=TRUE, all.y=TRUE, by=cols)
+        tmp[is.na(data.y)]
         
-        cat('===\n Studying ', file, '...\n===\n\n')
+        merge(
+            dvl[, .(study_id, round, hiv_vl)],
+            dvl2[, .(study_id, round, COPIES = fcoalesce(new_copies, copies))],
+            by=cols
+        ) -> tmp
 
-        # Warnings about 6 dates prior to 1900, but shouldn t be an issue
-        dvl2 <- suppressWarnings(read_xlsx(file)) 
-        dvl2 <- as.data.table(dvl2)
-        setkey(dvl2, study_id, round)
-        setcolorder(dvl2, c('study_id', 'round'))
-
-        dvl2[, round := gsub('PLA', '', round)] 
-        dvl2[, `:=` (studyid = NULL, round = round2numeric(round))]
+        tmp[!is.na(hiv_vl) & hiv_vl == 0, table(COPIES)]
+        tmp[!is.na(hiv_vl) & COPIES == 'BD', table(hiv_vl)]
+        tmp[!is.na(hiv_vl), table(hiv_vl < 500 & hiv_vl > 0)]
         
-        # What to do with non-numeric entries?
-        dvl2[, guessed := FALSE]
-        dvl2[copies %like% '[A-Z]|<|>', table(copies)] |> knitr::kable()
-        dvl2[copies %like% '[A-Z]|<|>', guessed := TRUE]
+        diff <- tmp[!is.na(hiv_vl) & hiv_vl != copies]
+        diff[, COPIES := fcoalesce(new_copies, copies)]
+        diff[hiv_vl == 0 & copies != 'BD' & !is.na(as.integer(copies)), ]
+    }
+    
+    # What to do with non-numeric entries?]
+    dvl2[, guessed := FALSE]
+    dvl2[copies %like% '[A-Z]|<|>', table(copies)] |> knitr::kable()
 
-        cat(' - For "<" ranges, keep the upper bound...\n')
-        cols <- c('copies', 'new_copies')
-        dvl2[, (cols) := lapply(.SD, function(x) gsub(',', '', x) ) , .SDcols=cols]
-        dvl2[, (cols) := lapply(.SD, function(x) gsub('<|< ', '', x) ) , .SDcols=cols]
+    if(0)
+    {
+        dvl2[copies %like% '[A-Z]|<|>', table(new_copies)]
+        dvl2[copies %like% '<|>', table(new_copies)]
+        dvl2[copies %like% 'BD', table(new_copies)]
 
-        # It would seem that new-copies should be kept if it differs from copies!
-        # BD is generally equivalent with 0 hiv_vl (~70% of times, else NA)
-        tmp <- merge(dvl[, .(study_id, round, hiv_vl, hivdate)], dvl2, by=c('study_id', 'round'))
-        # tmp[hiv_vl != new_copies & hiv_vl != 0]
-        # tmp[new_copies %like% "[A-Z]", .(hiv_vl, new_copies)][, mean(!is.na(hiv_vl))]
+        dvl3 <- copy(dvl2)
+        dvl3[copies %like% 'BD' & !(new_copies %like% 'BD' | is.na(new_copies)), 
+             copies2 := new_copies]
 
-        # 
-        cat(' - setting BD, ND to 0...\n')
-        cols <- c('copies', 'new_copies')
-        dvl2[, (cols) := lapply(.SD, function(x) gsub('^BD|^ND|^Not Dete.*?$', '0',x)), .SDcols=cols]
-        dvl2[, (cols) := lapply(.SD, function(x) gsub('[A-Z]', '0',x)), .SDcols=cols]
-        dvl2[, hiv_vl := copies]
-        dvl2[copies != new_copies, hiv_vl := new_copies]
-        dvl2[, hiv_vl := as.numeric(hiv_vl)]
+        cols <- c('study_id', 'round')
+        merge(
+            dvl[, .SD, .SDcols=c(cols, 'hiv_vl')],
+            dvl2[, .SD, .SDcols=c(cols, 'copies', 'new_copies')],
+            by=cols
+        ) -> dcomp
 
-        # merge?
-        tmp <- dvl[is.na(hiv_vl), .(study_id, round)]
-        tmp <- merge(tmp, dvl2, all.x=TRUE)
-        tmp[, cat("Out of ", .N, " NA viral loads in the first dataset, ", round(100*mean(!is.na(hiv_vl)),2), '% are reported in the second one', '\n' )]
+        dcomp[ copies == 'BD',  table(hiv_vl, new_copies)] |> knitr::kable()
 
-        cat('Substituting....\n')
-        setnames(tmp, 'hiv_vl', 'hiv_vl2')
-        tmp[!is.na(hiv_vl2), round]
-        tbl <- knitr::kable(tmp[!is.na(hiv_vl2), table(round)])
+
+        dcomp[copies=='BD' & !is.na(copies2),]
+        dvl2[copies == 'BD']
+
         
+    }
+    
+    dvl2[copies %like% '[A-Z]|<|>' & ! new_copies %like% '[A-Z]|<|>' & !is.na(new_copies)]
+    dvl2[copies %like% '[A-Z]|<|>', guessed := TRUE]
 
-        dvl <- merge(dvl,
-              tmp[!is.na(hiv_vl2), .(study_id, round, hiv_vl2)],
-              all.x=TRUE, by=c('study_id', 'round'))
-        dvl[!is.na(hiv_vl2), hiv_vl := hiv_vl2]
-        dvl[, hiv_vl2:=NULL]
+    cat(' - For "<" ranges, keep the upper bound...\n')
+    cols <- c('copies', 'new_copies')
+    dvl2[, (cols) := lapply(.SD, function(x) gsub(',', '', x) ) , .SDcols=cols]
+    dvl2[, (cols) := lapply(.SD, function(x) gsub('<|< ', '', x) ) , .SDcols=cols]
 
-        return(list(dvl=dvl, tbl=tbl))
+    # It would seem that new-copies should be kept if it differs from copies!
+    # BD is generally equivalent with 0 hiv_vl (~70% of times, else NA)
+    copiestmp <- merge(dvl[, .(study_id, round, hiv_vl, hivdate)], dvl2, by=c('study_id', 'round'))
+    # tmp[hiv_vl != new_copies & hiv_vl != 0]
+    # tmp[new_copies %like% "[A-Z]", .(hiv_vl, new_copies)][, mean(!is.na(hiv_vl))]
+
+    # 
+    cat(' - setting BD, ND to 0...\n')
+    cols <- c('copies', 'new_copies')
+    dvl2[, (cols) := lapply(.SD, function(x) gsub('^BD|^ND|^Not Dete.*?$', '0',x)), .SDcols=cols]
+    dvl2[, (cols) := lapply(.SD, function(x) gsub('[A-Z]', '0',x)), .SDcols=cols]
+    dvl2[, hiv_vl := copies]
+    dvl2[copies != new_copies, hiv_vl := new_copies]
+    dvl2[, hiv_vl := as.numeric(hiv_vl)]
+
+    # merge?
+    tmp <- dvl[is.na(hiv_vl), .(study_id, round)]
+    tmp <- merge(tmp, dvl2, all.x=TRUE)
+    tmp[, cat("Out of ", .N, " NA viral loads in the first dataset, ", round(100*mean(!is.na(hiv_vl)),2), '% are reported in the second one', '\n' )]
+
+    cat('Substituting....\n')
+    setnames(tmp, 'hiv_vl', 'hiv_vl2')
+    tmp[!is.na(hiv_vl2), round]
+    tbl <- knitr::kable(tmp[!is.na(hiv_vl2), table(round)])
+    
+
+    dvl <- merge(dvl,
+          tmp[!is.na(hiv_vl2), .(study_id, round, hiv_vl2)],
+          all.x=TRUE, by=c('study_id', 'round'))
+    dvl[!is.na(hiv_vl2), hiv_vl := hiv_vl2]
+    dvl[, hiv_vl2:=NULL]
+
+    return(list(dvl=dvl, tbl=tbl))
 }
 
 make_relational_database <- function(DT)
@@ -516,88 +566,85 @@ make_joseph_table <- function()
 
 define_trajectories <- function(DT=dvl_15)
 {
-        
-        .plot <- function(DT)
-        {
-                tmp <- melt(DT, id.vars=c('study_id', 'class'))
-                tmp <- tmp[!is.na(value), ]
-                .f <- function(x) as.integer(gsub('^V','',x))
-                tmp[, `:=` (round= .f(variable), variable=NULL) ]
-                
-                tmp[ , v2 := 10*(1-value)+runif(.N, min=-2, max=2)]
+    .plot <- function(DT)
+    {
+            tmp <- melt(DT, id.vars=c('study_id', 'class'))
+            tmp <- tmp[!is.na(value), ]
+            .f <- function(x) as.integer(gsub('^V','',x))
+            tmp[, `:=` (round= .f(variable), variable=NULL) ]
+            
+            tmp[ , v2 := 10*(1-value)+runif(.N, min=-2, max=2)]
 
 
-                .f <- function(idx)
-                {
-                        ggplot(data=tmp[class==idx], 
-                               aes(color=class, y=v2, x=round)) + 
-                                geom_line(aes(group=study_id))
-                }
-                idx <- tmp[, unique(class)]
-                plots <- lapply(idx, .f) 
-                plots[[5]]
+            .f <- function(idx)
+            {
+                    ggplot(data=tmp[class==idx], 
+                           aes(color=class, y=v2, x=round)) + 
+                            geom_line(aes(group=study_id))
+            }
+            idx <- tmp[, unique(class)]
+            plots <- lapply(idx, .f) 
+            plots[[5]]
 
-        }
+    }
 
-        # Get wide table with round results (TRUE for suppressed and FALSE for viremic)
-        cols <- c('study_id', 'hivdate', 'hiv_vl')
-        tmp <- DT[, .SD,.SDcols=cols]
+    # Get wide table with round results (TRUE for suppressed and FALSE for viremic)
+    cols <- c('study_id', 'hivdate', 'hiv_vl')
+    tmp <- DT[, .SD,.SDcols=cols]
 
-        setkey(tmp, study_id, hivdate)
-        setorder(tmp, study_id, -hivdate)
-        # stopifnot(tmp[, !is.unsorted(-hivdate), by='study_id'][, all(V1)])
+    setkey(tmp, study_id, hivdate)
+    setorder(tmp, study_id, -hivdate)
+    # stopifnot(tmp[, !is.unsorted(-hivdate), by='study_id'][, all(V1)])
 
-        tmp[, `:=` (
-            hiv_suppressed =  count2suppstatus(hiv_vl),
-            visit_order = paste0('V',-seq_along(hivdate))
-        ), by=study_id] 
-        tmp[, `:=` (hiv_vl=NULL, hivdate=NULL)]
-        tmp <- dcast(tmp, study_id ~ visit_order, value.var='hiv_suppressed')
-        tmp
+    tmp[, `:=` (
+        hiv_suppressed =  count2suppstatus(hiv_vl),
+        visit_order = paste0('V',-seq_along(hivdate))
+    ), by=study_id] 
+    tmp[, `:=` (hiv_vl=NULL, hivdate=NULL)]
+    tmp <- dcast(tmp, study_id ~ visit_order, value.var='hiv_suppressed')
+    tmp
 
-        # Define classes based on viremic-non-viremic measurements
-        tmp[, class := NA_character_]
-        tmp[`V-1` == TRUE & `V-2` == TRUE, class := 'durably_suppressed']
-        tmp[`V-1` == TRUE & `V-2` == FALSE, class := 'newly_suppressed']
-        tmp[`V-1` == FALSE & `V-2` == FALSE & `V-3` == FALSE, class := 'durably_viremic']
-        tmp[`V-1` == FALSE & (
-             `V-2` == TRUE &  (`V-3` == FALSE | `V-4` == FALSE | `V-5` == FALSE | `V-6`==FALSE) | 
-             `V-2` == FALSE & `V-3` == TRUE & ( `V-4` == FALSE | `V-5` == FALSE | `V-6`==FALSE) 
-            ), 
-            class:='intermittently_viremic'
-            ]
-        .naortrue <- function(x) return(is.na(x) | x == TRUE)
-        tmp[is.na(class) & `V-1` == FALSE & 
-            ( .naortrue(`V-3`) & .naortrue(`V-4`) & .naortrue(`V-5`) & .naortrue(`V-6`) ),
-            class:='newly_viremic']
+    # Define classes based on viremic-non-viremic measurements
+    tmp[, class := NA_character_]
+    tmp[`V-1` == TRUE & `V-2` == TRUE, class := 'durably_suppressed']
+    tmp[`V-1` == TRUE & `V-2` == FALSE, class := 'newly_suppressed']
+    tmp[`V-1` == FALSE & `V-2` == FALSE & `V-3` == FALSE, class := 'durably_viremic']
+    tmp[`V-1` == FALSE & (
+         `V-2` == TRUE &  (`V-3` == FALSE | `V-4` == FALSE | `V-5` == FALSE | `V-6`==FALSE) | 
+         `V-2` == FALSE & `V-3` == TRUE & ( `V-4` == FALSE | `V-5` == FALSE | `V-6`==FALSE) 
+        ), 
+        class:='intermittently_viremic'
+        ]
+    .naortrue <- function(x) return(is.na(x) | x == TRUE)
+    tmp[is.na(class) & `V-1` == FALSE & 
+        ( .naortrue(`V-3`) & .naortrue(`V-4`) & .naortrue(`V-5`) & .naortrue(`V-6`) ),
+        class:='newly_viremic']
 
-        tmp1 <- tmp[ class=='durably_suppressed',
-                    all(`V-3`, `V-4`, `V-5`, `V-6`, na.rm=TRUE), by='study_id']
-        tmp1[, cat('-',tmp1[, sum(!V1)],' out of ', tmp1[, .N], 'durably suppressed pariticipants',
-              'had previous viremic measurements\n')]
+    tmp1 <- tmp[ class=='durably_suppressed',
+                all(`V-3`, `V-4`, `V-5`, `V-6`, na.rm=TRUE), by='study_id']
+    tmp1[, cat('-',tmp1[, sum(!V1)],' out of ', tmp1[, .N], 'durably suppressed pariticipants',
+          'had previous viremic measurements\n')]
 
-        tmp1 <- tmp[ class=='newly_suppressed',]
-        tmp2 <- tmp1[,all(!`V-3`, !`V-4`, !`V-5`, !`V-6`, na.rm=TRUE), by='study_id']
-        tmp2[, cat('- For', tmp1[, sum(V1)], 'out of', tmp1[, .N], 'newly suppressed, the last measurement corresponded to the first suppressed results.\n' )]
+    tmp1 <- tmp[ class=='newly_suppressed',]
+    tmp2 <- tmp1[,all(!`V-3`, !`V-4`, !`V-5`, !`V-6`, na.rm=TRUE), by='study_id']
+    tmp2[, cat('- For', tmp1[, sum(V1)], 'out of', tmp1[, .N], 'newly suppressed, the last measurement corresponded to the first suppressed results.\n' )]
 
-        tmp1 <- tmp[ class=='durably_viremic',
-                    any(`V-4`, `V-5`, `V-6`, na.rm=TRUE), by='study_id']
-        tmp1[, cat('-',tmp1[, sum(V1)],' out of ', tmp1[, .N],
-                   'durably viremic pariticipants previously had non-viremic measurements\n')]
+    tmp1 <- tmp[ class=='durably_viremic',
+                any(`V-4`, `V-5`, `V-6`, na.rm=TRUE), by='study_id']
+    tmp1[, cat('-',tmp1[, sum(V1)],' out of ', tmp1[, .N],
+               'durably viremic pariticipants previously had non-viremic measurements\n')]
 
-        tmp1 <- tmp[ class=='intermittently_viremic', ]
-        tmp1 <- tmp1[, mean(c(`V-6`,`V-5`, `V-4`, `V-3`, `V-2`, `V-1`), na.rm=T), by='study_id']
-        tmp1[, cat( '- Out of ', .N, 'intermittently viremic individuals:\n -',
-                   sum(V1 > .5), 'historically had more viremic measurements \n -',
-                   sum(V1 < .5), 'historically had more non-viremic measurements\n\n')]
+    tmp1 <- tmp[ class=='intermittently_viremic', ]
+    tmp1 <- tmp1[, mean(c(`V-6`,`V-5`, `V-4`, `V-3`, `V-2`, `V-1`), na.rm=T), by='study_id']
+    tmp1[, cat( '- Out of ', .N, 'intermittently viremic individuals:\n -',
+               sum(V1 > .5), 'historically had more viremic measurements \n -',
+               sum(V1 < .5), 'historically had more non-viremic measurements\n\n')]
 
-        # summarise
-        cat('The ', tmp[, .N], 'trajectories with 4 or more VL measurements were classified as:\n')
-        print( tmp[, knitr::kable(table(class))] )
+    # summarise
+    cat('The ', tmp[, .N], 'trajectories with 4 or more VL measurements were classified as:\n')
+    print( tmp[, knitr::kable(table(class))] )
 
-        stopifnot(tmp[is.na(class) , .N == 0])
-        return(tmp)
-        # return(list(tmp, .plot(tmp)))
+    stopifnot(tmp[is.na(class) , .N == 0])
+    return(tmp)
+    # return(list(tmp, .plot(tmp)))
 }
-
-

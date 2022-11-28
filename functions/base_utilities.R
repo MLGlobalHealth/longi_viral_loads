@@ -15,7 +15,8 @@ palettes <- list(
                  comm = wesanderson::wes_palette("Moonrise3")[c(1,3)],
                  arvmed = c('#E03531', '#51B364'),
                  cuarvmed = c('#E03531', '#51B364'),
-                 supp_status =  c('#8F190E', '#DBCB00', '#00DB25')
+                 supp_status =  c('#8F190E', '#DBCB00', '#00DB25'),
+                 comm2 = c("#9C964A", "#85D4E3","#FF9933")
 )
 
 ggsave2 <- function(p, file, w, h, LALA=vl.out.dir, u='in')

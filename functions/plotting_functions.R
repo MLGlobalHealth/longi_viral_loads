@@ -54,7 +54,7 @@ plot_rounds_vl_collection <- function(DT, rnd=15, atleast=NULL, community=NULL, 
                                      subtitle_comm,
                                      subtitle_atleast,')'))
 
-        if(! is.null(filename))    saveplot(filename, p1, 7,5)
+        if(! is.null(filename))    ggplot2(filename, p1, 7,5)
         p1
 }
 
@@ -145,7 +145,7 @@ plot_classes_by_sex_age <- function(DCLASS, DVL, filename=NULL)
                      title="VL Trajectories classifications: age and sex composition"
                 ) 
 
-        if(! is.null(filename))    saveplot(filename, p, w=10,h=8)
+        if(! is.null(filename))    ggplot2(filename, p, w=10,h=8)
         p
 }
 
@@ -192,7 +192,7 @@ plot_classes_by_comm_age <- function(DCLASS, DVL, filename=NULL)
                      title="VL Trajectories classifications: age and community composition"
                 ) 
 
-        if(! is.null(filename))    saveplot(filename, p, w=10,h=8)
+        if(! is.null(filename))    ggplot2(filename, p, w=10,h=8)
         p
 }
 
@@ -255,6 +255,6 @@ plot_scatter_cd4vl_bygroup <- function(DCD4=dcd4, DVL=dvl, group, filename=NULL)
                 plot_layout(ncol=2, nrow=2, widths=c(4,1), heights=c(1,4))
         p1
 
-        if(! is.null(filename))    saveplot(filename, p1, 8,8)
+        if(! is.null(filename))    ggplot2(filename, p1, 8,8)
         p1
 }
