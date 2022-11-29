@@ -153,7 +153,7 @@ out.dir <- file.path(args$out.dir.prefix)
 vl.out.dir <- out.dir
 if(usr=='andrea')
     vl.out.dir <- file.path(out.dir, paste0('vl_', VIREMIC_VIRAL_LOAD) )
-dir.create(vl.out.dir. showWarnings = FALSE)
+dir.create(vl.out.dir, showWarnings = FALSE)
 
 # get data
 dall <- get.dall(path.tests)
