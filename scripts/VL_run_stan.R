@@ -19,7 +19,7 @@ library(rstan)
 #    PATHS     #
 ################
 
-parallelise <- TRUE
+parallelise <- FALSE
 
 usr <- Sys.info()[['user']]
 if(usr == 'andrea')
