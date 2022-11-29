@@ -73,5 +73,5 @@ done
 # EOF
   
 cd $OUTDIR
-qsub bash_$STAN_MODEL-$JOBNAME.pbs
+qsub bash-$JOBNAME.pbs
 
