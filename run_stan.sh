@@ -1,7 +1,8 @@
 #!/bin/sh
 
 # STAN_MODEL=TODO
-JOBNAME="viremic200"
+VL=200
+JOBNAME="vl_$VL"
 INDIR="/rds/general/user/ab1820/home/git/longi_viral_loads"
 OUTDIR="/rds/general/user/ab1820/home/projects/2022/longvl"
 
@@ -29,11 +30,11 @@ OUTDIR=$OUTDIR
 JOBNAME=$JOBNAME
 
 # main directory
-CWD=\$PWD/\$JOBNAME-\$MODEL
+CWD=\$PWD/\$JOBNAME-$MODEL
 
 mkdir \$CWD
 
-Rsript \$INDIR/scripts/analyse_all_participants.R --viremic-viral-load 200 --outdir \$CWD --$MODEL TRUE 
+Rscript \$INDIR/scripts/VL_run_stan.R --viremic-viral-load $VL --outdir \$CWD --$MODEL TRUE 
 
 cp -R --no-preserve=mode,ownership \$PWD/* \$OUTDIR
 
@@ -73,5 +74,8 @@ done
 # EOF
   
 cd $OUTDIR
-qsub bash-$JOBNAME.pbs
 
+qsub bash-$JOBNAME-run-gp-prevl.pbs
+qsub bash-$JOBNAME-run-gp-supp-hiv.pbs
+qsub bash-$JOBNAME-run-gp-supp-pop.pbs
+qsub bash-$JOBNAME-run-icar-mean-vl.pbs
