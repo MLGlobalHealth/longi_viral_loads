@@ -19,6 +19,8 @@ library(rstan)
 #    PATHS     #
 ################
 
+parallelise <- TRUE
+
 usr <- Sys.info()[['user']]
 if(usr == 'andrea')
 {
@@ -27,6 +29,7 @@ if(usr == 'andrea')
     indir.deepanalyses.xiaoyue <- '/home/andrea/Documents/Box/ratmann_xiaoyue_jrssc2022_analyses/live'
     # out.dir.prefix <- '/media/andrea/SSD/2022/longvl'
     # out.dir.prefix <- file.path(git.repository, 'results')
+    parallelise <- TRUE
     # 
 }
 
@@ -121,7 +124,7 @@ print(args)
 source( file.path(git.repository,'functions/base_utilities.R') )
 source( file.path(git.repository,'scripts/phsc_vl_helpers.R'))
 
-if(0)
+if(parallelise)
 {   # set up parallel backend
     n.cores <- min(4, parallel::detectCores() - 1 )
 
@@ -147,7 +150,9 @@ VIREMIC_VIRAL_LOAD = args$viremic.viral.load
 # specify and create output directories
 stopifnot( dir.exists(args$out.dir.prefix))
 out.dir <- file.path(args$out.dir.prefix)
-vl.out.dir <- file.path(out.dir, paste0('vl_', VIREMIC_VIRAL_LOAD) )
+vl.out.dir <- out.dir
+if(usr=='andrea')
+    vl.out.dir <- file.path(out.dir, paste0('vl_', VIREMIC_VIRAL_LOAD) )
 dir.create(vl.out.dir. showWarnings = FALSE)
 
 # get data
