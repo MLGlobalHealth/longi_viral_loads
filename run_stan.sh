@@ -9,7 +9,7 @@ mkdir $OUTDIR
 
 for MODEL in run-gp-prevl run-gp-supp-hiv run-gp-supp-pop run-icar-mean-vl 
 do
-    cat > $OUTDIR/bash-$JOBNAME.pbs <<EOF
+    cat > $OUTDIR/bash-$JOBNAME-$MODEL.pbs <<EOF
 
 #!/bin/sh
 #PBS -l walltime=48:00:00
@@ -33,12 +33,12 @@ CWD=\$PWD/\$JOBNAME-\$MODEL
 
 mkdir \$CWD
 
-Rscript \$INDIR/scripts/analyse_all_participants.R --viremic-viral-load 200 --outdir \$CWD --\$MODEL TRUE 
+Rsript \$INDIR/scripts/analyse_all_participants.R --viremic-viral-load 200 --outdir \$CWD --$MODEL TRUE 
 
 cp -R --no-preserve=mode,ownership \$PWD/* \$OUTDIR
 
 # cd \$OUTDIR
-# qsub bash-$JOBNAME-postprocessing.pbs
+# qsub bash-$JOBNAME-$MODEL-postprocessing.pbs
 
 EOF
 
