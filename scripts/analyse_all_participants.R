@@ -12,8 +12,8 @@ library(ggplot2)
 library(Hmisc)
 library(rstan)
 # For parallelisation across cores:
-library(foreach)
-library(doParallel)
+# library(foreach)
+# library(doParallel)
 
 ################
 #    PATHS     #
@@ -27,24 +27,92 @@ if(usr == 'andrea')
     indir.deepanalyses.xiaoyue <- '/home/andrea/Documents/Box/ratmann_xiaoyue_jrssc2022_analyses/live'
     # out.dir.prefix <- '/media/andrea/SSD/2022/longvl'
     # out.dir.prefix <- file.path(git.repository, 'results')
-    out.dir.prefix <- '~/OneDrive/2022/longvl/'
-
-}else{
-    git.repository <-'~/git/longi_viral_loads'
-    #exi indir.deepsequence.data <- '~/rds/general/projects/LALALADEEPDATA'
+    # 
 }
 
-out.dir <- file.path(out.dir.prefix, '220729_oli')
+if(usr == 'ab1820')
+{
+    git.repository <-'/rds/general/user/ab1820/home/git/longi_viral_loads'
+    indir.deepsequence.data <- '/rds/general/project/ratmann_pangea_deepsequencedata/live'
+    indir.deepanalyses.xiaoyue <- '/rds/general/project/ratmann_xiaoyue_jrssc2022_analyses/live'
+    # out.dir.prefix <- '/home/andrea/Documents/Box/ratmann_xiaoyue_jrssc2022_analyses/live'
+}
+
 path.stan <- file.path(git.repository, 'stan')
 path.tests <- file.path(indir.deepsequence.data, 
                         'RCCS_R15_R20',
                         "all_participants_hivstatus_vl_220729.csv")
 file.exists(
-            out.dir,
+            # out.dir,
             path.stan,
             path.tests
 ) |> all() |> stopifnot()
 
+################
+#   OPTIONS    #
+################
+
+option_list <- list(
+    optparse::make_option(
+        "--refit",
+        type = "logical",
+        default = FALSE,
+        help = "Flag on whether to re-run the stan models even if already exist [Defaults to FALSE]", 
+        dest = 'rerun'
+    ),
+    optparse::make_option(
+        "--run-gp-prevl",
+        type = "logical",
+        default = FALSE,
+        help = "Flag on whether to run the Stan model for prevalence [Defaults to FALSE] ",
+        dest = 'run.gp.prevl'
+    ),
+    optparse::make_option(
+        "--run-icar-mean-vl",
+        type = "logical",
+        default = FALSE,
+        help = "Flag on whether to run the Stan model for population level viral loads [Defaults to FALSE] ",
+        dest = 'run.icar.mean.vl'
+    ),
+    optparse::make_option(
+        "--run-gp-supp-hiv",
+        type = "logical",
+        default = FALSE,
+        help = "Flag on whether to run the Stan model for suppression among HIV positive [Defaults to FALSE] ",
+        dest = 'run.gp.supp.hiv'
+    ),
+    optparse::make_option(
+        "--run-gp-supp-pop",
+        type = "logical",
+        default = FALSE,
+        help = "Flag on whether to run the Stan model for suppression among population [Defaults to FALSE] ",
+        dest = 'run.gp.supp.pop'
+    ),
+    optparse::make_option(
+        "--viremic-viral-load",
+        type = "numeric",
+        default = 1000,
+        help = "Duration of acute phase, in years [Defaults to 2 months]", 
+        dest = 'viremic.viral.load'
+    ),
+    optparse::make_option(
+        "--vl-detectable",
+        type = "numeric",
+        default = 150,
+        help = "Duration of acute phase, in years [Defaults to 2 months]", 
+        dest = 'viremic.viral.load'
+    ),
+    optparse::make_option(
+        "--outdir",
+        type = "character",
+        default = '~/OneDrive/2022/longvl/220729_oli',
+        help = "Path to output directory where to store results [Defaults to my directory]", 
+        dest = 'out.dir.prefix'
+    )
+)
+
+args <-  optparse::parse_args(optparse::OptionParser(option_list = option_list))
+print(args)
 
 ################
 #    HELPERS   #
@@ -53,9 +121,8 @@ file.exists(
 source( file.path(git.repository,'functions/base_utilities.R') )
 source( file.path(git.repository,'scripts/phsc_vl_helpers.R'))
 
-# set up parallel backend
 if(0)
-{
+{   # set up parallel backend
     n.cores <- min(4, parallel::detectCores() - 1 )
 
     logname <- Sys.time() |> format('%m%d_%H%m')
@@ -73,12 +140,17 @@ if(0)
 #     MAIN     #
 ################
 
-VL_DETECTABLE = 400
-VIREMIC_VIRAL_LOAD = 1000
+# set viral load thresholds
+VL_DETECTABLE = args$vl.detectable
+VIREMIC_VIRAL_LOAD = args$viremic.viral.load
 
+# specify and create output directories
+stopifnot( dir.exists(args$out.dir.prefix))
+out.dir <- file.path(args$out.dir.prefix)
 vl.out.dir <- file.path(out.dir, paste0('vl_', VIREMIC_VIRAL_LOAD) )
-stopifnot(dir.exists(vl.out.dir))
+dir.create(vl.out.dir. showWarnings = FALSE)
 
+# get data
 dall <- get.dall(path.tests)
 
 if(0) 
@@ -153,13 +225,6 @@ if(0) # Study ARVMED
             theme(legend.position='bottom') + 
             labs(x='Community type', y='Proportion of suppressed measurements', title='Among people reporting ever ARV...')
 
-}
-
-if(0)
-{
-    # Proportion of participants with HIV+ and na viral loads
-    .f <- function(x) paste0(round(x*100, 2), '%')
-    dall[, .f(mean(is.na(VL_COPIES) & HIV_STATUS==1)), by='ROUND']
 }
 
 if(0)
@@ -296,27 +361,29 @@ if(0)
 # Estimate HIV prevalence
 #________________________
 
-if(0) 
-        vl.prevalence.by.gender.loc.age.gp(dall, refit=FALSE)
+if(args$run.gp.prevl) 
+        vl.prevalence.by.gender.loc.age.gp(dall, refit=args$refit)
 
 # Estimate mean viral load
 # ________________________
 
-if(0) 
-        vl.meanviralload.by.gender.loc.age.icar(dall)
+if(args$run.icar.mean.vl) 
+        vl.meanviralload.by.gender.loc.age.icar(dall, refit=args$refit)
 
 # Estimate suppressed pop
 # _______________________
 
 
-if(0)   # Among HIV positive
-        vl.suppofinfected.by.gender.loc.age.gp(dall, refit=TRUE)
+if(args$run.gp.supp.hiv)   # Among HIV positive
+        vl.suppofinfected.by.gender.loc.age.gp(dall, refit=args$refit)
 
 
-if(1)   # Among Entire population
-        vl.suppofpop.by.gender.loc.age.gp(dall, refit=FALSE)
+if(args$run.gp.supp.pop)   # Among Entire population
+        vl.suppofpop.by.gender.loc.age.gp(dall, refit=args$refit)
 
 
+if(0)
+{
 # GET POSTERIORS ON SUPP AMONG POP
 # ________________________________
 
@@ -358,5 +425,4 @@ p <- ggplot(dinc, aes(x=AGEYRS, colour=ROUND)) +
 # 1. get Mean Viral Load by location
 # 2. run an analysis GLM like
 # 3. Using what as a predictor? 
-
-
+}
