@@ -111,11 +111,19 @@ option_list <- list(
         default = '~/OneDrive/2022/longvl/220729_oli',
         help = "Path to output directory where to store results [Defaults to my directory]", 
         dest = 'out.dir.prefix'
+    ),
+    optparse::make_option(
+        "--round",
+        type = "numeric",
+        default = c(16,17,18,19),
+        help = "Path to output directory where to store results [Defaults to my directory]", 
+        dest = 'round'
     )
 )
 
 args <-  optparse::parse_args(optparse::OptionParser(option_list = option_list))
 print(args)
+
 
 ################
 #    HELPERS   #
@@ -142,6 +150,9 @@ if(parallelise)
 ################
 #     MAIN     #
 ################
+
+# check study round exists
+stopifnot(all(args$round %in% 16:19))
 
 # set viral load thresholds
 VL_DETECTABLE = args$vl.detectable
