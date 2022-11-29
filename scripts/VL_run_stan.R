@@ -61,7 +61,7 @@ option_list <- list(
         type = "logical",
         default = FALSE,
         help = "Flag on whether to re-run the stan models even if already exist [Defaults to FALSE]", 
-        dest = 'rerun'
+        dest = 'refit'
     ),
     optparse::make_option(
         "--run-gp-prevl",
