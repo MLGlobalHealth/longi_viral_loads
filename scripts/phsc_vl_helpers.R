@@ -29,6 +29,17 @@ get.dall <- function(path)
     return(dall)
 }
 
+.get.dcomm <- function()
+{
+    path <- file.path(indir.deepanalyses.xiaoyue, 'PANGEA2_RCCS1519_UVRI', 'community_names.csv')
+    dcomm <- fread(path)
+    .f <- function(x)
+        fcase(x %like% '^f', 'fishing', x %like% '^t', 'trading', x %like% '^a', 'agrarian')
+    dcomm[, TYPE:=.f(COMM_NUM_A)]
+    dcomm[, COMM_NUM:=as.integer(COMM_NUM_RAW)]
+    dcomm
+}
+
 make.study.flowchart <- function(DT)
 {
     
@@ -116,7 +127,36 @@ make.study.flowchart <- function(DT)
                       ")  |> export_svg() |> charToRaw() |> rsvg_pdf(filename)
 }
 
-.get.prior.ranges <- function(stan.data, shape, scale)
+get.glm.data <- function(DT)
+{
+
+    # get community data
+    dcomm <- .get.dcomm()
+
+    DT <- copy(dall)
+    DT <- .preprocess.ds.oli(DT)
+    DT[ COMM_NUM==22, COMM_NUM:=1 ]
+
+    .f <- function(x,y)
+        as.vector( unname ( binconf(sum(x), length(y) )  ) )
+
+    vlc <- DT[, {
+        z  <- .f( HIV_STATUS == 1, HIV_STATUS)
+        z2 <- .f( VLNS == 1, VLNS )
+        z3 <- .f( VLNS == 1, which(HIV_STATUS == 1) )
+        list(FC=FC[1],
+             N= length(HIV_STATUS),
+             HIV_N = sum(HIV_STATUS == 1),
+             VLNS_N = sum(VLNS == 1))		
+    }, by=c('ROUND', 'COMM_NUM','SEX', 'AGEYRS')]
+
+    # setkey(vlc, SEX, PHIV_MEAN)
+    vlc[, SEX := factor(SEX, levels=c('M', 'F'), labels=c('men', 'women'))]
+    vlc <- merge(vlc, dcomm[, .(COMM_NUM, FC2=TYPE) ] , by='COMM_NUM', all.x=TRUE)
+    vlc
+}
+
+.get.prior.ranges <- function(stan.data, DT, shape, scale)
 {
     # Extracts alpha and rho from stan.data
     # Then computes 95% intervals assuming inv.gamma and normal prior distributions
@@ -175,24 +215,8 @@ make.study.flowchart <- function(DT)
     tmp1 <- unique(DT[, .(SEX,SEX_LABEL,LOC,LOC_LABEL)])
     tmp <- merge(tmp1, tmp, by=c('SEX','LOC'))
     tmp[, col:='prior']
+    tmp
 }
-
-# .make.stan.data.glm <- function(DT, cols=c(ROUND, SEX, ))
-# {
-#     DT <- copy(dglm)
-# 
-#     stan.data <- list()
-# 
-#     stan.data$N <- dglm[, .N]
-#     stan.data$y <- dglm[, as.integer(N*PHIV_MEAN)]
-#     stan.data$T <- dglm[, as.integer(N)]
-#     stan.data$K <- 
-#     stan.data$X <- 
-#     stan.data$scale_alpha <- 
-#     stan.data$scale_beta <- 
-#     stan.data$int use_y_rep <- 
-#     stan.data$int use_log_lik <- 
-# }
 
 .make.stan.data.gp <- function(DTsd, 
                             num.var=NA,
@@ -398,16 +422,7 @@ vl.vlprops.by.comm.gender.loc<- function(DT, write.csv=FALSE)
     DT[ COMM_NUM==22, COMM_NUM:=1 ]
 
     # get.community types
-    path <- file.path(indir.deepanalyses.xiaoyue, 'PANGEA2_RCCS1519_UVRI', 'community_names.csv')
-
-    
-    dcomm <- fread(path)
-    .f <- function(x)
-        fcase(x %like% '^f', 'fishing', x %like% '^t', 'trading', x %like% '^a', 'agrarian')
-    dcomm[, TYPE:=.f(COMM_NUM_A)]
-    dcomm[, COMM_NUM:=as.integer(COMM_NUM_RAW)]
-    # dcomm[, table(TYPE)]
-    
+    dcomm <- .get.dcomm()
 
 	# calculate HIV prevalence and proportion not suppressed of HIV+ by community and gender
     .f <- function(x,y)
@@ -510,7 +525,6 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT, refit=FALSE, vl.out.dir.=vl.o
 
     # Stan file locations
     file.stan <- file.path(path.stan, 'vl_binomial_gp.stan')
-    stan.model <- stan_model(file=file.stan, model_name= 'gp_all')
     
     .fit.stan.and.plot.by.round <- function(DT, itr=10e3, wrmp=5e2, chns=1, cntrl=list(max_treedepth= 15, adapt_delta= 0.999))
     {
@@ -525,13 +539,14 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT, refit=FALSE, vl.out.dir.=vl.o
 
         if(file.exists(filename) & refit == FALSE)
         {
-                cat('Loading previously run HMC... \n')
-                fit <- readRDS(filename)
+            cat('Loading previously run HMC... \n')
+            fit <- readRDS(filename)
         }else{
-                fit <- sampling(stan.model, data=stan.data, 
-                                iter=itr, warmup=wrmp,
-                                chains=chns, control=cntrl)
-                saveRDS(fit, file=filename)
+            stan.model <- stan_model(file=file.stan, model_name= 'gp_all')
+            fit <- sampling(stan.model, data=stan.data, 
+                            iter=itr, warmup=wrmp,
+                            chains=chns, control=cntrl)
+            saveRDS(fit, file=filename)
         }
 
         # Analyse posterior
@@ -571,7 +586,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT, refit=FALSE, vl.out.dir.=vl.o
         prev.hiv.gp.pars[, col:='posterior']
         prev.hiv.gp.pars[, GP_hyper_par:=gsub('_[0-1][0-1]', '',GP_hyper_par)]
 
-        tmp <- .get.prior.ranges(stan.data, 
+        tmp <- .get.prior.ranges(stan.data, DT=tmp1, 
                 shape=re$rho_hyper_par_shape2[1],
                 scale=re$rho_hyper_par_scale2[1])
 
@@ -765,7 +780,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT, refit=FALSE, vl.out.dir.=vl.o
 
         # else do not
         for( r in args$round)
-               .fit.stan.and.plot.by.round(vla[ ROUND == r, ]) 
+            .fit.stan.and.plot.by.round(vla[ ROUND == r, ]) 
     }
 
     return(tmp)
@@ -1099,7 +1114,6 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=v
     # NOTE: ARV_N == 0
 
     file.stan.1 <- file.path(path.stan, 'vl_binomial_gp.stan')
-    stan.model <- stan_model(file.stan.1, model_name='gp_all')	 
 
     .fit.stan.and.plot.by.round <- function(DT, itr=10e3, wrmp=5e2, chns=1, cntrl = list(max_treedepth= 15, adapt_delta= 0.999))
     {
@@ -1110,7 +1124,6 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=v
 
         DT[, VLSUP_N := HIV_N - VLNS_N,]
         stan.data <- .make.stan.data.gp(DT, num.var='VLSUP_N', den.var='HIV_N')
-
         filename <- paste0( '220729f_notsuppAmongInfected_gp_stan_round',round,'.rds')
         filename <- file.path(vl.out.dir., filename)
 
@@ -1119,6 +1132,7 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=v
             cat('Loading previously run HMC... \n')
             fit <- readRDS(filename)
         }else{
+            stan.model <- stan_model(file.stan.1, model_name='gp_all')	 
             fit <- sampling(stan.model, data=stan.data, 
                             iter=itr, warmup=wrmp,
                             chains=chns, control=cntrl)
@@ -1188,7 +1202,7 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=v
         tmp1 <- unique(DT[, .(SEX,SEX_LABEL,LOC,LOC_LABEL)])
         nsinf.gp.pars <- merge(tmp1, tmp, by=c('SEX','LOC'))
         nsinf.gp.pars[, col:='posterior']
-        tmp <- .get.prior.ranges(stan.data, 
+        tmp <- .get.prior.ranges(stan.data, DT=tmp1,
                                  shape=re$rho_hyper_par_shape2[1],
                                  scale=re$rho_hyper_par_scale2[1])
         p <- .plot.gp.hyperparameters(nsinf.gp.pars, tmp)
@@ -1466,10 +1480,9 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=v
         } -> tmp
 
     }else{
-
         # else do not
         for( r in args$round)
-               .fit.stan.and.plot.by.round(vla[ ROUND == r, ]) 
+            .fit.stan.and.plot.by.round(vla[ ROUND == r, ]) 
     }
 
     return(tmp)
@@ -1477,7 +1490,7 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=v
 
 vl.suppofinfected.by.gender.loc.age.icar<- function(DT, refit=FALSE)
 {
-        # DT <- copy(dall)
+    # DT <- copy(dall)
 	vl.out.dir <- file.path(vl.out.dir)
     DT <- .preprocess.ds.oli(DT)
 
@@ -1801,9 +1814,7 @@ vl.suppofpop.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=vl.out
     vla <- .preprocess.make.vla(DT, select=tmp)
 
     # Stan file locations
-    cat('Compiling STAN model...\n')
     file.stan <- file.path(path.stan, 'vl_binomial_gp.stan')
-    stan.model <- stan_model(file=file.stan, model_name= 'gp_all')
 
     .fit.stan.and.plot.by.round <- function(DT, itr=10e3, wrmp=5e2, chns=1, cntrl = list(max_treedepth= 15, adapt_delta= 0.999))
     {
@@ -1821,6 +1832,7 @@ vl.suppofpop.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=vl.out
             cat('Loading previously run HMC... \n')
             fit <- readRDS(filename)
         }else{
+            stan.model <- stan_model(file=file.stan, model_name= 'gp_all')
             fit <- sampling(stan.model, data=stan.data, 
                             iter=itr, warmup=wrmp,
                             chains=chns, control=cntrl)
@@ -1855,7 +1867,7 @@ vl.suppofpop.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=vl.out
         tmp1 <- unique(DT[, .(SEX,SEX_LABEL,LOC,LOC_LABEL)])
         nspop.gp.pars <- merge(tmp1, tmp, by=c('SEX','LOC'))
         nspop.gp.pars[, col:='Posterior']
-        tmp <- .get.prior.ranges(stan.data, 
+        tmp <- .get.prior.ranges(stan.data, DT=tmp1,
                                  shape=re$rho_hyper_par_shape2[1],
                                  scale=re$rho_hyper_par_scale2[1])
 
@@ -3236,5 +3248,3 @@ mcmc_intervals_2 <- function(
 
     out
 }
-
-

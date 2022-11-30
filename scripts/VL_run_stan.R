@@ -29,7 +29,7 @@ if(usr == 'andrea')
     indir.deepanalyses.xiaoyue <- '/home/andrea/Documents/Box/ratmann_xiaoyue_jrssc2022_analyses/live'
     # out.dir.prefix <- '/media/andrea/SSD/2022/longvl'
     # out.dir.prefix <- file.path(git.repository, 'results')
-    parallelise <- TRUE
+    # parallelise <- TRUE
     # 
 }
 
@@ -61,7 +61,7 @@ option_list <- list(
         type = "logical",
         default = FALSE,
         help = "Flag on whether to re-run the stan models even if already exist [Defaults to FALSE]", 
-        dest = 'rerun'
+        dest = 'refit'
     ),
     optparse::make_option(
         "--run-gp-prevl",
@@ -90,6 +90,13 @@ option_list <- list(
         default = FALSE,
         help = "Flag on whether to run the Stan model for suppression among population [Defaults to FALSE] ",
         dest = 'run.gp.supp.pop'
+    ),
+    optparse::make_option(
+        "--run-comm-analysis",
+        type = "logical",
+        default = FALSE,
+        help = "Flag on whether to run the Stan GLM model for community-level suppression [Defaults to FALSE] ",
+        dest = 'run.comm.analysis'
     ),
     optparse::make_option(
         "--viremic-viral-load",
@@ -123,7 +130,6 @@ option_list <- list(
 
 args <-  optparse::parse_args(optparse::OptionParser(option_list = option_list))
 print(args)
-
 
 ################
 #    HELPERS   #
@@ -185,7 +191,6 @@ if(0)
     dall[HIV_AND_VL==1 & is.na(ARVMED), .(VLmean=mean(log(VL_COPIES+1, 10))) , by='ROUND']
     cat('mean log10 VL across people reporting ARVMED\n')
     dall[HIV_AND_VL==1 & !is.na(ARVMED), .(VLmean=mean(log(VL_COPIES+1, 10))) , by='ROUND']
-
     # 
 }
 
@@ -243,15 +248,17 @@ if(0) # Study ARVMED
 
 }
 
-if(0)
+if(args$run.comm.analysis)
 {
     library(patchwork)
     library(rstanarm)
     library(tidybayes)
     library(bayesplot)
     library(bayestestR)
+    library(lme4)
     # tmp$p for plot and tmp$DT for 'vlc' datatable
     tmp <- vl.vlprops.by.comm.gender.loc(dall, write.csv=FALSE)
+    tmp$DT
     tmp$p_among_pop + tmp$p_among_inf
 
     vlc <- copy(tmp$DT)
@@ -273,48 +280,60 @@ if(0)
     filename <- file.path('220729_longitudinal_PVLNSofHIV_by_comm_sex.pdf')
     ggsave2(p, file=filename, w=9, h=12)
 
-    p_map <- make.map.220810(copy(dall), copy(vlc))
-    filename <- file.path('220729_map_PVLNSofHIV_by_comm_sex.pdf')
-    ggsave2(p_map, file=filename, w=9, h=12)
+    if(0)
+    {
+        p_map <- make.map.220810(copy(dall), copy(vlc))
+        filename <- file.path('220729_map_PVLNSofHIV_by_comm_sex.pdf')
+        ggsave2(p_map, file=filename, w=9, h=12)
+    }
 
     # What kind of GLM to use? 
     # Well we can start with a binomial right? 
 
     inverse.logit <- function(x){ exp(x)/(exp(x) + 1)}
-    cols <- c("COMM_NUM","ROUND","SEX", "FC","N","PHIV_MEAN","PHIV_CL","PHIV_CU","PVLNS_MEAN",
-              "PVLNS_CL","PVLNS_CU","PVLNSofHIV_MEAN","PVLNSofHIV_CL","PVLNSofHIV_CU","FC2")
-    dglm <- subset(tmp$DT,select=cols)
+    dglm <- get.glm.data(dall)
+    dglm[, ROUND := as.factor(ROUND)]
 
-    .f <- as.integer
-    dglm[, `:=` (N_HIV=.f(N*PHIV_MEAN), N_HIV_NOTSUP=.f(N*PHIV_MEAN*PVLNSofHIV_MEAN))]
-    str(dglm[, as.factor(ROUND)])
+    #cols <- c("COMM_NUM","ROUND","SEX", "FC","N","PHIV_MEAN","PHIV_CL","PHIV_CU","PVLNS_MEAN",
+    #          "PVLNS_CL","PVLNS_CU","PVLNSofHIV_MEAN","PVLNSofHIV_CL","PVLNSofHIV_CU","FC2")
+    #dglm <- subset(tmp$DT,select=cols)
+    #.f <- as.integer
+    #dglm[, `:=` (N_HIV=.f(N*PHIV_MEAN), N_HIV_NOTSUP=.f(N*PHIV_MEAN*PVLNSofHIV_MEAN))]
 
-    require(lme4)
+    str(dglm)
     comm_lvls <- dglm[, sort(unique(COMM_NUM)), by='FC2'][, V1, ]
-    glm_no_random_effects(PVLNSofHIV_MEAN ~ FC:ROUND)
-    glm_no_random_effects(PVLNSofHIV_MEAN ~ FC:ROUND:SEX)
-    glm_no_random_effects(PVLNSofHIV_MEAN ~ FC:ROUND + SEX) 
 
-    glm_random_effects(PVLNSofHIV_MEAN ~ FC:ROUND + SEX + (1|COMM_NUM) ) |> AIC()
-    glm_random_effects(PVLNSofHIV_MEAN ~ FC:SEX + ROUND + (1|COMM_NUM) ) |> AIC()
+    # glm_no_random_effects(PVLNSofHIV_MEAN ~ FC:ROUND)
+    # glm_no_random_effects(PVLNSofHIV_MEAN ~ FC:ROUND:SEX)
+    # glm_no_random_effects(PVLNSofHIV_MEAN ~ FC:ROUND + SEX) 
+    # glm_random_effects(PVLNSofHIV_MEAN ~ FC:ROUND + SEX + (1|COMM_NUM) ) |> AIC()
+    # glm_random_effects(PVLNSofHIV_MEAN ~ FC:SEX + ROUND + (1|COMM_NUM) ) |> AIC()
 
-    prior.pars <- list(
-                       intercept.mean=logit(dglm[, sum(N_HIV_NOTSUP)/sum(N_HIV)])
-    )
+    prior.pars <- list( intercept.mean=logit(dglm[, sum(N_HIV_NOTSUP)/sum(N_HIV)]) )
     
     dglm[, ROUND_IDX := ROUND - min(ROUND + 1)]
     # What's the best way to set priors and hyperprios? Maybe look at 8 schools examples.
     # Also: http://mc-stan.org/rstanarm/articles/glmer.html
+    names(dglm)
+    options(mc.cores=parallel::detectCores())
     glm_reffs <- stan_glmer(data=dglm,
-                            formula=PVLNSofHIV_MEAN ~ FC:ROUND_IDX + SEX + (1|COMM_NUM),
-                            weights=N_HIV,
+                            formula=VLNS_N/HIV_N ~ FC:ROUND + SEX + (1|COMM_NUM) + AGEYRS,
+                            weights=HIV_N,
                             # prior_intercept = student_t(df = 7, prior.pars$intercept.mean, 5),
                             prior_intercept = normal( prior.pars$intercept.mean, 5),
                             family=binomial(link='logit'))
+    # save fit:
+    filename <- file.path(vl.out.dir, 'supppofpart_glmer_fit.rds')
+    saveRDS(glm_reffs, filename)
+
+    # get sample size
+    tmp <- as.data.frame(summary(glm_reffs)) |> as.data.table(keep.rownames = TRUE)
+    tmp <- tmp[! rn %in% 'log-posterior', {z1 <- which.min(n_eff); z2 <- which.max(Rhat); list(n=n_eff[z1], pn=rn[z1], R=Rhat[z2], pR=rn[z2])}]
+    cat('Minimum effective sample size:',tmp$n, 'for parameter', tmp$pn, '\n')
+    cat('Maximum Rhat:',tmp$R, 'for parameter', tmp$pR, '\n')
 
     help('prior_summary.stanreg')
     prior_summary(glm_reffs)
-
 
     # get a feel
     # launch_shinystan(glm_reffs)
@@ -347,7 +366,7 @@ if(0)
             geom_errorbarh(aes(xmin=l, xmax=h), height=0, size=1) + 
             scale_color_manual(values=palettes$comm2) +
             labs(x='Posterior', y='Community level random effects', color='Community type') 
-        p_ranges
+    p_ranges
 
     filename <- file.path( 'comm_stanglm_diagnostics_comm_random_effects.png')
     ggsave2(p_ranges, file=filename, w=9, h=12)
@@ -362,6 +381,7 @@ if(0)
 
     pp_check(glm_reffs, plotfun = "boxplot", nreps = 10, notch = FALSE)
     pp_check(glm_reffs, plotfun = "scatter_avg") # y vs. average yrep
+    pp_check(glm_reffs, plotfun = "hist", nreps=3) # y vs. average yrep
 
     # Posterior vs prior
     p <- posterior_vs_prior( glm_reffs) +
@@ -378,24 +398,23 @@ if(0)
 #________________________
 
 if(args$run.gp.prevl) 
-        vl.prevalence.by.gender.loc.age.gp(dall, refit=args$refit)
+    vl.prevalence.by.gender.loc.age.gp(dall, refit=args$refit)
 
 # Estimate mean viral load
 # ________________________
 
 if(args$run.icar.mean.vl) 
-        vl.meanviralload.by.gender.loc.age.icar(dall, refit=args$refit)
+    vl.meanviralload.by.gender.loc.age.icar(dall, refit=args$refit)
 
 # Estimate suppressed pop
 # _______________________
 
-
 if(args$run.gp.supp.hiv)   # Among HIV positive
-        vl.suppofinfected.by.gender.loc.age.gp(dall, refit=args$refit)
+    vl.suppofinfected.by.gender.loc.age.gp(dall, refit=args$refit)
 
 
 if(args$run.gp.supp.pop)   # Among Entire population
-        vl.suppofpop.by.gender.loc.age.gp(dall, refit=args$refit)
+    vl.suppofpop.by.gender.loc.age.gp(dall, refit=args$refit)
 
 
 if(0)
