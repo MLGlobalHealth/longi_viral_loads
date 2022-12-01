@@ -1,7 +1,7 @@
 #!/bin/sh
 
 VL="${1:=1000}" 
-echo "VL set to @VL"
+echo "VL set to $VL"
 # VL=1000
 JOBNAME="vl_$VL"
 INDIR="/rds/general/user/ab1820/home/git/longi_viral_loads"
