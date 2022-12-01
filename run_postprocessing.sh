@@ -1,6 +1,8 @@
 #!/bin/sh
 
-VL=200
+VL="${1:=1000}" 
+echo "VL set to @VL"
+# VL=1000
 JOBNAME="vl_$VL"
 INDIR="/rds/general/user/ab1820/home/git/longi_viral_loads"
 OUTDIR="/rds/general/user/ab1820/home/projects/2022/longvl"
@@ -23,6 +25,7 @@ JOBNAME=$JOBNAME
 CWD=\$PWD/\$JOBNAME
 
 # directories for figure and table
+mkdir \$CWD
 mkdir \$CWD/figures
 mkdir \$CWD/tables
 
@@ -30,4 +33,5 @@ Rscript \$INDIR/scripts/VL_scripts/VL_postprocessing.R -indir --viremic-viral-lo
 
 EOF
 
+cd $OUTDIR
 qsub bash-$JOBNAME-postprocessing.pbs

@@ -1,7 +1,8 @@
 #!/bin/sh
 
 # STAN_MODEL=TODO
-VL=1000
+VL="${1:=1000}" 
+echo "VL set to @VL"
 JOBNAME="vl_$VL"
 INDIR="/rds/general/user/ab1820/home/git/longi_viral_loads"
 OUTDIR="/rds/general/user/ab1820/home/projects/2022/longvl"
@@ -46,6 +47,7 @@ EOF
 
 done
 
+cd $OUTDIR
 qsub bash-$JOBNAME-run-gp-supp-hiv.pbs
 qsub bash-$JOBNAME-run-gp-supp-pop.pbs
 qsub bash-$JOBNAME-run-icar-mean-vl.pbs
