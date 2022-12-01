@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # STAN_MODEL=TODO
-VL=200
+VL=1000
 JOBNAME="vl_$VL"
 INDIR="/rds/general/user/ab1820/home/git/longi_viral_loads"
 OUTDIR="/rds/general/user/ab1820/home/projects/2022/longvl"
