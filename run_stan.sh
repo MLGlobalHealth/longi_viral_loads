@@ -46,38 +46,6 @@ EOF
 
 done
 
-
-
-# TODO: postprocessing
-# cat > $OUTDIR/bash_$STAN_MODEL-$JOBNAME-postprocessing.pbs <<EOF
-#   
-# #!/bin/sh
-# #PBS -l walltime=24:00:00
-# #PBS -l select=1:ncpus=10:ompthreads=1:mem=480gb
-# #PBS -j oe
-# module load anaconda3/personal
-# 
-# INDIR=$INDIR
-# OUTDIR=$OUTDIR
-# STAN_MODEL=$STAN_MODEL
-# JOBNAME=$JOBNAME
-#   
-# # main directory
-# CWD=\$OUTDIR/\$STAN_MODEL-\$JOBNAME
-# 
-# # directories for figure and table
-# mkdir \$CWD/figures
-# mkdir \$CWD/tables
-# 
-# Rscript \$INDIR/scripts/postprocessing_assess_mixing.R -indir \$INDIR -outdir \$CWD -stan_model \$STAN_MODEL -jobname \$JOBNAME 
-# Rscript \$INDIR/scripts/postprocessing_figures.R -indir \$INDIR -outdir \$CWD -stan_model \$STAN_MODEL -jobname \$JOBNAME 
-# 
-# EOF
-  
-cd $OUTDIR
-
-cat bash-$JOBNAME-run-gp-prevl.pbs
-qsub bash-$JOBNAME-run-gp-prevl.pbs
 qsub bash-$JOBNAME-run-gp-supp-hiv.pbs
 qsub bash-$JOBNAME-run-gp-supp-pop.pbs
 qsub bash-$JOBNAME-run-icar-mean-vl.pbs
