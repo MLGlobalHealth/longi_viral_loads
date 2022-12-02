@@ -15,6 +15,7 @@ cat > $OUTDIR/bash-$JOBNAME-postprocessing.pbs <<EOF
 #PBS -l select=1:ncpus=10:ompthreads=1:mem=480gb
 #PBS -j oe
 module load anaconda3/personal
+source activate longivl
 
 INDIR=$INDIR
 OUTDIR=$OUTDIR
@@ -29,7 +30,7 @@ mkdir \$CWD
 mkdir \$CWD/figures
 mkdir \$CWD/tables
 
-Rscript \$INDIR/scripts/VL_scripts/VL_postprocessing.R -indir --viremic-viral-load $VL --outdir \$CWD --indir \$CWD
+Rscript \$INDIR/scripts/VL_postprocessing.R -indir --viremic-viral-load $VL --outdir \$CWD --indir \$CWD
 
 EOF
 
