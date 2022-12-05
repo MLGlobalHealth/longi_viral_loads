@@ -1,6 +1,8 @@
 #!/bin/sh
 
-VL=200
+VL="${1:=1000}" 
+echo "VL set to $VL"
+# VL=1000
 JOBNAME="vl_$VL"
 INDIR="/rds/general/user/ab1820/home/git/longi_viral_loads"
 OUTDIR="/rds/general/user/ab1820/home/projects/2022/longvl"
@@ -13,6 +15,7 @@ cat > $OUTDIR/bash-$JOBNAME-postprocessing.pbs <<EOF
 #PBS -l select=1:ncpus=10:ompthreads=1:mem=480gb
 #PBS -j oe
 module load anaconda3/personal
+source activate longivl
 
 INDIR=$INDIR
 OUTDIR=$OUTDIR
@@ -23,11 +26,13 @@ JOBNAME=$JOBNAME
 CWD=\$PWD/\$JOBNAME
 
 # directories for figure and table
+mkdir \$CWD
 mkdir \$CWD/figures
 mkdir \$CWD/tables
 
-Rscript \$INDIR/scripts/VL_scripts/VL_postprocessing.R -indir --viremic-viral-load $VL --outdir \$CWD --indir \$CWD
+Rscript \$INDIR/scripts/VL_postprocessing.R -indir --viremic-viral-load $VL --outdir \$CWD --indir \$CWD
 
 EOF
 
+cd $OUTDIR
 qsub bash-$JOBNAME-postprocessing.pbs

@@ -21,6 +21,12 @@ if(usr == 'andrea')
     indir.deepsequence.data <- '~/Documents/Box/ratmann_pangea_deepsequencedata'
     indir.deepanalyses.xiaoyue <- '/home/andrea/HPC/project/ratmann_xiaoyue_jrssc2022_analyses/live'
     out.dir.prefix <- '/home/andrea/HPC/ab1820/home/projects/2022/longvl/'
+}else if(usr == 'ab1820')
+{
+    git.repository <-'~/git/longi_viral_loads' 
+    indir.deepsequence.data <- '/rds/general/project/ratmann_pangea_deepsequencedata/live/'
+    indir.deepanalyses.xiaoyue <- '/rds/general/project/ratmann_xiaoyue_jrssc2022_analyses/live/'
+    out.dir.prefix <- '/rds/general/user/ab1820/home/projects/2022/longvl'
 }
 
 path.stan <- file.path(git.repository, 'stan')
