@@ -61,6 +61,13 @@ option_list <- list(
         dest = 'viremic.viral.load'
     ),
     optparse::make_option(
+        "--indir",
+        type = "character",
+        default = '/home/andrea/HPC/ab1820/home/projects/2022/longvl/',
+        help = "Path to output directory where model fits are stored [Defaults to my directory]", 
+        dest = 'indir'
+    ),
+    optparse::make_option(
         "--outdir",
         type = "character",
         default = '/home/andrea/HPC/ab1820/home/projects/2022/longvl/',
@@ -100,10 +107,14 @@ naturemed_reqs() # stores them in nm_reqs
 # output directory with rda files
 out.dir <- args$out.dir.prefix
 vl.out.dir <- file.path(out.dir, paste0('vl_', VIREMIC_VIRAL_LOAD) )
+
+.f <- function(x) dir.create(file.path(vl.out.dir, x))
+sapply(c('figures', 'tables'), .f)
+list.dirs(vl.out.dir)
 stopifnot(dir.exists(vl.out.dir))
 
 # get rda paths for fitted models
-rda_files <- list.files(vl.out.dir, pattern='.rda', full.names=T, recursive=TRUE)
+rda_files <- list.files(args$indir, pattern='.rda', full.names=T, recursive=TRUE)
 
 # get data 
 dall <- get.dall(path.tests)
@@ -119,19 +130,18 @@ dcens[, .(N_ELIGIBLE=sum(ELIGIBLE)), by=c('ROUND', 'SEX_LABEL')] |> kable()
 cat('--- Make UNAIDS objectives plot ---\n')
 tmp <- make.unaids.plots(DT=dcens)
 
-
 # Summarised analyes
 # __________________
 
 cat('--- Plot Posteriors for fishing analyses ---\n')
 p <- plot.all.gps(loc='fishing')
 filename <- 'main_allanalyses_fishing.pdf'
-ggsave2(p, file=filename, w=18, h=24, u='cm')
+ggsave2(p, file=filename, LALA=file.path(vl.out.dir, 'figures') , w=18, h=24, u='cm')
 
 cat('--- Plot Posteriors for inland analyses ---\n')
 p <- plot.all.gps(loc='inland')
 filename <- 'main_allanalyses_inland.pdf'
-ggsave2(p, file=filename, w=18, h=24, u='cm')
+ggsave2(p, file=filename, LALA=file.path(vl.out.dir, 'figures'), w=18, h=24, u='cm')
 
 # Unaids table
 # ____________
@@ -141,7 +151,7 @@ tmp <- make.table.unaids.goals()
 print(xtable::xtable(tmp), 
       include.rownames=FALSE, 
       hline.after=c(-1, seq(0, nrow(tmp), nrow(tmp)/4)),
-      file='main_unaids_table.tex')
+      file=file.path(vl.out.dir, 'tables', 'main_unaids_table.tex'))
 
 # Compare Prevalence of suppression among HIV+
 # ____________________________________________
@@ -217,7 +227,7 @@ compare.suppression <- function()
         tmp
     }
 
-    rda_files <- list.files(vl.out.dir, pattern='.rda', full.names=T)
+    rda_files <- list.files(args$indir, pattern='.rda', full.names=T)
     rda_files <- grep('16|19', rda_files, value=TRUE)
 
     # get posterior samples ratios of supp19/supp16
