@@ -55,7 +55,7 @@ option_list <- list(
     optparse::make_option(
         "--viremic-viral-load",
         type = "numeric",
-        default = 1000,
+        default = 200,
         help = "Duration of acute phase, in years [Defaults to 2 months]", 
         dest = 'viremic.viral.load'
     ),
@@ -116,15 +116,14 @@ vl.out.dir <- file.path(out.dir, paste0('vl_', VIREMIC_VIRAL_LOAD) )
 
 .f <- function(x) dir.create(file.path(vl.out.dir, x))
 sapply(c('figures', 'tables'), .f)
-list.dirs(vl.out.dir)
 stopifnot(dir.exists(vl.out.dir))
 
 # get rda paths for fitted models
 rda_files <- list.files(args$indir, pattern='.rda', full.names=T, recursive=TRUE)
+rda_files <- grep(paste0('vl_', args$viremic.viral.load), rda_files, value=T)
 
 # get data 
 dall <- get.dall(path.tests)
-
 
 # Get census eligible and compare with participants 
 # __________________________________________________
@@ -132,6 +131,7 @@ dall <- get.dall(path.tests)
 # we need to chose whether to use the smoothed version, or the actual counts (`.count`)
 dcens <- get.census.eligible()
 dcens[, .(N_ELIGIBLE=sum(ELIGIBLE)), by=c('ROUND', 'SEX_LABEL')] |> kable()
+last.round <- dcens[, max(ROUND)] 
 
 cat('--- Make UNAIDS objectives plot ---\n')
 tmp <- make.unaids.plots(DT=dcens)
@@ -158,6 +158,7 @@ print(xtable::xtable(tmp),
       include.rownames=FALSE, 
       hline.after=c(-1, seq(0, nrow(tmp), nrow(tmp)/4)),
       file=file.path(vl.out.dir, 'tables', 'main_unaids_table.tex'))
+xtable::xtable(tmp)
 
 # Compare Prevalence of suppression among HIV+
 # ____________________________________________
