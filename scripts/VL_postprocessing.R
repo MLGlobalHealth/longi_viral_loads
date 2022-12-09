@@ -92,6 +92,7 @@ option_list <- list(
 args <-  optparse::parse_args(optparse::OptionParser(option_list = option_list))
 print(args)
 
+
 ################
 #    HELPERS   #
 ################
@@ -130,12 +131,14 @@ dall <- get.dall(path.tests)
 
 # we need to chose whether to use the smoothed version, or the actual counts (`.count`)
 dcens <- get.census.eligible()
+cat('\n* number of census eligible by round, sex and location *')
 dcens[, .(N_ELIGIBLE=sum(ELIGIBLE)), by=c('ROUND', 'SEX_LABEL', 'LOC_LABEL')] |> 
-    dcast(ROUND + SEX_LABEL ~ LOC_LABEL ) |> kable()
+    dcast(ROUND + SEX_LABEL ~ LOC_LABEL, value.var='N_ELIGIBLE' ) |> kable()
 last.round <- dcens[, max(ROUND)] 
 
 cat('--- Make UNAIDS objectives plot ---\n')
 tmp <- make.unaids.plots(DT=dcens)
+
 
 # Summarised analyes
 # __________________
