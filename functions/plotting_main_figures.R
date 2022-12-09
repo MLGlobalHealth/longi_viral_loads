@@ -10,10 +10,10 @@ get.census.eligible <- function()
 {
     # Recall that COUNT and TOTAL_COUNT do not agree with HIV_N and N in our vla.
     # but also recall I remove (very few) HIV+ without VLs.
-    tmp <- .preprocess.ds.oli(dall)
-    vla <- .preprocess.make.vla(tmp, c('N', 'HIV_N'))
+    vla <- .preprocess.ds.oli(dall)
+    vla <- .preprocess.make.vla(vla, c('N', 'HIV_N'))
 
-    .f <- function(file)
+    .load.dcens <- function(file)
     {
         dcens <- fread(file)
         setnames(dcens, c('COMM', 'AGEYRS', 'SEX'), c('LOC_LABEL', 'AGE_LABEL', 'SEX_LABEL'))
@@ -25,16 +25,12 @@ get.census.eligible <- function()
                         by=c('ROUND', 'LOC_LABEL', 'SEX_LABEL','AGE_LABEL'))
         dcens[, `:=` (SEX=NULL, AGE=NULL, LOC=NULL)]
         dcens
-
     }
-    dcens <- .f(path.census.eligible.count)
-    tmp <- .f(path.census.eligible)
-    setnames(tmp, 'ELIGIBLE', 'ELIGIBLE_SMOOTH')
-    cols <- setdiff(names(dcens), 'ELIGIBLE')
-    dcens <- merge(dcens, tmp, by=cols)
+    dcens <- .load.dcens(path.census.eligible)
+    dcens
 }
 
-plot.all.gps <- function( outdir = vl.out.dir, loc='fishing')
+plot.all.gps <- function( loc='fishing')
 {
     # rda_files <- list.files(outdir, pattern='.rda', full.names=T)
 
@@ -347,7 +343,6 @@ make.table.unaids.goals <- function(age_group_width=5)
     # Load HIV+ and suppAmongPop gps
     # ______________________________
 
-    # rda_files <- list.files(vl.out.dir, pattern='.rda', full.names=T)
     cat('Focus on last round only for this table...\n')
     dfiles <- grep(last.round,rda_files, value=TRUE)
 
@@ -652,7 +647,7 @@ make.unaids.plots <- function(DT)
           nm_reqs
 
     filename <- paste0('main_hivstatus_by_participation_loc_sex_round',max.round,'.pdf')
-    ggsave_nature(p, filename=filename, w=15, h=17)
+    ggsave_nature(p, filename=filename,LALA=file.path(vl.out.dir, 'figures') , w=15, h=17)
 
     out <- .aggregate_by_agebins(tmp, width=5)
     out <- melt(out, id.vars=c('ROUND', 'LOC_LABEL', 'SEX_LABEL', 'GROUP')) 
