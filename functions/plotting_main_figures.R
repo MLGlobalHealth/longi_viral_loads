@@ -16,7 +16,9 @@ get.census.eligible <- function()
     .load.dcens <- function(file)
     {
         dcens <- fread(file)
-        setnames(dcens, c('COMM', 'AGEYRS', 'SEX'), c('LOC_LABEL', 'AGE_LABEL', 'SEX_LABEL'))
+        setnames(dcens,
+                 c('COMM', 'AGEYRS', 'SEX'),
+                 paste0(c('LOC', 'AGE', 'SEX'), '_LABEL'))
         dcens <- dcens[ ! ROUND %like% '15']
         dcens[, ROUND := as.integer(ROUND)]
         cols <- grep('LABEL|ELIGIBLE$|ROUND', names(dcens), value=TRUE)
@@ -489,16 +491,18 @@ make.unaids.plots <- function(DT)
 
     plot.unaids.goals <- function(DT)
     {
-        dplot1 <- melt(DT, id.vars=c('ROUND', 'LOC_LABEL', 'SEX_LABEL', 'GROUP'))
-        DPLOT <- copy(dplot1)
+        #dplot1 <- melt(DT, id.vars=c('ROUND', 'LOC_LABEL', 'SEX_LABEL', 'GROUP'))
+        #DPLOT <- copy(dplot1)
 
-        DT <- dplot1[GROUP !='overall']
-        dplot1 <- dplot1[GROUP == 'overall', {
+        DT <- copy(out)
+        dplot1 <- out[GROUP == 'overall', {
                 z <- value[variable=='HIV_N']
                 list(variable=variable, 
                      value=.p(value/z)
                 )},by=c('ROUND', 'LOC_LABEL', 'SEX_LABEL', 'GROUP')] 
+        DT <- DT[GROUP !='overall']
 
+        # Make labels
         dplot1 <- dplot1[variable %like% 'POST_SUPP',] 
         .s <- function(z, y=NULL)
         {
@@ -509,35 +513,52 @@ make.unaids.plots <- function(DT)
 
         }
         dplot1[, LAB:=.s(variable, value)]
-        
-        dplot1[, LAB := paste(c('UNAIDS: 73% 86%',LAB), collapse='\n'), by=c('ROUND', 'LOC_LABEL', 'SEX_LABEL', 'GROUP')]
+        dplot1[, LAB := paste(c('UNAIDS: 73% 86%',LAB), collapse='\n'),
+               by=c('ROUND', 'LOC_LABEL', 'SEX_LABEL', 'GROUP')]
         dplot1[, `:=` (HJUST='right', VJUST='top')]
         dplot1[, `:=` (GROUP=NULL)] 
 
-        dplot[variable %like% 'POST_SUPP', variable:=.s( variable) ]
-        dplot1[variable %like% 'POST_SUPP', variable:=.s( variable) ]
+        # dplot[variable %like% 'POST_SUPP', variable:=.s( variable) ]
+        .labfill <- function(x)
+        {
+            x <- gsub('POST_SUPP_', '',,x) |> tolower()
+            fcase(x == 'homogeneous', '',
+                  x == 'half', '',
+                  x == 'zero', '')
+        }
 
         p <- ggplot(DT, aes(x=GROUP, y=value, group=1, fill=variable)) + 
-                geom_col(data=DT[ variable %like% 'homo|half|zero'], position='identity',width=1) +
-                geom_col(data=DT[ variable %like% 'UNAIDS' ], color='darkred', linetype='dashed', fill=NA, width=1, position='identity', size=1) +
-                geom_col(data=DT[ variable=='HIV_N'], color='black', fill=NA, width=1, size=1) +
-                geom_text(data=dplot1, aes(label=LAB, hjust=HJUST, vjust=VJUST), x=Inf, y=Inf ) + #, vjust=VJUST, hjust=HJUST), x=100, y=100, color='red')
-                facet_grid(LOC_LABEL ~ SEX_LABEL, scales = 'free_y', labeller=labeller(SEX_LABEL=dfacets$sex, LOC_LABEL=dfacets$comm)) +
+                geom_col(data=DT[ variable %like% 'HOMO|HALF|ZERO'],
+                         position='identity',width=1) +
+                geom_col(data=DT[ variable %like% 'UNAIDS' ],
+                         color='darkred', linetype='dashed', fill=NA, width=1,
+                         position='identity', size=1) +
+                geom_col(data=DT[ variable=='HIV_N'],
+                         color='black', fill=NA, width=1, size=1) +
+                geom_text(data=dplot1,
+                          aes(label=LAB, hjust=HJUST, vjust=VJUST),
+                          x=Inf, y=Inf ) + #, vjust=VJUST, hjust=HJUST), x=100, y=100, color='red')
+                facet_grid(LOC_LABEL ~ SEX_LABEL,
+                           scales = 'free_y',
+                           labeller=labeller(SEX_LABEL=dfacets$sex, LOC_LABEL=dfacets$comm)) +
+                # scale_fill_discrete() +
                 viridis::scale_colour_viridis(discrete=TRUE, option='A', begin=.4,end = .8) +
-                viridis::scale_fill_viridis(discrete=TRUE, option='A',begin=.4, end = .8) +
-
+                viridis::scale_fill_viridis(discrete=TRUE, option='A',begin=.4, end = .8, 
+                                            labels= c('homogeneous among census eligible',
+                                              'half-prevalence of suppression out-of-study',
+                                              'no out-of-study-suppression')) +
                 scale_y_continuous(expand=expansion(mult = c(0, .15))) +
-                theme(legend.position='bottom') +
+                theme(legend.position='bottom', legend.direction = "vertical") +
                 labs(x='Age', y='HIV positive among census eligible population',
-                     fill='Suppressed under out-of-study assumption',
+                     fill='Suppression assumptions',
                      title='Estimated suppression among HIV positive',
-                     subtitle='(Under different assumptions on non-participants)') +
-              p_reqs
+                     subtitle='(Under different assumptions on non-participants)')  +
+                nm_reqs  
 
         filename <- paste0('main_unaids_goals_N_by_sex_loc_assumptions_round',max.round,'.pdf')
-        ggsave2(p, file=filename, w=18, h=20, u='cm')
+        ggsave2(p, file=filename, LALA=file.path(vl.out.dir, 'figures'), w=18, h=20, u='cm')
 
-        return(DPLOT)
+        return(DT)
     }
 
     # Extract Census for last round and load posteriors
@@ -566,8 +587,14 @@ make.unaids.plots <- function(DT)
     dunaids <- .f(dprev, colnameN='HIV_N_M', colnameM='PREVALENCE_M')
     dunaids <- .f(dsupp_pop, colnameN='HIV_UNSUPP_M', colnameM='UNSUPP_PROP_M')
 
-    cat('Forcing posterior unsuppressed to be lower than HIV+ cases...\n')
-    dunaids[HIV_N_M < HIV_UNSUPP_M, HIV_UNSUPP_M := HIV_N_M]
+    # Consistency: there cannot be more unsuppressed than positive
+    tmp <- dunaids[HIV_N_M < HIV_UNSUPP_M, .N]
+    if(tmp > 0)
+    {
+        cat('Forcing posterior unsuppressed to be lower than HIV+ cases in',
+            tmp, 'cases ...\n')
+        dunaids[HIV_N_M < HIV_UNSUPP_M, HIV_UNSUPP_M := HIV_N_M]
+    }
 
     # Summarise HIV status among participants and non-participants
     tmp <- dunaids[, .(ROUND, LOC_LABEL, SEX_LABEL, AGE_LABEL,
@@ -575,13 +602,11 @@ make.unaids.plots <- function(DT)
     tmp[, HIV_NEG_M := N - HIV_N_M]
     tmp[, HIV_SUPP_M := HIV_N_M - HIV_UNSUPP_M]
     tmp[, HIV_N_M := NULL]
-
     # Need to go wide to long
     cols <- grep('_M$', names(tmp), value=TRUE)
     tmp <- melt(tmp,  measure.vars=cols,
                 value.name='PARTICIPATION_STATUS_IN', 
                 variable.name='VIR_STATUS')
-
     tmp[, VIR_STATUS := gsub('^HIV_|_M', '', VIR_STATUS)]
     tmp[, VIR_STATUS := ordered(VIR_STATUS, c('UNSUPP', 'SUPP', 'NEG'))]
     tmp[, PARTICIPATION_STATUS_OUT := PARTICIPATION_STATUS_IN*(ELIGIBLE-N)/N]
@@ -593,13 +618,18 @@ make.unaids.plots <- function(DT)
          value.name='count',
          variable.name='PARTICIPATION_STATUS')
 
-    tmp[, PARTICIPATION_STATUS := gsub('PARTICIPATION_STATUS_', '', PARTICIPATION_STATUS)]
-    setkeyv(tmp, c('ROUND', 'LOC_LABEL', 'SEX_LABEL', 'AGE_LABEL', 'PARTICIPATION_STATUS', 'VIR_STATUS' ))
-    tmp[, cumcount:=cumsum(count), by=c('ROUND', 'LOC_LABEL', 'SEX_LABEL', 'AGE_LABEL')]
-    tmp[, PARTICIPATION_STATUS := ordered(PARTICIPATION_STATUS, c('OUT', 'IN'))]
+    # prepare for plots 
+    by_cols <- c('ROUND', 'LOC_LABEL', 'SEX_LABEL', 'AGE_LABEL')
+    tmp[, PARTICIPATION_STATUS := gsub('PARTICIPATION_STATUS_',
+                                       '', PARTICIPATION_STATUS)]
+    setkeyv(tmp, c(by_cols, 'PARTICIPATION_STATUS', 'VIR_STATUS' ))
+
+    dplot <- copy(tmp)
+    dplot[, cumcount:=cumsum(count), by=by_cols]
+    # dplot[, PARTICIPATION_STATUS := ordered(PARTICIPATION_STATUS, c('OUT', 'IN'))]
 
     # ggplot label for participation rate:
-    tmp1 <- tmp[, .(LAB=paste0('Part. rate:  \n', .p(sum(N)/sum(ELIGIBLE))),
+    dlab <- dplot[, .(LAB=paste0('Part. rate:  \n', .p(sum(N)/sum(ELIGIBLE))),
                     VJUST='top', 
                     HJUST='right'
                     ), by=c('ROUND', 'SEX_LABEL', 'LOC_LABEL')]
@@ -616,17 +646,17 @@ make.unaids.plots <- function(DT)
     
     .rl2 <- function(x)
     {
-        lvls <- c('in-study', 'out-of-study')
+        lvls <- c('out-of-study', 'in-study')
         out <- fcase(x %like% 'IN', 'in-study',
               x %like% 'OUT', 'out-of-study')
         out <- ordered(out, levels=lvls)
     }
     
-    p <- ggplot(tmp[ROUND==max.round], aes(x=AGE_LABEL)) +
+    p <- ggplot(dplot[ROUND==max.round], aes(x=AGE_LABEL)) +
             geom_col(aes(y=count, alpha=.rl2(PARTICIPATION_STATUS), fill=.rl1(VIR_STATUS)), colour='grey') +
             geom_step(aes(y=N, x=AGE_LABEL - .5), position='dodge', alpha=.6, linetype='dashed') + 
             geom_step(aes(y=ELIGIBLE, x=AGE_LABEL - .5), position='dodge', alpha=.6) + 
-            geom_text(data=tmp1, aes(label=LAB, vjust=VJUST, hjust=HJUST), x=Inf, y=Inf)+
+            geom_text(data=dlab, aes(label=LAB, vjust=VJUST, hjust=HJUST), x=Inf, y=Inf)+
             facet_grid(LOC_LABEL ~ SEX_LABEL, scales = 'free_y', labeller=labeller(SEX_LABEL=dfacets$sex, LOC_LABEL=dfacets$comm)) +
             scale_y_continuous(expand=expansion(mult=c(0,.05))) +
             scale_x_continuous(expand=c(0,0)) +
@@ -645,11 +675,10 @@ make.unaids.plots <- function(DT)
                  title='Participants among Census Eligibles Population',
                  subtitle='(assuming homogeneous population)') +
           nm_reqs
-
     filename <- paste0('main_hivstatus_by_participation_loc_sex_round',max.round,'.pdf')
     ggsave_nature(p, filename=filename,LALA=file.path(vl.out.dir, 'figures') , w=15, h=17)
 
-    out <- .aggregate_by_agebins(tmp, width=5)
+    out <- .aggregate_by_agebins(dplot, width=5)
     out <- melt(out, id.vars=c('ROUND', 'LOC_LABEL', 'SEX_LABEL', 'GROUP')) 
 
     if(make_paper_numbers)
@@ -705,4 +734,7 @@ make.unaids.plots <- function(DT)
 
         ppr_numbers
     }
+
+    plot.unaids.goals(out)
+    out
 }

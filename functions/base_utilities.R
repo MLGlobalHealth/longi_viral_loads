@@ -35,7 +35,8 @@ naturemed_reqs <- function()
     # call this before doing your plots
     nm_reqs <<- theme(axis.text = element_text(size=5, family='sans'),
                       text=element_text(size=7,family='sans'),
-                      legend.text=element_text(size=7, family='sans'))
+                      legend.text=element_text(size=7, family='sans'),
+                      strip.background = element_rect(colour="white", fill="white"))
 }
 
 ggarrange_nature <- function(

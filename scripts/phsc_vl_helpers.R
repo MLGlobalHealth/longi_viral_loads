@@ -1,4 +1,4 @@
-get.dall <- function(path)
+get.dall <- function(path, make_flowchart=TRUE)
 {
     # Load data: exclude round 20 as incomplete
     dall <- fread(path)
@@ -19,11 +19,11 @@ get.dall <- function(path)
              c('VL_COPIES', 'FC') )
     dall[, HIV_AND_VL := ifelse( HIV_STATUS == 1 & !is.na(VL_COPIES), 1, 0)]
 
-
+    # remove individuals without sex reported
     dall <- dall[! SEX=='']
 
     # make study flowchart if packages are installed 
-    if('DiagrammeR' %in% installed.packages())
+    if('DiagrammeR' %in% installed.packages() & make_flowchart)
         make.study.flowchart(dall)
 
     return(dall)
@@ -153,6 +153,13 @@ get.glm.data <- function(DT)
     # setkey(vlc, SEX, PHIV_MEAN)
     vlc[, SEX := factor(SEX, levels=c('M', 'F'), labels=c('men', 'women'))]
     vlc <- merge(vlc, dcomm[, .(COMM_NUM, FC2=TYPE) ] , by='COMM_NUM', all.x=TRUE)
+
+    # additional columns
+    comm_lvls <- vlc[, sort(unique(COMM_NUM)), by='FC2'][, V1, ]
+    vlc[, SEX_LABEL := fifelse(SEX == 'women', yes='F', no='M')]
+    vlc[, AGEGROUP := cut(AGEYRS, breaks=c(15, 24.01, 25, 34.01, 35, 50.01)-.01 ) ]
+    .gs <- function(x) { y <- gsub(']|\\(', ' ', x);gsub(',', '_', y) }
+    vlc[, AGEGROUP := .gs(AGEGROUP)]
     vlc
 }
 
@@ -481,7 +488,7 @@ vl.vlprops.by.comm.gender.loc<- function(DT, write.csv=FALSE)
 
 
     filename <- file.path('220729_hivnotsuppofhiv_vs_hivprev_by_round_gender_fishinland.pdf')
-    ggsave2(p_inf, file=filename, w=9, h=12)
+    ggsave2(p_inf, file=filename, LALA=glm.out.dir, w=9, h=12)
 
 
     p_pop <- ggplot(vlc) +
@@ -500,12 +507,12 @@ vl.vlprops.by.comm.gender.loc<- function(DT, write.csv=FALSE)
              colour='community type')
 
     filename <- file.path('220729_hivnotsuppofpop_vs_hivprev_by_round_gender_fishinland.pdf')
-    ggsave2(p_pop, file=filename, w=9, h=12)
+    ggsave2(p_pop, file=filename,LALA=glm.out.dir, w=9, h=12)
 
     if(write.csv)
     {
         #	write results to file
-        filename <- file.path(vl.out.dir,
+        filename <- file.path(glm.out.dir,
                               '220729_hivnotsuppofhiv_vs_hivprev_by_round_gender_fishinland.csv')
         fwrite(vlc, file=filename)
     }
