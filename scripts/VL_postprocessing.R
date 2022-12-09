@@ -34,8 +34,8 @@ path.tests <- file.path(indir.deepsequence.data,
                         'RCCS_R15_R20',
                         "all_participants_hivstatus_vl_220729.csv")
 
-path.census.eligible <- file.path(indir.deepsequence.data, 'RCCS_R15_R18/RCCS_census_eligible_individuals_220807.csv')
-path.census.eligible.count <- file.path(indir.deepsequence.data, 'RCCS_R15_R18/RCCS_census_eligible_count_220719.csv')
+path.census.eligible <- file.path(git.repository, 'data/RCCS_census_eligible_individuals_221209.csv')
+# path.census.eligible.count <- file.path(indir.deepsequence.data, 'RCCS_R15_R18/RCCS_census_eligible_count_220719.csv')
 
 file.exists(
         path.stan,
@@ -130,7 +130,8 @@ dall <- get.dall(path.tests)
 
 # we need to chose whether to use the smoothed version, or the actual counts (`.count`)
 dcens <- get.census.eligible()
-dcens[, .(N_ELIGIBLE=sum(ELIGIBLE)), by=c('ROUND', 'SEX_LABEL')] |> kable()
+dcens[, .(N_ELIGIBLE=sum(ELIGIBLE)), by=c('ROUND', 'SEX_LABEL', 'LOC_LABEL')] |> 
+    dcast(ROUND + SEX_LABEL ~ LOC_LABEL ) |> kable()
 last.round <- dcens[, max(ROUND)] 
 
 cat('--- Make UNAIDS objectives plot ---\n')

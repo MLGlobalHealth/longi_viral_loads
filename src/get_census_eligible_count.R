@@ -174,9 +174,10 @@ p
 ncen[, ELIGIBLE_SMOOTH := ELIGIBLE_SMOOTH.50]
 ncen <- select(ncen, -c('ELIGIBLE_SMOOTH.25', 'ELIGIBLE_SMOOTH.50', 'ELIGIBLE_SMOOTH.75'))
 
-ncen[, ELIGIBLE_NOT_SMOOTH := ELIGIBLE]
-ncen[, ELIGIBLE := ELIGIBLE_SMOOTH]
-ncen <- select(ncen, -'ELIGIBLE_SMOOTH')
+# ncen[, ELIGIBLE_NOT_SMOOTH := ELIGIBLE]
+# ncen[, ELIGIBLE := ELIGIBLE_SMOOTH]
+# ncen <- select(ncen, -'ELIGIBLE_SMOOTH')
+ncen
 
 # save
 filename <- file.path(indir.repository, 'data', 'RCCS_census_eligible_individuals_221209.csv')
