@@ -115,7 +115,7 @@ option_list <- list(
     optparse::make_option(
         "--outdir",
         type = "character",
-        default = '~/OneDrive/2022/longvl/220729_oli',
+        default = '~/OneDrive/2022/longvl/',
         help = "Path to output directory where to store results [Defaults to my directory]", 
         dest = 'out.dir.prefix'
     ),
@@ -173,7 +173,7 @@ if(usr=='andrea')
 dir.create(vl.out.dir, showWarnings = FALSE)
 
 # get data
-dall <- get.dall(path.tests)
+dall <- get.dall(path.tests, make_flowchart=FALSE)
 
 if(0) 
 {   # Info for introduction to results
@@ -256,12 +256,17 @@ if(args$run.comm.analysis)
     library(bayesplot)
     library(bayestestR)
     library(lme4)
+
+    # create output directory
+    glm.out.dir <- file.path(vl.out.dir, 'glm')
+
+    # helper fs
+    inverse.logit <- function(x){ exp(x)/(exp(x) + 1)}
+
     # tmp$p for plot and tmp$DT for 'vlc' datatable
     tmp <- vl.vlprops.by.comm.gender.loc(dall, write.csv=FALSE)
-    tmp$DT
-    tmp$p_among_pop + tmp$p_among_inf
-
     vlc <- copy(tmp$DT)
+
     p <- ggplot(vlc, aes(x=ROUND)) +
         # scale_x_continuous(labels=scales:::percent) +
         scale_y_continuous(labels=scales:::percent) +
@@ -278,7 +283,7 @@ if(args$run.comm.analysis)
              colour='location')
 
     filename <- file.path('220729_longitudinal_PVLNSofHIV_by_comm_sex.pdf')
-    ggsave2(p, file=filename, w=9, h=12)
+    ggsave2(p, file=filename, LALA=glm.out.dir,  w=9, h=12)
 
     if(0)
     {
@@ -290,18 +295,64 @@ if(args$run.comm.analysis)
     # What kind of GLM to use? 
     # Well we can start with a binomial right? 
 
-    inverse.logit <- function(x){ exp(x)/(exp(x) + 1)}
     dglm <- get.glm.data(dall)
     dglm[, ROUND := as.factor(ROUND)]
 
-    #cols <- c("COMM_NUM","ROUND","SEX", "FC","N","PHIV_MEAN","PHIV_CL","PHIV_CU","PVLNS_MEAN",
-    #          "PVLNS_CL","PVLNS_CU","PVLNSofHIV_MEAN","PVLNSofHIV_CL","PVLNSofHIV_CU","FC2")
-    #dglm <- subset(tmp$DT,select=cols)
-    #.f <- as.integer
-    #dglm[, `:=` (N_HIV=.f(N*PHIV_MEAN), N_HIV_NOTSUP=.f(N*PHIV_MEAN*PVLNSofHIV_MEAN))]
+    # Get agresti-coull intervals
+    cols <- c('HIV_N', 'VLNS_N', 'N')
+    by_cols <- c('FC2', 'COMM_NUM', 'AGEGROUP','SEX_LABEL', 'ROUND')
+    # by_cols <- c('FC2', 'COMM_NUM', 'SEX_LABEL', 'ROUND')
+    dglm[, lapply(.SD, sum),
+         .SDcols=cols,
+         by=by_cols][,
+         Hmisc::binconf(n=HIV_N+4, x=VLNS_N+1, method='wilson', return.df=TRUE),
+         by=by_cols]  -> tmp
 
-    str(dglm)
-    comm_lvls <- dglm[, sort(unique(COMM_NUM)), by='FC2'][, V1, ]
+    tmp |> ggplot(aes(x=ROUND, y=logit(PointEst), color=FC2, linetype=FC2)) + 
+        geom_line(aes(group=COMM_NUM)) + 
+        facet_grid(AGEGROUP ~ SEX_LABEL ) +
+        labs(x='Round',
+             y='Logit suppression',
+             title='Community-level suppression trajectories',
+             subtitle='(Agresti-coull intervals adding 1 VLNS of 4 HIV_pos)') -> p1
+        p1
+    filename <- 'edaglm_logitprev_vs_round_by_agesexcomm.png'
+    ggsave2(p1, file=filename, LALA=glm.out.dir, w=9, h=8)
+
+    tmp[, {
+        z19 <- which(ROUND == '19')
+        z16 <- which(ROUND == '16')
+        list(Delta=PointEst[z19] - PointEst[z16])
+    }, by=c('FC2', 'COMM_NUM', 'AGEGROUP', 'SEX_LABEL')][, 
+        median(Delta)
+    , by=c('FC2', 'SEX_LABEL')] |> dcast(FC2 ~ SEX_LABEL)
+
+    tmp |> ggplot(aes(x=as.factor(COMM_NUM),y=PointEst, color=as.factor(ROUND))) + 
+        geom_point() + 
+        facet_grid(SEX_LABEL ~ .) +
+        theme(axis.text.x = element_text(angle = 90)) +
+        labs(x='Community Label', y='Proportion of suppressed among study participants', color='Round')
+
+    # check that the inverse.logit difference across round is similar,
+    # and does not linearly depend on R16's 
+    tmp[ ROUND %in% c(16, 18), ][,
+        ROUND := paste0('R', ROUND)][,
+        PointEst := inverse.logit(PointEst)
+        ] |>
+        dcast(FC2 + COMM_NUM + SEX_LABEL + AGEGROUP ~ ROUND, value.var = 'PointEst') -> tmp1
+    tmp1[, `:=`(
+        median16=median(R16),
+        median18=median(R18)
+        ),by=c('SEX_LABEL', 'AGEGROUP')] 
+    tmp1 |>  ggplot(aes(y=inverse.logit(`R16`) - inverse.logit(`R18`), 
+                        x=as.factor(COMM_NUM), color=FC2 )) + 
+            geom_point() + 
+            #geom_vline(aes(xintercept=median16, linetype=SEX_LABEL)) + 
+            #geom_hline(aes(yintercept=median18, linetype=SEX_LABEL)) + 
+            facet_grid(SEX_LABEL ~ AGEGROUP) +
+            #lims(x=c(0,1), y=c(0,1))
+            theme(axis.text.x = element_text(angle = 90)) 
+
 
     # glm_no_random_effects(PVLNSofHIV_MEAN ~ FC:ROUND)
     # glm_no_random_effects(PVLNSofHIV_MEAN ~ FC:ROUND:SEX)
@@ -309,88 +360,168 @@ if(args$run.comm.analysis)
     # glm_random_effects(PVLNSofHIV_MEAN ~ FC:ROUND + SEX + (1|COMM_NUM) ) |> AIC()
     # glm_random_effects(PVLNSofHIV_MEAN ~ FC:SEX + ROUND + (1|COMM_NUM) ) |> AIC()
 
-    prior.pars <- list( intercept.mean=logit(dglm[, sum(N_HIV_NOTSUP)/sum(N_HIV)]) )
-    
-    dglm[, ROUND_IDX := ROUND - min(ROUND + 1)]
+
+    prior.pars <- list( intercept.mean= dglm[, logit(sum(VLNS_N)/ sum(HIV_N))])
+    # dglm[, ROUND_IDX := ROUND - min(ROUND + 1)]
+
     # What's the best way to set priors and hyperprios? Maybe look at 8 schools examples.
     # Also: http://mc-stan.org/rstanarm/articles/glmer.html
     names(dglm)
     options(mc.cores=parallel::detectCores())
+
+
+    dglm[, ROUNDi := as.integer(ROUND) - 1 ]
+    dglm
+
+    # FIT AND SAVE MODELS
+
+    # GLM on slopes
+    glm_slopes <- stan_glm(data=dglm,
+                          formula=VLNS_N/HIV_N ~  ROUNDi*(AGEGROUP+SEX+FC), 
+                          weights=HIV_N,
+                          # prior_intercept = student_t(df = 7, prior.pars$intercept.mean, 5),
+                          prior_intercept = normal( prior.pars$intercept.mean, 5),
+                          family=binomial(link='logit'))
+    filename <- file.path(glm.out.dir, 'supppofpart_slopes_fit.rds')
+    saveRDS(glm_slopes, filename)
+
+    # GLM anova like, without random effects
+    glm_anova <- stan_glm(data=dglm,
+                          formula=VLNS_N/HIV_N ~  ROUND*AGEGROUP*SEX*FC, 
+                          weights=HIV_N,
+                          # prior_intercept = student_t(df = 7, prior.pars$intercept.mean, 5),
+                          prior_intercept = normal( prior.pars$intercept.mean, 5),
+                          family=binomial(link='logit'))
+    filename <- file.path(vl.out.dir, 'supppofpart_anova_fit.rds')
+    saveRDS(glm_reffs, filename)
+
+
+    # without random effects (base)
+    # Currently, the reference levels are Fishing, Females in age group 15-24
+    # problem is that this model does not allow for different rates of change in FC
+    glm_base <- stan_glm(data=dglm,
+                         formula=VLNS_N/HIV_N ~  ROUND*AGESEX*FC, 
+                         weights=HIV_N,
+                         # prior_intercept = student_t(df = 7, prior.pars$intercept.mean, 5),
+                         prior_intercept = normal( prior.pars$intercept.mean, 5),
+                         family=binomial(link='logit'))
+    filename <- file.path(vl.out.dir, 'supppofpart_base_fit.rds')
+    saveRDS(glm_reffs, filename)
+
+    summary(glm_base)
+
+    # with random effects by community
     glm_reffs <- stan_glmer(data=dglm,
-                            formula=VLNS_N/HIV_N ~ FC:ROUND + SEX + (1|COMM_NUM) + AGEYRS,
+                            formula=VLNS_N/HIV_N ~ FC + ROUND:AGESEX  + (1|COMM_NUM), 
                             weights=HIV_N,
                             # prior_intercept = student_t(df = 7, prior.pars$intercept.mean, 5),
                             prior_intercept = normal( prior.pars$intercept.mean, 5),
                             family=binomial(link='logit'))
-    # save fit:
     filename <- file.path(vl.out.dir, 'supppofpart_glmer_fit.rds')
     saveRDS(glm_reffs, filename)
 
-    # get sample size
-    tmp <- as.data.frame(summary(glm_reffs)) |> as.data.table(keep.rownames = TRUE)
+
+    # model from the 5th december
+    glm_5dec <- stan_glmer(data=dglm,
+                            formula=VLNS_N/HIV_N ~ SEX_LABEL + AGEGROUP + (1|ROUND:FC)  + (1|COMM_NUM), 
+                            weights=HIV_N,
+                            # prior_intercept = student_t(df = 7, prior.pars$intercept.mean, 5),
+                            prior_intercept = normal( prior.pars$intercept.mean, 5),
+                            family=binomial(link='logit'))
+
+
+    # 
+    # ANALYSE
+    #
+
+
+    glm_model_choice <- copy(glm_5dec)
+
+    # get effective sample size
+    tmp <- as.data.frame(summary(glm_model_choice)) |> as.data.table(keep.rownames = TRUE)
     tmp <- tmp[! rn %in% 'log-posterior', {z1 <- which.min(n_eff); z2 <- which.max(Rhat); list(n=n_eff[z1], pn=rn[z1], R=Rhat[z2], pR=rn[z2])}]
     cat('Minimum effective sample size:',tmp$n, 'for parameter', tmp$pn, '\n')
     cat('Maximum Rhat:',tmp$R, 'for parameter', tmp$pR, '\n')
 
-    help('prior_summary.stanreg')
-    prior_summary(glm_reffs)
+    # help('prior_summary.stanreg')
+    prior_summary(glm_model_choice)
 
     # get a feel
-    # launch_shinystan(glm_reffs)
-    mcmc_intervals(glm_reffs)
+    launch_shinystan(glm_model_choice)
+    mcmc_intervals(glm_model_choice)
+
+    summary(glm_model_choice)
+
+    # lala
+    glm_model_choice$ses
+    
+    .f <- function(vec) data.table(NAME=names(vec), VALUE=vec)
+    .f(se(glm_reffs)) |> ggplot(aes(x=NAME, y=VALUE)) + geom_point() + coord_flip()
 
     # COMM_NUM random effects sorted by median. Can I color by comm type 
-    tmp <- glm_reffs %>%
-        spread_draws(b[term,group], `(Intercept)`) %>%
-        tidyr::separate(group, c('RAND_EFF', 'COMM_NUM'), ':')
-    setDT(tmp)
-    tmp <- tmp[, {z <- quantile(b, probs=c(.025, .5, .975)); list(CL=z[1], M=z[2], CU=z[3]) }, by='COMM_NUM' ]
-    setorder(tmp, 'M')
-    performers_bad <- tmp[CU < 0]
-    performers_good <- tmp[CL > 0]
-    nms <- tmp[, COMM_NUM]
-    nms <- paste0('b[(Intercept) COMM_NUM:',nms,']')
+    if(0)
+    {
+        library(modelsummary)
 
-    p_tmp <- mcmc_intervals(x=glm_reffs, pars=nms) 
-    .gs <- function(x) as.integer(gsub('[A-z]|\\)|\\(|:','',x))
-    lvls <- .gs(p_tmp$data$parameter)
-    p_tmp$data$COMM_NUM <- lvls
-    tmp <- unique(dglm[, .(COMM_NUM, FC2),])
-    p_tmp$data <- merge(p_tmp$data, tmp)
+        tmp <- glm_model_choice %>%
+            spread_draws(b[term,group], `(Intercept)`) %>%
+            tidyr::separate(group, c('RAND_EFF', 'COMM_NUM'), ':')
+        setDT(tmp)
+        tmp <- tmp[COMM_NUM != 'FC' , {
+            z <- quantile(b, probs=c(.025, .5, .975));
+            list(CL=z[1], M=z[2], CU=z[3])
+        }, by='COMM_NUM' ]
 
-    p_ranges <- ggplot(p_tmp$data,
-                       aes(x=m, y=ordered(COMM_NUM, levels=lvls), xmin=ll, xmax=hh, col=FC2)) +
-            geom_vline(aes(xintercept=0), linetype='dotted', color='red')+
-            geom_point(size=1.5) +
-            geom_errorbarh(height=0, size=0.5) +
-            geom_errorbarh(aes(xmin=l, xmax=h), height=0, size=1) + 
-            scale_color_manual(values=palettes$comm2) +
-            labs(x='Posterior', y='Community level random effects', color='Community type') 
-    p_ranges
+        setorder(tmp, 'M')
+        performers_bad <- tmp[CU < 0]
+        performers_good <- tmp[CL > 0]
+        nms <- tmp[, COMM_NUM]
+        nms <- paste0('b[(Intercept) COMM_NUM:',nms,']')
 
-    filename <- file.path( 'comm_stanglm_diagnostics_comm_random_effects.png')
-    ggsave2(p_ranges, file=filename, w=9, h=12)
+        p_tmp <- mcmc_intervals(x=glm_model_choice, pars=nms) 
+        .gs <- function(x) as.integer(gsub('[A-z]|\\)|\\(|:','',x))
+        lvls <- .gs(p_tmp$data$parameter)
+        p_tmp$data$COMM_NUM <- lvls
+        tmp <- unique(dglm[, .(COMM_NUM, FC2),])
+        p_tmp$data <- merge(p_tmp$data, tmp)
 
+        p_ranges <- ggplot(p_tmp$data,
+                           aes(x=m, y=ordered(COMM_NUM, levels=lvls), xmin=ll, xmax=hh, col=FC2)) +
+                geom_vline(aes(xintercept=0), linetype='dotted', color='red')+
+                geom_point(size=1.5) +
+                geom_errorbarh(height=0, size=0.5) +
+                geom_errorbarh(aes(xmin=l, xmax=h), height=0, size=1) + 
+                scale_color_manual(values=palettes$comm2) +
+                labs(x='Posterior', y='Community level random effects', color='Community type') 
+        p_ranges
+
+        filename <- file.path( 'comm_stanglm_diagnostics_comm_random_effects.png')
+        ggsave2(p_ranges, file=filename, w=9, h=12)
+    }
 
     # POSTERIOR PREDICTIVE CHECKS
     # https://mc-stan.org/rstanarm/reference/plot.stanreg.html
     bayesplot::available_ppc()
-    p_check <- pp_check(glm_reffs)
+    p_check <- pp_check(glm_model_choice)
     filename <- file.path('comm_stanglm_diagnostics_ppcheck_density.png')
     ggsave2(p_check, file=filename, w=9, h=8)
 
-    pp_check(glm_reffs, plotfun = "boxplot", nreps = 10, notch = FALSE)
-    pp_check(glm_reffs, plotfun = "scatter_avg") # y vs. average yrep
-    pp_check(glm_reffs, plotfun = "hist", nreps=3) # y vs. average yrep
+    pp_check(glm_model_choice, plotfun = "boxplot", nreps = 10, notch = FALSE)
+    pp_check(glm_model_choice, plotfun = "scatter_avg") # y vs. average yrep
+    pp_check(glm_model_choice, plotfun = "hist", nreps=3) # y vs. average yrep
 
     # Posterior vs prior
-    p <- posterior_vs_prior( glm_reffs) +
+    p <- posterior_vs_prior( glm_model_choice) +
         guides(color=FALSE) + theme(axis.text.x = element_text(angle = 90))
     filename <- file.path( 'comm_stanglm_diagnostics_postvsprior.png')
     ggsave2(p, file=filename, w=9, h=6)
 
     # Statistical 'significance': probability of direction
-    p_direction(glm_reffs)
+    p_direction(glm_model_choice)
+    library('sjPlot')
+    sjPlot::tab_model(glm_model_choice)
+
+    tmp <- modelsummary(glm_model_choice, statistic='mad', output='markdown')
 
 }
 
