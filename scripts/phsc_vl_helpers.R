@@ -163,6 +163,56 @@ get.glm.data <- function(DT)
     vlc
 }
 
+fit.glm.model <- function(formula, suffix, .outdir=vl.out.dir )
+{
+    # Loads or runs a stan model.
+
+    stopifnot(is.character(suffix))
+    filename <- file.path(.outdir, suffix )
+
+    FileExists <- file.exists(filename)
+    HasRandomEffects <- length(lme4::findbars(formula))>0
+    NamesFormula <- unique(all.names(formula))
+    NamesFormula <- NamesFormula[NamesFormula %like% '[A-z]']
+    NamesFormulaExist <- all(NamesFormula %in% names(dglm))
+
+    if( FileExists  )
+    {
+
+        cat('Loading fit...\n')
+        fit <- readRDS(filename)
+
+    }else if( NamesFormulaExist & HasRandomEffects ){
+
+        fit <- stan_glmer(
+            data=dglm,
+            formula=formula,
+            weights=HIV_N,
+            prior_intercept = normal( prior.pars$intercept.mean, 5),
+            family=binomial(link='logit'))
+        saveRDS(fit, filename)
+
+
+    }else if( NamesFormulaExist & ! HasRandomEffects ){
+
+        fit <- stan_glm(
+            data=dglm,
+            formula=formula,
+            weights=HIV_N,
+            prior_intercept = normal( prior.pars$intercept.mean, 5),
+            family=binomial(link='logit'))
+        saveRDS(fit, filename)
+
+    }else{
+
+        stop('Model not found, and could not be run due to missing columns.\n')
+
+    }
+
+    return(fit)
+
+}
+
 .get.prior.ranges <- function(stan.data, DT, shape, scale)
 {
     # Extracts alpha and rho from stan.data
@@ -408,34 +458,34 @@ date2numeric <- function( x )
 
 vl.get.eligible.round17<- function()
 {
-	require(data.table)
-	
-	infile					<- "~/Dropbox (SPH Imperial College)/Rakai Pangea Meta Data/Data for Fish Analysis Working Group/rakai_elibility.rda"
-	outfile.base			<- "~/Dropbox (SPH Imperial College)/Rakai Fish Analysis/full_run/"
-	load(infile)
-	
-	#	subset to data of interest
-	de	<- as.data.table(eldat)	
-	de	<- subset(de, status%in%c('_Participated','Away','Blood refusal','Missing data','Other','Refused','urine sample'))
-	de	<- subset(de, visit==17)
-	
+    require(data.table)
+    
+    infile <- "~/Dropbox (SPH Imperial College)/Rakai Pangea Meta Data/Data for Fish Analysis Working Group/rakai_elibility.rda"
+    outfile.base <- "~/Dropbox (SPH Imperial College)/Rakai Fish Analysis/full_run/"
+    load(infile)
+    
+    # subset to data of interest
+    de <- as.data.table(eldat)
+    de <- subset(de, status%in%c('_Participated','Away','Blood refusal','Missing data','Other','Refused','urine sample'))
+    de <- subset(de, visit==17)
+
 }
 
 vl.vlprops.by.comm.gender.loc<- function(DT, write.csv=FALSE)
 {
     # DT <- copy(dall)
     DT <- .preprocess.ds.oli(DT)
-	# merge two communities that fully overlap, so we have 40 communities in the end 
+    # merge two communities that fully overlap, so we have 40 communities in the end 
     DT[ COMM_NUM==22, COMM_NUM:=1 ]
 
     # get.community types
     dcomm <- .get.dcomm()
 
-	# calculate HIV prevalence and proportion not suppressed of HIV+ by community and gender
+    # calculate HIV prevalence and proportion not suppressed of HIV+ by community and gender
     .f <- function(x,y)
         as.vector( unname ( binconf(sum(x), length(y) )  ) )
 
-	vlc <- DT[, {
+    vlc <- DT[, {
         z  <- .f( HIV_STATUS == 1, HIV_STATUS)
         z2 <- .f( VLNS == 1, VLNS )
         z3 <- .f( VLNS == 1, which(HIV_STATUS == 1) )
@@ -443,14 +493,14 @@ vl.vlprops.by.comm.gender.loc<- function(DT, write.csv=FALSE)
              N= length(HIV_STATUS),
              PHIV_MEAN= z[1],
              PHIV_CL= z[2],
-             PHIV_CU= z[3],				 
+             PHIV_CU= z[3],
              PVLNS_MEAN= z2[1],
              PVLNS_CL= z2[2],
              PVLNS_CU= z2[3],
              PVLNSofHIV_MEAN= z3[1],
              PVLNSofHIV_CL= z3[2],
-             PVLNSofHIV_CU= z3[3],				 
-             VLC_MEAN= mean(VLC))		
+             PVLNSofHIV_CU= z3[3],
+             VLC_MEAN= mean(VLC))
     }, by=c('ROUND', 'COMM_NUM','SEX')]
 
     .f <- function(m, l, u)
@@ -511,7 +561,7 @@ vl.vlprops.by.comm.gender.loc<- function(DT, write.csv=FALSE)
 
     if(write.csv)
     {
-        #	write results to file
+        # write results to file
         filename <- file.path(glm.out.dir,
                               '220729_hivnotsuppofhiv_vs_hivprev_by_round_gender_fishinland.csv')
         fwrite(vlc, file=filename)

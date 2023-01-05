@@ -7,10 +7,11 @@
 # DEPENDENCIES #
 ################
 
-library(data.table) 
-library(ggplot2)
-library(Hmisc)
-library(rstan)
+library('data.table') 
+library('ggplot2')
+library('Hmisc')
+library('rstan')
+library('optparse')
 # For parallelisation across cores:
 # library(foreach)
 # library(doParallel)
@@ -56,70 +57,70 @@ file.exists(
 ################
 
 option_list <- list(
-    optparse::make_option(
+    make_option(
         "--refit",
         type = "logical",
         default = FALSE,
         help = "Flag on whether to re-run the stan models even if already exist [Defaults to FALSE]", 
         dest = 'refit'
     ),
-    optparse::make_option(
+    make_option(
         "--run-gp-prevl",
         type = "logical",
         default = FALSE,
         help = "Flag on whether to run the Stan model for prevalence [Defaults to FALSE] ",
         dest = 'run.gp.prevl'
     ),
-    optparse::make_option(
+    make_option(
         "--run-icar-mean-vl",
         type = "logical",
         default = FALSE,
         help = "Flag on whether to run the Stan model for population level viral loads [Defaults to FALSE] ",
         dest = 'run.icar.mean.vl'
     ),
-    optparse::make_option(
+    make_option(
         "--run-gp-supp-hiv",
         type = "logical",
         default = FALSE,
         help = "Flag on whether to run the Stan model for suppression among HIV positive [Defaults to FALSE] ",
         dest = 'run.gp.supp.hiv'
     ),
-    optparse::make_option(
+    make_option(
         "--run-gp-supp-pop",
         type = "logical",
         default = FALSE,
         help = "Flag on whether to run the Stan model for suppression among population [Defaults to FALSE] ",
         dest = 'run.gp.supp.pop'
     ),
-    optparse::make_option(
+    make_option(
         "--run-comm-analysis",
         type = "logical",
-        default = FALSE,
+        default = TRUE,
         help = "Flag on whether to run the Stan GLM model for community-level suppression [Defaults to FALSE] ",
         dest = 'run.comm.analysis'
     ),
-    optparse::make_option(
+    make_option(
         "--viremic-viral-load",
         type = "numeric",
         default = 1000,
         help = "Duration of acute phase, in years [Defaults to 2 months]", 
         dest = 'viremic.viral.load'
     ),
-    optparse::make_option(
+    make_option(
         "--vl-detectable",
         type = "numeric",
         default = 150,
         help = "Duration of acute phase, in years [Defaults to 2 months]", 
         dest = 'viremic.viral.load'
     ),
-    optparse::make_option(
+    make_option(
         "--outdir",
         type = "character",
         default = '~/OneDrive/2022/longvl/',
         help = "Path to output directory where to store results [Defaults to my directory]", 
         dest = 'out.dir.prefix'
     ),
-    optparse::make_option(
+    make_option(
         "--round",
         type = "numeric",
         default = c(16,17,18,19),
@@ -128,7 +129,7 @@ option_list <- list(
     )
 )
 
-args <-  optparse::parse_args(optparse::OptionParser(option_list = option_list))
+args <-  parse_args(OptionParser(option_list = option_list))
 print(args)
 
 ################
@@ -256,6 +257,7 @@ if(args$run.comm.analysis)
     library(bayesplot)
     library(bayestestR)
     library(lme4)
+    library(modelsummary)
 
     # create output directory
     glm.out.dir <- file.path(vl.out.dir, 'glm')
@@ -281,7 +283,6 @@ if(args$run.comm.analysis)
         labs(x='Survey Round', 
              y='proportion unsuppressed HIV among infected\n', 
              colour='location')
-
     filename <- file.path('220729_longitudinal_PVLNSofHIV_by_comm_sex.pdf')
     ggsave2(p, file=filename, LALA=glm.out.dir,  w=9, h=12)
 
@@ -297,6 +298,7 @@ if(args$run.comm.analysis)
 
     dglm <- get.glm.data(dall)
     dglm[, ROUND := as.factor(ROUND)]
+    dglm[, ROUNDi := as.integer(ROUND) - 1 ]
 
     # Get agresti-coull intervals
     cols <- c('HIV_N', 'VLNS_N', 'N')
@@ -315,7 +317,6 @@ if(args$run.comm.analysis)
              y='Logit suppression',
              title='Community-level suppression trajectories',
              subtitle='(Agresti-coull intervals adding 1 VLNS of 4 HIV_pos)') -> p1
-        p1
     filename <- 'edaglm_logitprev_vs_round_by_agesexcomm.png'
     ggsave2(p1, file=filename, LALA=glm.out.dir, w=9, h=8)
 
@@ -333,107 +334,86 @@ if(args$run.comm.analysis)
         theme(axis.text.x = element_text(angle = 90)) +
         labs(x='Community Label', y='Proportion of suppressed among study participants', color='Round')
 
-    # check that the inverse.logit difference across round is similar,
-    # and does not linearly depend on R16's 
-    tmp[ ROUND %in% c(16, 18), ][,
-        ROUND := paste0('R', ROUND)][,
-        PointEst := inverse.logit(PointEst)
-        ] |>
-        dcast(FC2 + COMM_NUM + SEX_LABEL + AGEGROUP ~ ROUND, value.var = 'PointEst') -> tmp1
-    tmp1[, `:=`(
-        median16=median(R16),
-        median18=median(R18)
-        ),by=c('SEX_LABEL', 'AGEGROUP')] 
-    tmp1 |>  ggplot(aes(y=inverse.logit(`R16`) - inverse.logit(`R18`), 
-                        x=as.factor(COMM_NUM), color=FC2 )) + 
-            geom_point() + 
-            #geom_vline(aes(xintercept=median16, linetype=SEX_LABEL)) + 
-            #geom_hline(aes(yintercept=median18, linetype=SEX_LABEL)) + 
-            facet_grid(SEX_LABEL ~ AGEGROUP) +
-            #lims(x=c(0,1), y=c(0,1))
-            theme(axis.text.x = element_text(angle = 90)) 
-
-
-    # glm_no_random_effects(PVLNSofHIV_MEAN ~ FC:ROUND)
-    # glm_no_random_effects(PVLNSofHIV_MEAN ~ FC:ROUND:SEX)
-    # glm_no_random_effects(PVLNSofHIV_MEAN ~ FC:ROUND + SEX) 
-    # glm_random_effects(PVLNSofHIV_MEAN ~ FC:ROUND + SEX + (1|COMM_NUM) ) |> AIC()
-    # glm_random_effects(PVLNSofHIV_MEAN ~ FC:SEX + ROUND + (1|COMM_NUM) ) |> AIC()
-
-
-    prior.pars <- list( intercept.mean= dglm[, logit(sum(VLNS_N)/ sum(HIV_N))])
-    # dglm[, ROUND_IDX := ROUND - min(ROUND + 1)]
-
     # What's the best way to set priors and hyperprios? Maybe look at 8 schools examples.
     # Also: http://mc-stan.org/rstanarm/articles/glmer.html
-    names(dglm)
     options(mc.cores=parallel::detectCores())
-
-
-    dglm[, ROUNDi := as.integer(ROUND) - 1 ]
-    dglm
+    prior.pars <- list( intercept.mean= dglm[, logit(sum(VLNS_N)/ sum(HIV_N))])
 
     # FIT AND SAVE MODELS
+    # ___________________
 
     # GLM on slopes
-    glm_slopes <- stan_glm(data=dglm,
-                          formula=VLNS_N/HIV_N ~  ROUNDi*(AGEGROUP+SEX+FC), 
-                          weights=HIV_N,
-                          # prior_intercept = student_t(df = 7, prior.pars$intercept.mean, 5),
-                          prior_intercept = normal( prior.pars$intercept.mean, 5),
-                          family=binomial(link='logit'))
-    filename <- file.path(glm.out.dir, 'supppofpart_slopes_fit.rds')
-    saveRDS(glm_slopes, filename)
+    glm_slopes <- fit.glm.model( 
+        suffix = 'supppofpart_slopes_fit.rds',
+        formula=VLNS_N/HIV_N ~  ROUNDi*(AGEGROUP+SEX+FC)
+    )
 
     # GLM anova like, without random effects
-    glm_anova <- stan_glm(data=dglm,
-                          formula=VLNS_N/HIV_N ~  ROUND*AGEGROUP*SEX*FC, 
-                          weights=HIV_N,
-                          # prior_intercept = student_t(df = 7, prior.pars$intercept.mean, 5),
-                          prior_intercept = normal( prior.pars$intercept.mean, 5),
-                          family=binomial(link='logit'))
-    filename <- file.path(vl.out.dir, 'supppofpart_anova_fit.rds')
-    saveRDS(glm_reffs, filename)
-
+    glm_anova <- fit.glm.model( 
+        formula=VLNS_N/HIV_N ~  ROUND*AGEGROUP*SEX*FC, 
+        suffix =  'supppofpart_anova_fit.rds'
+    )
 
     # without random effects (base)
-    # Currently, the reference levels are Fishing, Females in age group 15-24
-    # problem is that this model does not allow for different rates of change in FC
-    glm_base <- stan_glm(data=dglm,
-                         formula=VLNS_N/HIV_N ~  ROUND*AGESEX*FC, 
-                         weights=HIV_N,
-                         # prior_intercept = student_t(df = 7, prior.pars$intercept.mean, 5),
-                         prior_intercept = normal( prior.pars$intercept.mean, 5),
-                         family=binomial(link='logit'))
-    filename <- file.path(vl.out.dir, 'supppofpart_base_fit.rds')
-    saveRDS(glm_reffs, filename)
-
-    summary(glm_base)
+    glm_base <- fit.glm.model( 
+        formula = VLNS_N/HIV_N ~ FC + ROUND:AGESEX  + (1|COMM_NUM), 
+        suffix = 'suppofpart_base_fit.rds'
+    )
 
     # with random effects by community
-    glm_reffs <- stan_glmer(data=dglm,
-                            formula=VLNS_N/HIV_N ~ FC + ROUND:AGESEX  + (1|COMM_NUM), 
-                            weights=HIV_N,
-                            # prior_intercept = student_t(df = 7, prior.pars$intercept.mean, 5),
-                            prior_intercept = normal( prior.pars$intercept.mean, 5),
-                            family=binomial(link='logit'))
-    filename <- file.path(vl.out.dir, 'supppofpart_glmer_fit.rds')
-    saveRDS(glm_reffs, filename)
-
+    glm_reffs <- fit.glm.model( 
+        formula = VLNS_N/HIV_N ~ FC + ROUND:AGESEX  + (1|COMM_NUM), 
+        suffix = 'suppofpart_glmer_fit.rds'
+    )
 
     # model from the 5th december
-    glm_5dec <- stan_glmer(data=dglm,
-                            formula=VLNS_N/HIV_N ~ SEX_LABEL + AGEGROUP + (1|ROUND:FC)  + (1|COMM_NUM), 
-                            weights=HIV_N,
-                            # prior_intercept = student_t(df = 7, prior.pars$intercept.mean, 5),
-                            prior_intercept = normal( prior.pars$intercept.mean, 5),
-                            family=binomial(link='logit'))
+    glm_5dec <- fit.glm.model( 
+        formula = VLNS_N/HIV_N ~ SEX_LABEL + AGEGROUP + (1|ROUND:FC)  + (1|COMM_NUM), 
+        suffix = 'suppofpart_5thdec.rds'
+    )
 
+    Glm3MostSignificant <- fit.glm.model(
+        formula = VLNS_N/HIV_N ~ (1|AGEGROUP:SEX_LABEL) + (1|ROUND:FC) + (1|COMM_NUM),
+        suffix = 'suppofpar_6mostsignificantanova.rds'
+    )
+
+    # Full Anova
+    FullAnovaFormula <- VLNS_N/HIV_N ~ 
+        (1|SEX_LABEL) + (1|ROUND) + (1|AGEGROUP) + (1|FC) +
+        (1|SEX_LABEL:ROUND) + (1|SEX_LABEL:AGEGROUP) + (1|SEX_LABEL:FC) + (1|ROUND:AGEGROUP) + (1|ROUND:FC) + (1|AGEGROUP:FC) +
+        (1|SEX_LABEL:ROUND:AGEGROUP) +  (1|SEX_LABEL:ROUND:FC) +  (1|ROUND:AGEGROUP:FC) +
+        (1|SEX_LABEL:ROUND:AGEGROUP:FC) 
+
+    fit <- glmer(
+        data=dglm,
+        formula = FullAnovaFormula,
+        weights=HIV_N,
+        family=binomial(link='logit')) 
+
+    glm_fullanova <- fit.glm.model(
+        formula= FullAnovaFormula, 
+        suffix = 'suppofpart_fullanova.rds'
+    )
+
+    if(0)   # random fctions we can use
+    {
+        summary(fit) |> str()
+        summary(fit)$ngrps
+        summary(fit)$vcov
+        summary(fit)$varcor |> as.data.table() |> 
+            ggplot(aes(x=grp, y=sdcor)) + geom_point() + coord_flip()
+    }
 
     # 
     # ANALYSE
     #
 
+    # loo for leave one out cross validation! 
+
+    p_slopes <- analyse_glm_model(glm_slopes, 'slopes')
+    view_list_ggplots(p_slopes, 1)
+
+    loo(glm_slopes) |> plot()
 
     glm_model_choice <- copy(glm_5dec)
 
@@ -461,7 +441,6 @@ if(args$run.comm.analysis)
     # COMM_NUM random effects sorted by median. Can I color by comm type 
     if(0)
     {
-        library(modelsummary)
 
         tmp <- glm_model_choice %>%
             spread_draws(b[term,group], `(Intercept)`) %>%
@@ -522,8 +501,10 @@ if(args$run.comm.analysis)
     sjPlot::tab_model(glm_model_choice)
 
     tmp <- modelsummary(glm_model_choice, statistic='mad', output='markdown')
+    tmp
 
 }
+# stop('end of experiment')
 
 # Estimate HIV prevalence
 #________________________
