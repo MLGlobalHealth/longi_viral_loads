@@ -87,74 +87,71 @@ plot.all.gps <- function( loc='fishing')
 
     .plot.hiv.prevalence <- function(DFIT, DRAW)
     {
-            ppDT <- copy(DRAW)
-            cols <- c('M', 'CU', 'CL')
-            ppDT[, (cols) := binconf(HIV_N, N, return.df=T), ]
+        ppDT <- copy(DRAW)
+        cols <- c('M', 'CU', 'CL')
+        ppDT[, (cols) := binconf(HIV_N, N, return.df=T), ]
 
-            tmp <- DFIT[ROUND == 16, .(M, AGE_LABEL, SEX_LABEL)]
-            tmp1 <- ppDT[, max(M, na.rm=T) + 0.01]
+        tmp <- DFIT[ROUND == 16, .(M, AGE_LABEL, SEX_LABEL)]
+        tmp1 <- ppDT[, max(M, na.rm=T) + 0.01]
 
-            ggplot(DFIT, aes(x=AGE_LABEL, colour=SEX_LABEL)) + 		
-                    geom_ribbon(aes( ymin=CL, ymax=CU, fill=SEX_LABEL), alpha=0.2, col=NA) +
-                    geom_line(aes( y=M)) +
-                    geom_line(data=tmp,aes(y=M), linetype='dotted') +
-                    scale_x_continuous( expand=c(0,0) ) + 
-                    scale_y_continuous(labels=scales:::percent, expand=c(0,0), limits=c(0,tmp1)) +
-                    scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-                    scale_fill_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-                    facet_wrap(~ ROUND, ncol=4, labeller=labeller(ROUND=round_labs)) +
-                    geom_point(data=ppDT, aes(y=M, pch=SEX_LABEL, size=N)) +
-                    scale_size(range = c(0, 3)) +
-                    theme_bw() +
-                    theme(legend.position='bottom') + 
-                    labs(x='\nage at visit (years)', 
-                         y='HIV prevalence\n(95% credible interval)', 
-                         pch='gender', fill='gender', color='gender',
-                         size='population size'
-                    )
+        ggplot(DFIT, aes(x=AGE_LABEL, colour=SEX_LABEL)) + 		
+                geom_ribbon(aes( ymin=CL, ymax=CU, fill=SEX_LABEL), alpha=0.2, col=NA) +
+                geom_line(aes( y=M)) +
+                geom_line(data=tmp,aes(y=M), linetype='dotted') +
+                scale_x_continuous( expand=c(0,0) ) + 
+                scale_y_continuous(labels=scales:::percent, expand=c(0,0), limits=c(0,tmp1)) +
+                scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
+                scale_fill_manual(values=c('M'='royalblue3','F'='deeppink2')) +
+                facet_wrap(~ ROUND, ncol=4, labeller=labeller(ROUND=round_labs)) +
+                geom_point(data=ppDT, aes(y=M, pch=SEX_LABEL, size=N)) +
+                scale_size(range = c(0, 3)) +
+                theme_bw() +
+                theme(legend.position='bottom') + 
+                labs(x='\nage at visit (years)', 
+                     y='HIV prevalence\n(95% credible interval)', 
+                     pch='gender', fill='gender', color='gender',
+                     size='population size'
+                )
     }
 
     .plot.supp.hiv <- function(DFIT, DRAW)
     {
-            ppDT <- copy(DRAW)
-            cols <- c('M', 'CU', 'CL')
-            ppDT[, (cols) := binconf(HIV_N - VLNS_N, HIV_N, return.df=T)]
+        # DFIT = dfit[LOC_LABEL==loc]; DRAW =  draw[LOC_LABEL==loc])
+        ppDT <- copy(DRAW)
+        cols <- c('M', 'CU', 'CL')
+        ppDT[, (cols) := binconf(HIV_N - VLNS_N, HIV_N, return.df=T)]
 
-            tmp <- DFIT[ROUND == 16, .(M, AGE_LABEL, SEX_LABEL)]
-            tmp1 <- ppDT[, max(M, na.rm=T) + 0.01]
+        tmp <- DFIT[ROUND == 16, .(M, AGE_LABEL, SEX_LABEL)]
+        tmp1 <- ppDT[, max(M, na.rm=T) + 0.01]
 
-            ggplot(DFIT, aes(x=AGE_LABEL, colour=SEX_LABEL)) + 		
-                    geom_ribbon(aes( ymin=CL, ymax=CU, fill=SEX_LABEL), alpha=0.2, col=NA) +
-                    geom_line(aes( y=M)) +
-                    geom_line(data=tmp,aes(y=M), linetype='dotted') +
-                    geom_hline(yintercept=c(0.9^2, 0.95^2), linetype='dashed') +
-                    geom_richtext(data=DFIT[ROUND == 16],
-                                  size=2, 
-                                  fill=NA, label.color=NA, color='black',
-                                  aes(15, 0.9^2, 
+        ggplot(DFIT, aes(x=AGE_LABEL, colour=SEX_LABEL)) + 
+                geom_ribbon(aes( ymin=CL, ymax=CU, fill=SEX_LABEL), alpha=0.2, col=NA) +
+                geom_line(aes( y=M)) +
+                geom_line(data=tmp,aes(y=M), linetype='dotted') +
+                geom_hline(yintercept=c(0.9^2, 0.95^2), linetype='dashed') +
+                geom_richtext(size=2.5, fill=NA, label.color=NA, color='black',
+                              aes(15, 0.9^2, 
                                   label = 'UNAIDS 0.90<sup>2</sup>', 
                                   vjust = 'bottom', hjust='left')) + 
-                    geom_richtext(data=DFIT[ROUND == 16],
-                                  size=2, 
-                                  fill=NA, label.color=NA, color='black',
-                                  aes(15, 0.95^2, 
+                geom_richtext(size=2.5, fill=NA, label.color=NA, color='black',
+                              aes(15, 0.95^2, 
                                   label = 'UNAIDS 0.95<sup>2</sup>', 
                                   vjust = 'bottom', hjust='left')) + 
-                    scale_x_continuous( expand=c(0,0) ) + 
-                    scale_y_continuous(labels=scales:::percent, expand=c(0,0), limits=c(0,1)) +
-                    scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-                    scale_fill_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-                    facet_wrap(~ ROUND, ncol=4, labeller=labeller(ROUND=round_labs)) +
-                    geom_point(data=ppDT, aes(y=M, pch=SEX_LABEL, size=N)) +
-                    scale_size(range = c(0, 3)) +
-                    theme_bw() +
-                    theme(legend.position='bottom') + 
-                    labs(x='\nage at visit (years)', 
-                         y='HIV+ individuals with suppressed viral load\n(95% credible interval)\n', 
-                         colour='gender', fill='gender',
-                         pch='gender', 
-                         size='population size'
-                    )
+                scale_x_continuous( expand=c(0,0) ) + 
+                scale_y_continuous(labels=scales:::percent, expand=c(0,0), limits=c(0,1)) +
+                scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
+                scale_fill_manual(values=c('M'='royalblue3','F'='deeppink2')) +
+                facet_wrap(~ ROUND, ncol=4, labeller=labeller(ROUND=round_labs)) +
+                geom_point(data=ppDT, aes(y=M, pch=SEX_LABEL, size=N)) +
+                scale_size(range = c(0, 3)) +
+                theme_bw() +
+                theme(legend.position='bottom') + 
+                labs(x='\nage at visit (years)', 
+                     y='HIV+ individuals with suppressed viral load\n(95% credible interval)\n', 
+                     colour='gender', fill='gender',
+                     pch='gender', 
+                     size='population size'
+                )
     }
 
     .plot.unsupp.pop <- function(DFIT, DRAW)
