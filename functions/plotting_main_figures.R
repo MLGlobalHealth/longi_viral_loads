@@ -585,7 +585,7 @@ make.unaids.plots <- function(DT)
     dunaids <- .f(dsupp_pop, colnameN='HIV_UNSUPP_M', colnameM='UNSUPP_PROP_M')
 
     # Consistency: there cannot be more unsuppressed than positive
-    tmp <- dunaids[HIV_N_M < HIV_UNSUPP_M, .N]
+    tmp <- dunaids[HIV_N_M < HIV_UNSUPP_M, .N > 0]
     if(tmp > 0)
     {
         cat('Forcing posterior unsuppressed to be lower than HIV+ cases in',
@@ -594,8 +594,8 @@ make.unaids.plots <- function(DT)
     }
 
     # Summarise HIV status among participants and non-participants
-    tmp <- dunaids[, .(ROUND, LOC_LABEL, SEX_LABEL, AGE_LABEL,
-                       ELIGIBLE, N, HIV_N_M, HIV_UNSUPP_M)]
+    tmp <- subset(dunaids,
+        c('ROUND', 'LOC_LABEL', 'SEX_LABEL', 'AGE_LABEL', 'ELIGIBLE', 'N', 'HIV_N_M', 'HIV_UNSUPP_M'))
     tmp[, HIV_NEG_M := N - HIV_N_M]
     tmp[, HIV_SUPP_M := HIV_N_M - HIV_UNSUPP_M]
     tmp[, HIV_N_M := NULL]
