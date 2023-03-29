@@ -1,0 +1,155 @@
+---
+ title: "Testing and suppression in Rakai"
+ author: "Andrea Brizzi"
+ date: 2023-03-29
+ output: html_document
+ # bibliography: references.bib
+---
+
+```{r intro_source, echo=FALSE, message=FALSE, results='hide'}
+library(ggplot2)
+library(data.table)
+library(here)
+library(knitr)
+
+gitdir <- here()
+source(file.path(gitdir,'R/paths.R'))
+sapply(R_scripts, source) |> invisible()
+source(file.path(gitdir.functions, 'preprocessing_helpers.R'))
+source(file.path(gitdir.functions, 'vl_testing_helpers.R'))
+source(file.path(gitdir.scripts,'phsc_vl_helpers.R'))
+naturemed_reqs() 
+
+geom.text.size = 5/14*10
+update_geom_defaults("text", list(size = geom.text.size))
+
+file.exists(
+    # out.dir,
+    gitdir.stan,
+    path.hivstatusvl.r1520,
+    path.quest_r1519_221207 
+) |> all() |> stopifnot()
+
+catn <- function(...)
+    cat(..., '\n')
+```
+
+The figures below analyse the answers from the testing questions in rounds 18 and 19.
+In particular, we are interested in whether people reported previous testing, and if so, how long before.
+
+As aware HIV positive individuals are less likely to test, we need to be careful about the selection of our population denominators, or our study population.
+Below, we consider three possible selections: HIV negatives, newly diagnosed positives, and both of these together.
+
+Results are shown below, but there a few interesting points: 
+
+1. Section 'reported time since last test' shows that newly diagnosed individuals report much longer testing delays compared to negatives. It would seem that about one quarter report a test more than 5 years prior (this proportion looks probably a bit smaller in fishing communities).
+
+2. In other words, infrequent testers are 'over-represented' in the HIV positive diagnoses.
+
+3. Differences are less clear when looking at "reporting of a previous test", just because the numbers are so much lower.
+
+4. When predicting vl suppression, it may make more sense to consider the proportion of individuals who reported very long testing delays, rather than those reporting very short delays (especially for men).
+
+5. In other words, lack of suppression may mostly be driven by prevalence of infrequent testing (which may be a proxy for ART uptake)
+
+The plots below do not distinguish between fishing and inland communities, however, as a visual note,  fishing communities are the 4 largest communities in population and they are easy to distinguish.
+
+```{r loading_data, echo=FALSE, message=FALSE}
+# copied and pasted fom script/VL_analyse_testing.R
+dstatus <- get.dall(path.hivstatusvl.r1520, make_flowchart=FALSE)
+dtesting <- readRDS(path.processed.testing.r1519) |> process.hiv.testing.data(rounds=18:19)
+dtesting[, I := .I]
+
+newdiagnoses <- readRDS(path.processed.hivstatus.r0920) |>
+subset(ROUND %in% 18:19 & ROUND == ROUND_FP, select=c('STUDY_ID', 'ROUND'))
+newdiagnoses[, NEW_DIAGN:=TRUE]
+stopifnot(uniqueN(newdiagnoses) == nrow(newdiagnoses))
+
+# merge and compare hiv status dataset with testing dataset
+# 3 cases in which the COMM_NUM differs: just take it from dstatus
+dall2 <- merge( dstatus[ROUND %in% c(18,19)], dtesting, all.x=TRUE, all.y=TRUE)
+
+# only include those that appear in both datasets
+dall2 <- dall2[ !is.na(HIV_STATUS) & !is.na(I)]
+dall2[, I := NULL]
+
+dall2 <- merge(dall2, newdiagnoses, c("STUDY_ID", "ROUND"), all.x=TRUE)
+dall2[is.na(NEW_DIAGN), NEW_DIAGN := FALSE]
+```
+
+```{r, echo=FALSE, hidden=TRUE, message=FALSE, results='asis', fig.height=9,fig.width= 15, warning=FALSE}
+# define the layout
+
+plot_types <- c(
+    "Reported time since last test"="TEST_YEAR_AGO",
+    "Reporting of a previous test"="TEST_EVER"
+)
+
+groups <- c( 
+    "Negatives"="negatives", 
+    "New diagnoses"="newdiagnoses",
+    "Negatives and new diagnoses"="negatives_and_newdiagnoses")
+
+for(.type in plot_types)
+{
+    .type.name <- names(plot_types)[.type == plot_types]
+
+    sprintf( "\n## %s {.tabset} \n", .type.name) |> catn()
+
+    for (.group in groups)
+    {
+        .group.name <- names(groups)[.group == groups]
+        sprintf( "\n### %s {.tabset} \n", .group.name) |> catn()
+
+        for (p in c(FALSE, TRUE))
+        {
+            ttl <- fifelse(p == TRUE, yes='Percentage', no="Absolute Numbers")
+            sprintf( "\n#### %s \n", ttl) |> catn()
+            plot.testing.answers.proportions(DT=dall2, var=.type, group=.group, percentage=p) |> print()
+            catn()
+        }
+    }
+}
+```
+
+
+Our objective is to determine whether testing frequency can help us predict the level of suppression among HIV positives. 
+We can therefore study relationships between these two variables.
+
+## Testing vs suppression scatterplots {.tabset}
+
+
+```{r, echo=FALSE, hidden=TRUE, message=FALSE, results='asis', fig.height=12,fig.width= 17, warning=FALSE}
+VIREMIC_VIRAL_LOAD = 1000
+
+plot_types <- c(
+    "Reported test in the last year"="test1ya",
+    "Reported test in the last 5 year"="test5ya",
+    "Reporting of a previous test"="evertest"
+)
+
+groups <- c( 
+    "Negatives"="negatives", 
+    "New diagnoses"="newdiagnoses",
+    "Negatives and new diagnoses"="negatives_and_newdiagnoses")
+
+
+for(.type in plot_types)
+{
+    .type.name <- names(plot_types)[.type == plot_types]
+    sprintf( "\n### %s {.tabset} \n", .type.name) |> catn()
+
+    for (.group in groups)
+    {
+        .group.name <- names(groups)[.group == groups]
+        sprintf( "\n#### %s \n", .group.name) |> catn()
+
+        plot.suppression.vs.testing.answers.proportions(
+            DT=dall2, 
+            .group = .group,
+            type = .type) |> print() 
+        catn()
+    }
+}
+```
+

@@ -1,63 +1,38 @@
-.empty2na <- function(x)
-{
-        y <- gsub(' ', '', x)
-        if(any(is.na(x)) & length(y=='')>0) warning('Vector x already contains NA values')
-        x[y==''] <- NA
-        x
-}
-
-round2numeric <- function(x)
-{
-        x <- gsub('^R0', '', x)
-        x <- gsub('S$', '.5', x)
-        as.numeric(x)
-}
-
-round2factor <- function(x)
-{
-        stopifnot(is.numeric(x))
-        x <- paste0('R', x)
-        x <- gsub('\\.5', 'S', x)
-        as.factor(x)
-}
-
-na2zero <- function(x){x[is.na(x)] <-0; x}
-
 table_f <- function(x, print=FALSE)
 {
-        # TODO: for some reason it does not print the result
-        # when print=FALSE
-        tmp <- as.data.table(table(x))
-        tmp[, `F(%)`:= round(100*N/sum(N), 2)]
-        print(knitr::kable(tmp))
-        return(tmp)
+    # TODO: for some reason it does not print the result
+    # when print=FALSE
+    tmp <- as.data.table(table(x))
+    tmp[, `F(%)`:= round(100*N/sum(N), 2)]
+    print(knitr::kable(tmp))
+    return(tmp)
 }
 
 participant_comm2mode <- function(DT, quietly=FALSE)
 {
-        if(!quietly)
-        {
-                cat(
-                'Some participants travelled in fishing and inland communities.\n',
-                'We only want to attribute one classification to each of these. \n',
-                'So, set community to mode of where measurements were taken inland/fishing,\n',
-                'with preference for fishing\n')
-        }
+    if(!quietly)
+    {
+        cat(
+        'Some participants travelled in fishing and inland communities.\n',
+        'We only want to attribute one classification to each of these. \n',
+        'So, set community to mode of where measurements were taken inland/fishing,\n',
+        'with preference for fishing\n')
+    }
 
-        getmode <- function(x){
-                x <- table(x)
-                names(which.max(x))
-        }
-        tmp <- DT[,.(mode=getmode(comm)), by='study_id']
+    getmode <- function(x){
+            x <- table(x)
+            names(which.max(x))
+    }
+    tmp <- DT[,.(mode=getmode(comm)), by='study_id']
 
-        # substitute by data.table keys
-        setkey(tmp, study_id)
-        setkey(DT,study_id)
-        DT[tmp, comm:=mode]
+    # substitute by data.table keys
+    setkey(tmp, study_id)
+    setkey(DT,study_id)
+    DT[tmp, comm:=mode]
 
-        # return
-        stopifnot(DT[, uniqueN(comm), by='study_id'][V1 > 1, .N == 0])
-        DT
+    # return
+    stopifnot(DT[, uniqueN(comm), by='study_id'][V1 > 1, .N == 0])
+    DT
 }
 
 count2suppstatus <- function(x, character=FALSE)
@@ -69,22 +44,22 @@ count2suppstatus <- function(x, character=FALSE)
 
 community.keys2type <- function(DT, path=file.community.keys, by.DT='comm_num')
 {
-        # read in community keys
-        dkeys <- fread(path)
-        names(dkeys) <- tolower(colnames(dkeys))
-        dkeys[, comm := ifelse(grepl('^f',comm_num_a), 'fishing', 'inland')]
-        dkeys[, comm_num_a := NULL]
+    # read in community keys
+    dkeys <- fread(path)
+    names(dkeys) <- tolower(colnames(dkeys))
+    dkeys[, comm := ifelse(grepl('^f',comm_num_a), 'fishing', 'inland')]
+    dkeys[, comm_num_a := NULL]
 
-        # merge
-        idx <- which(names(DT) == by.DT)
-        tmp <- merge(DT, dkeys, all.x=TRUE, by.x=by.DT , by.y='comm_num_raw', sort=FALSE)
-        if(tmp[, any(is.na(comm))]) warning('At least one comm_num not found')
+    # merge
+    idx <- which(names(DT) == by.DT)
+    tmp <- merge(DT, dkeys, all.x=TRUE, by.x=by.DT , by.y='comm_num_raw', sort=FALSE)
+    if(tmp[, any(is.na(comm))]) warning('At least one comm_num not found')
 
-        # reorder as original, with comm preceding comm_num
-        rnk <- names(DT) 
-        rnk <- c(rnk[1:(idx-1)], 'comm', rnk[idx:length(rnk)])
-        tmp <- tmp[, .SD, .SDcols=rnk]
-        tmp
+    # reorder as original, with comm preceding comm_num
+    rnk <- names(DT) 
+    rnk <- c(rnk[1:(idx-1)], 'comm', rnk[idx:length(rnk)])
+    tmp <- tmp[, .SD, .SDcols=rnk]
+    tmp
 }
 
 make_vl_samplesize_table <- function(DT, excludeR20 = FALSE)
@@ -647,4 +622,208 @@ define_trajectories <- function(DT=dvl_15)
     stopifnot(tmp[is.na(class) , .N == 0])
     return(tmp)
     # return(list(tmp, .plot(tmp)))
+}
+
+
+# From load_latest_quest.R
+
+
+get.testing.history <- function(path)
+{
+    cols <- c('study_id', 'round', 'hiv', 'lastnegv', 'firstpos_diagnosis_vis')
+    history <-  fread(path, select=cols)|>
+        empty2NA() |> 
+        subset(!is.na(hiv))
+
+    history[, table(firstpos_diagnosis_vis, useNA = 'ifany')]
+    cols <- c('round', 'firstpos_diagnosis_vis')
+    history[,  (cols) := lapply(.SD, round2numeric), .SDcols=cols]
+    names(history) <- toupper(names(history))
+
+    # what is the definition of firstpos diagnosis visit? 
+    idx <- history[ HIV == 'P', unique(STUDY_ID) ]
+    history[STUDY_ID %in% idx]
+    idx <- history[, any(HIV == 'P') & any(HIV=='N'), by=STUDY_ID][V1==TRUE, STUDY_ID]
+    history[STUDY_ID %in% idx, sum(!is.na(FIRSTPOS_DIAGNOSIS_VIS))]
+    return(history)
+}
+
+get.negatives <- function(path)
+{
+    negatives <- fread(path,select=c('study_id', 'round')) |> unique()
+    names(negatives) <- toupper(names(negatives)) 
+    negatives[, ROUND:= round2numeric(ROUND)]
+
+    if(exists('hivstatus'))
+    {
+        cat('\n checking negatives consistency with hivstatus\n')
+        check_negs_all_in_hivstatus <- merge(negatives, hivstatus)[, sum(HIV_STATUS==0) == nrow(negatives)]
+        stopifnot(check_negs_all_in_hivstatus)
+        cat('All negatives can be found in `hivstatus`\n')
+    }
+    negatives
+}
+
+load.hiv.testing.data <- function(path, print_statements=FALSE, make_plots=FALSE, verbose = FALSE)
+{
+
+    if(verbose==TRUE)
+    {
+        tmp <- path |> fread()
+        hiv_cols <- grep( 'hiv', names(tmp), value=TRUE )
+        hiv_tmp <- subset(tmp, select=c('round', hiv_cols))
+        cat('Ever tested for HIV?\n')
+        hiv_tmp[, round(100*table(round, rhivever)/.N, 2) ,]
+        cat('When last?\n')
+        hiv_tmp[, round(100*table(round, hivperiod)/.N, 2) ,]
+        cat('Which result?\n')
+        hiv_tmp[, round(100*table(round, hivrslt)/.N, 2) ,]
+        cat('Which oghivts1?\n')
+        hiv_tmp[, round(100*table(round, oghivts1)/.N, 2) ,]
+    }
+
+    cols_informing_hivtesting <- c('rhivever', 'hivperiod', 'hivrslt', 'oghivts1')
+    cols_identifying_person_round <- c('study_id', 'round', 'comm_num')
+
+    # load data
+    cols <- c(cols_informing_hivtesting, cols_identifying_person_round)
+    dtesting <- fread(path, select=cols)
+
+    # understand labels
+    # check no doubles
+    idcols <- c('study_id', 'round')
+    dtesting[, .N, by=idcols][, stopifnot(all(N==1))]
+
+    # rename with labels
+    dtesting[, rhivever2  := answers_dict$rhivever[as.character(rhivever)] ]
+    dtesting[, hivperiod2 := answers_dict$hivperiod[as.character(hivperiod)] ]
+    dtesting[, hivrslt2   := answers_dict$hivrslt[as.character(hivrslt)] ]
+    dtesting[, oghivts2   := answers_dict$oghivts1[as.character(oghivts1)] ]
+
+    # translate labels:
+    dtesting[, table(rhivever, rhivever2, useNA='ifany')]
+    dtesting[, table(hivperiod, hivperiod2, useNA='ifany')]
+    dtesting[, table(hivrslt, hivrslt2, useNA='ifany')]
+    dtesting[, table(oghivts1, oghivts2, useNA='ifany')]
+
+    if(print_statements)
+    {
+        .cat <- function(x) cat('\n',x, '\n')
+        .pr <- function(x) { table(x, round, useNA='ifany') |> knitr::kable() |> print()}
+
+        .cat('Have you ever received your HIV results from anywhere')
+        dtesting[, table(rhivever2,round, useNA='ifany') |> print() ]
+        .cat('How long ago did you last receive your HIV results?(years)')
+        dtesting[, table(hivperiod2, round, useNA='ifany') |> print() ]
+        .cat('What was the results of this last HIV test?')
+        dtesting[, table(hivrslt2, round, useNA='ifany') |> print() ]
+        .cat('From whom did you receive the test?')
+        dtesting[, table(oghivts2, round,useNA='ifany') |> print() ]
+    }
+
+    if(make_plots)
+    {
+        .plot <<- function(x, q)
+        {
+            DT <- as.data.table(x) 
+            # DT[, round := gsub("R0|S", "", round)  ]
+            question <- names(DT)[1]
+            p <- ggplot(DT, aes_string(x="round", fill=question)) +
+                geom_col(aes(y=N)) + 
+                theme_bw() +
+                theme(legend.position='bottom') +
+                scale_y_continuous(expand=expansion(mult=c(0,.1)))+
+                labs(x='Rounds', y='Number of answers', title=q, fill='') +
+                NULL
+            force(p)
+            p
+        }
+ 
+        plots <- list(
+            p_ever = dtesting[, table(rhivever2,round, useNA='ifany') ] |>
+                .plot(q='Have you ever received your HIV results from anywhere?'),
+
+            p_prd  = dtesting[rhivever==1, table(hivperiod2, round, useNA='ifany')] |>
+                .plot(q='How long ago did you last receive your HIV results?(years)'),
+
+            p_rslt = dtesting[rhivever==1, table(hivrslt2, round, useNA='ifany') ] |>
+                .plot(q='What was the results of this last HIV test?'),
+
+            p_where = dtesting[rhivever==1, table(oghivts2, round,useNA='ifany') ] |>
+                .plot(q='From whom did you receive the test?')
+        )
+
+        p <- (plots[[1]] + plots[[2]])/(plots[[3]] + plots[[4]])
+        filename = file.path(outdir.misc, 'testing_data_r1519.png')
+        ggsave(p, filename=filename, height=11, width=14)
+        plots <<- plots
+        p_testing <<- p
+    }
+
+    # check output before returning
+    dtesting[, .N, by=idcols][, stopifnot(all(N==1))]
+
+    setcolorder(dtesting, cols_identifying_person_round)
+
+    return(dtesting)
+}
+
+make.testing.plots.community <- function(dtest, bytype=FALSE)
+{
+    # dtest <- copy(dtesting); bytype=TRUE
+    names(dtest) <- toupper(names(dtest)) 
+    if( !is.numeric(dtest$ROUND))
+    {
+        dtest[, ROUND := round2numeric(ROUND)]
+    }
+
+    # get comm numbers if necessary
+    if(! 'COMM_NUM' %in% names(dtest) ) 
+        dtest <- merge(dcomms, dtest, by=c('STUDY_ID', 'ROUND'))
+    
+    dtest <- merge(dtest, dcommtype, by=c('COMM_NUM'))
+
+    aggregation_var <- fifelse(bytype==TRUE, yes="COMM_TYPE", no="COMM_NUM")
+
+    dtest_aggr_comm <- melt(dtest,
+        id.vars=c(aggregation_var, 'ROUND'),
+        measure.vars= c('RHIVEVER2', 'HIVPERIOD2', 'HIVRSLT2', 'OGHIVTS2'),
+        value.name = 'VALUE', variable.name = 'VARIABLE')
+    dtest_aggr_comm[, N := .N , c(aggregation_var,'ROUND', 'VARIABLE', 'VALUE')]
+    dtest_aggr_comm <- unique(dtest_aggr_comm)
+    dtest_aggr_comm[, TOT := sum(N), by=c(aggregation_var, 'ROUND', 'VARIABLE')]
+    dtest_aggr_comm[, PROP := N / TOT, by=c(aggregation_var, 'ROUND', 'VARIABLE')]
+
+    plot.question.results.by.community <- function(var, DT)
+    {
+        var <- as.character(var)
+        cat(question_dict[[var]], '\n')
+        dtest_aggr_comm2 <- DT |> subset(VARIABLE == var & ROUND > 15.5)
+        dtest_aggr_comm2[, AGGVAR:=lapply( .SD, as.factor), .SDcols=aggregation_var]
+
+        # plot settings
+        leg_nrow = fifelse(bytype==TRUE, yes=1, no=2)
+
+
+        p <- dtest_aggr_comm2 |> 
+            ggplot(aes(x=ROUND, color=AGGVAR, y=PROP)) +
+            geom_line() +
+            facet_grid(~ VALUE) +
+            theme_bw() +
+            theme(legend.position='bottom') + {
+                if(bytype) scale_color_manual(values=palettes$comm2) 
+            } +
+            scale_y_continuous(labels=scales::percent) + 
+            labs(title = question_dict[[var]], x='RCCS Round', y='Proportion of answers', color='community') +
+            guides(color=guide_legend(nrow=leg_nrow,byrow=TRUE))
+            
+
+        force(p)
+        return(p)
+    }
+
+    plots_comm <- lapply(unique(dtest_aggr_comm$VARIABLE), plot.question.results.by.community, DT=dtest_aggr_comm)
+    p_aggregated <- ((plots_comm[[1]] + plots_comm[[2]])/(plots_comm[[3]] + plots_comm[[4]]) ) & theme(legend.position ='bottom') 
+    p_aggregated <- p_aggregated + plot_layout(guides = "collect")
+    p_aggregated
 }

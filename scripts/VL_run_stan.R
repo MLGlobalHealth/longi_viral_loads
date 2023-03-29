@@ -28,10 +28,6 @@ if(usr == 'andrea')
     git.repository <-'~/git/longi_viral_loads'
     indir.deepsequence.data <- '~/Documents/Box/ratmann_pangea_deepsequencedata'
     indir.deepanalyses.xiaoyue <- '/home/andrea/Documents/Box/ratmann_xiaoyue_jrssc2022_analyses/live'
-    # out.dir.prefix <- '/media/andrea/SSD/2022/longvl'
-    # out.dir.prefix <- file.path(git.repository, 'results')
-    # parallelise <- TRUE
-    # 
 }
 
 if(usr == 'ab1820')
@@ -39,7 +35,6 @@ if(usr == 'ab1820')
     git.repository <-'/rds/general/user/ab1820/home/git/longi_viral_loads'
     indir.deepsequence.data <- '/rds/general/project/ratmann_pangea_deepsequencedata/live'
     indir.deepanalyses.xiaoyue <- '/rds/general/project/ratmann_xiaoyue_jrssc2022_analyses/live'
-    # out.dir.prefix <- '/home/andrea/Documents/Box/ratmann_xiaoyue_jrssc2022_analyses/live'
 }
 
 path.stan <- file.path(git.repository, 'stan')
@@ -116,7 +111,7 @@ option_list <- list(
     make_option(
         "--outdir",
         type = "character",
-        default = '~/OneDrive/2022/longvl/',
+        default = '~/home/andrea/HPC/ab1820/home/projects/2022/longvl/',
         help = "Path to output directory where to store results [Defaults to my directory]", 
         dest = 'out.dir.prefix'
     ),
@@ -304,13 +299,14 @@ if(args$run.comm.analysis)
     cols <- c('HIV_N', 'VLNS_N', 'N')
     by_cols <- c('FC2', 'COMM_NUM', 'AGEGROUP','SEX_LABEL', 'ROUND')
     # by_cols <- c('FC2', 'COMM_NUM', 'SEX_LABEL', 'ROUND')
+
     dglm[, lapply(.SD, sum),
          .SDcols=cols,
          by=by_cols][,
          Hmisc::binconf(n=HIV_N+4, x=VLNS_N+1, method='wilson', return.df=TRUE),
-         by=by_cols]  -> tmp
+         by=by_cols]  -> dvl_agresti
 
-    tmp |> ggplot(aes(x=ROUND, y=logit(PointEst), color=FC2, linetype=FC2)) + 
+    dvl_agresti |> ggplot(aes(x=ROUND, y=logit(PointEst), color=FC2, linetype=FC2)) + 
         geom_line(aes(group=COMM_NUM)) + 
         facet_grid(AGEGROUP ~ SEX_LABEL ) +
         labs(x='Round',
@@ -320,19 +316,22 @@ if(args$run.comm.analysis)
     filename <- 'edaglm_logitprev_vs_round_by_agesexcomm.png'
     ggsave2(p1, file=filename, LALA=glm.out.dir, w=9, h=8)
 
-    tmp[, {
+    # aggregate by = something else 
+    dvl_agresti[, {
         z19 <- which(ROUND == '19')
         z16 <- which(ROUND == '16')
         list(Delta=PointEst[z19] - PointEst[z16])
     }, by=c('FC2', 'COMM_NUM', 'AGEGROUP', 'SEX_LABEL')][, 
-        median(Delta)
-    , by=c('FC2', 'SEX_LABEL')] |> dcast(FC2 ~ SEX_LABEL)
+        .(DIFF = median(Delta))
+    , by=c('FC2', 'SEX_LABEL')] |> dcast(FC2 ~ SEX_LABEL, value.var = 'DIFF' )
 
-    tmp |> ggplot(aes(x=as.factor(COMM_NUM),y=PointEst, color=as.factor(ROUND))) + 
+    dvl_agresti |> ggplot(aes(x=as.factor(COMM_NUM),y=PointEst, color=as.factor(ROUND))) + 
         geom_point() + 
         facet_grid(SEX_LABEL ~ .) +
         theme(axis.text.x = element_text(angle = 90)) +
-        labs(x='Community Label', y='Proportion of suppressed among study participants', color='Round')
+        labs(x='Community Label', y='Proportion of suppressed among study participants', color='Round') -> p
+    filename <- 'edaglm_proprsupp_by_community_round_sex.png'
+    ggsave2(p1, file=filename, LALA=glm.out.dir, w=9, h=8)
 
     # What's the best way to set priors and hyperprios? Maybe look at 8 schools examples.
     # Also: http://mc-stan.org/rstanarm/articles/glmer.html
@@ -372,6 +371,7 @@ if(args$run.comm.analysis)
         suffix = 'suppofpart_5thdec.rds'
     )
 
+    # Take "most significant effects" from the anova model 
     Glm3MostSignificant <- fit.glm.model(
         formula = VLNS_N/HIV_N ~ (1|AGEGROUP:SEX_LABEL) + (1|ROUND:FC) + (1|COMM_NUM),
         suffix = 'suppofpar_6mostsignificantanova.rds'
@@ -478,32 +478,8 @@ if(args$run.comm.analysis)
         ggsave2(p_ranges, file=filename, w=9, h=12)
     }
 
-    # POSTERIOR PREDICTIVE CHECKS
-    # https://mc-stan.org/rstanarm/reference/plot.stanreg.html
-    bayesplot::available_ppc()
-    p_check <- pp_check(glm_model_choice)
-    filename <- file.path('comm_stanglm_diagnostics_ppcheck_density.png')
-    ggsave2(p_check, file=filename, w=9, h=8)
-
-    pp_check(glm_model_choice, plotfun = "boxplot", nreps = 10, notch = FALSE)
-    pp_check(glm_model_choice, plotfun = "scatter_avg") # y vs. average yrep
-    pp_check(glm_model_choice, plotfun = "hist", nreps=3) # y vs. average yrep
-
-    # Posterior vs prior
-    p <- posterior_vs_prior( glm_model_choice) +
-        guides(color=FALSE) + theme(axis.text.x = element_text(angle = 90))
-    filename <- file.path( 'comm_stanglm_diagnostics_postvsprior.png')
-    ggsave2(p, file=filename, w=9, h=6)
-
-    # Statistical 'significance': probability of direction
-    p_direction(glm_model_choice)
-    library('sjPlot')
-    sjPlot::tab_model(glm_model_choice)
-
-    tmp <- modelsummary(glm_model_choice, statistic='mad', output='markdown')
-    tmp
-
 }
+
 # stop('end of experiment')
 
 # Estimate HIV prevalence

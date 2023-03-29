@@ -79,7 +79,7 @@ make.study.flowchart <- function(DT)
     ls_fchart_round <- lapply(idx, statement_for_round)
     names(ls_fchart_round) <- paste0('r',idx)
 
-    filename <- file.path(vl.out.dir, 'flowchart_numbers.pdf')
+    filename <- file.path(out.dir, 'flowchart_numbers.pdf')
     DiagrammeR::grViz(
                       "
                       digraph graph2 {
@@ -163,7 +163,7 @@ get.glm.data <- function(DT)
     vlc
 }
 
-fit.glm.model <- function(formula, suffix, .outdir=vl.out.dir )
+fit.glm.model <- function(formula, suffix, .outdir=glm.out.dir )
 {
     # Loads or runs a stan model.
 
@@ -210,6 +210,61 @@ fit.glm.model <- function(formula, suffix, .outdir=vl.out.dir )
     }
 
     return(fit)
+
+}
+
+analyse_glm_model <- function(glm, prefix)
+{
+    # what need to be analysed:
+    # - convergence
+    # - pair plots 
+    # - posterior predictive checks. 
+
+    glm <- copy(glm_5dec)
+    summ <- summary(glm) |> as.data.table(keep.rownames = TRUE)
+
+    # Get diagnostics and print
+    summ[ ! rn %in% 'log-posterior', {
+            z1 <- which.min(n_eff);
+            z2 <- which.max(Rhat);
+            list( NEFF=n_eff[z1], V_NEFF=rn[z1], RHAT=Rhat[z2], V_RHAT=rn[z2])
+    } ] -> diagns
+
+    cat('Minimum effective sample size:', diagns$NEFF, 'for parameter', diagns$V_NEFF, '\n')
+    cat('Maximum Rhat:',diagns$RHAT, 'for parameter', diagns$V_RHAT, '\n')
+
+    
+    # get a table of the fit
+    if ( 0 )
+        modelsummary(glm, output = 'DT') # not optimal 4 models with multiple pars.
+
+    # bayesplot::available_ppc()
+
+    ## TOCLEAN 
+    # POSTERIOR PREDICTIVE CHECKS
+    # https://mc-stan.org/rstanarm/reference/plot.stanreg.html
+    p_check <- pp_check(glm_model_choice)
+    filename <- file.path('comm_stanglm_diagnostics_ppcheck_density.png')
+    ggsave2(p_check, file=filename, w=9, h=8)
+
+    pp_check(glm_model_choice, plotfun = "boxplot", nreps = 10, notch = FALSE)
+    pp_check(glm_model_choice, plotfun = "scatter_avg") # y vs. average yrep
+    pp_check(glm_model_choice, plotfun = "hist", nreps=3) # y vs. average yrep
+
+    # Posterior vs prior
+    p <- posterior_vs_prior( glm_model_choice) +
+        guides(color=FALSE) + theme(axis.text.x = element_text(angle = 90))
+    filename <- file.path( 'comm_stanglm_diagnostics_postvsprior.png')
+    ggsave2(p, file=filename, w=9, h=6)
+
+    # Statistical 'significance': probability of direction
+    p_direction(glm_model_choice)
+    library('sjPlot')
+    sjPlot::tab_model(glm_model_choice)
+
+    tmp <- modelsummary(glm_model_choice, statistic='mad', output='markdown')
+    tmp
+
 
 }
 
