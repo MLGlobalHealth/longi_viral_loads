@@ -9,37 +9,18 @@ library(ggpubr)
 library(knitr)
 library(Hmisc)
 library(xtable)
+library(here)
+library(optparse)
 
 ################
 #    PATHS     #
 ################
 
-usr <- Sys.info()[['user']]
-if(usr == 'andrea')
-{
-    git.repository <-'~/git/longi_viral_loads'
-    indir.deepsequence.data <- '~/Documents/Box/ratmann_pangea_deepsequencedata'
-    indir.deepanalyses.xiaoyue <- '/home/andrea/HPC/project/ratmann_xiaoyue_jrssc2022_analyses/live'
-    out.dir.prefix <- '/home/andrea/HPC/ab1820/home/projects/2022/longvl/'
-}else if(usr == 'ab1820')
-{
-    git.repository <-'~/git/longi_viral_loads' 
-    indir.deepsequence.data <- '/rds/general/project/ratmann_pangea_deepsequencedata/live/'
-    indir.deepanalyses.xiaoyue <- '/rds/general/project/ratmann_xiaoyue_jrssc2022_analyses/live/'
-    out.dir.prefix <- '/rds/general/user/ab1820/home/projects/2022/longvl'
-}
-
-path.stan <- file.path(git.repository, 'stan')
-path.tests <- file.path(indir.deepsequence.data, 
-                        'RCCS_R15_R20',
-                        "all_participants_hivstatus_vl_220729.csv")
-
-path.census.eligible <- file.path(git.repository, 'data/RCCS_census_eligible_individuals_221209.csv')
-# path.census.eligible.count <- file.path(indir.deepsequence.data, 'RCCS_R15_R18/RCCS_census_eligible_count_220719.csv')
+gitdir <- here()
+source(file.path(gitdir, "R/paths.R"))
 
 file.exists(
-        path.stan,
-        path.tests,
+        path.hivstatusvl.r1520,
         path.census.eligible
 ) |> all() |> stopifnot()
 
@@ -47,40 +28,48 @@ make_paper_numbers <- TRUE
 if(make_paper_numbers)
     ppr_numbers <- list()
 
+# helpers
+source( file.path(gitdir.R,'base_utilities.R') )
+source( file.path(gitdir.R,'base_plots.R') )
+source( file.path(gitdir.R,'dictionaries.R') )
+source( file.path(gitdir.functions,'plotting_main_figures.R') )
+source( file.path(gitdir.functions,'phsc_vl_helpers.R') )
+
+
 ################
 #   OPTIONS    #
 ################
 
 option_list <- list(
-    optparse::make_option(
+    make_option(
         "--viremic-viral-load",
         type = "numeric",
-        default = 200,
+        default = 1000,
         help = "Duration of acute phase, in years [Defaults to 2 months]", 
         dest = 'viremic.viral.load'
     ),
-    optparse::make_option(
+    make_option(
         "--vl-detectable",
         type = "numeric",
         default = 150,
         help = "Duration of acute phase, in years [Defaults to 2 months]", 
         dest = 'viremic.viral.load'
     ),
-    optparse::make_option(
+    make_option(
         "--indir",
         type = "character",
         default = '/home/andrea/HPC/ab1820/home/projects/2022/longvl/',
         help = "Path to output directory where model fits are stored [Defaults to my directory]", 
         dest = 'indir'
     ),
-    optparse::make_option(
+    make_option(
         "--outdir",
         type = "character",
         default = '/home/andrea/HPC/ab1820/home/projects/2022/longvl/',
         help = "Path to output directory where to store results [Defaults to my directory]", 
         dest = 'out.dir.prefix'
     ),
-    optparse::make_option(
+    make_option(
         "--round",
         type = "numeric",
         default = c(16,17,18,19),
@@ -89,17 +78,8 @@ option_list <- list(
     )
 )
 
-args <-  optparse::parse_args(optparse::OptionParser(option_list = option_list))
+args <-  parse_args(OptionParser(option_list = option_list))
 print(args)
-
-
-################
-#    HELPERS   #
-################
-
-source( file.path(git.repository,'functions/base_utilities.R') )
-source( file.path(git.repository,'functions/plotting_main_figures.R') )
-source( file.path(git.repository,'scripts/phsc_vl_helpers.R') )
 
 ################
 #     MAIN     #
@@ -114,26 +94,27 @@ naturemed_reqs() # stores them in nm_reqs
 # output directory with rda files
 out.dir <- args$out.dir.prefix
 vl.out.dir <- file.path(out.dir, paste0('vl_', VIREMIC_VIRAL_LOAD) )
+vl.out.dir
 
-.f <- function(x) dir.create(file.path(vl.out.dir, x))
+.f <- function(x) dir.create(file.path(vl.out.dir, x)) |> suppressWarnings()
 sapply(c('figures', 'tables'), .f)
 stopifnot(dir.exists(vl.out.dir))
 
 # get rda paths for fitted models
 rda_files <- list.files(args$indir, pattern='.rda', full.names=T, recursive=TRUE)
 rda_files <- grep(paste0('vl_', args$viremic.viral.load), rda_files, value=T)
-
 # get data 
-dall <- get.dall(path.tests)
+dall <- get.dall(path.hivstatusvl.r1520, make_flowchart=FALSE)
+
 
 # Get census eligible and compare with participants 
 # __________________________________________________
 
 # we need to chose whether to use the smoothed version, or the actual counts (`.count`)
 dcens <- get.census.eligible()
-cat('\n* number of census eligible by round, sex and location *')
 dcens[, .(N_ELIGIBLE=sum(ELIGIBLE)), by=c('ROUND', 'SEX_LABEL', 'LOC_LABEL')] |> 
-    dcast(ROUND + SEX_LABEL ~ LOC_LABEL, value.var='N_ELIGIBLE' ) |> kable()
+    dcast(ROUND + SEX_LABEL ~ LOC_LABEL, value.var='N_ELIGIBLE' ) |>
+    kable(caption = 'number of census eligible by round, sex and location')
 last.round <- dcens[, max(ROUND)] 
 
 cat('--- Make UNAIDS objectives plot ---\n')

@@ -69,19 +69,17 @@ dall_dictionaries <- list(
         '5' = '>5',
         `NA`= 'never'),
     TEST_EVER = c(),
-    TEST_LAST_RESULT = c(),
+        TEST_LAST_RESULT = c()
+    )
+
+postproc_dictionaries <- list(
+    VIR_STATUS = c(
+         'UNSUPP'='unsuppressed viral load',
+         'SUPP'='suppressed viral load',
+         'NEG'='HIV negative'
+    ),
+    PARTICIPATION_STATUS = c(
+        'IN'='in-study',
+        'OUT'='out-of-study'
+    )
 )
-
-# extract_from_dall_dicts <- function(dict, keys)
-# {
-#     NA2textNA <- function(x)
-#     {
-#         x[is.na(x)] <- "NA"
-#         return(x)
-#     }
-# 
-#     keys <- as.character(keys) |> NA2textNA()
-#     # return(keys)
-#     return(dall_dictionaries[[dict]][keys])
-# }
-

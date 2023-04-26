@@ -17,7 +17,7 @@ source(file.path(gitdir,'R/paths.R'))
 sapply(R_scripts, source) |> invisible()
 source(file.path(gitdir.functions, 'preprocessing_helpers.R'))
 source(file.path(gitdir.functions, 'vl_testing_helpers.R'))
-source(file.path(gitdir.scripts,'phsc_vl_helpers.R'))
+source(file.path(gitdir.functions,'phsc_vl_helpers.R'))
 naturemed_reqs() 
 
 geom.text.size = 5/14*10

@@ -29,7 +29,11 @@ path.negatives.r1520 <- file.path(indir.deepdata.r1520, 'R016_R020_Data_for_HIVn
 path.hivres.r0914 <- file.path(indir.deepdata.r0914, "HIV_R09_R14.csv")
 path.flow.r19 <- file.path(indir.deepdata.r1520, 'flowR19_VOIs.dta')
 
+
 # processed files:
 path.processed.hivstatus.r0920 <- file.path(indir.deepdata.r1520,"RCCS_processed_participants_hivstatus_230328.rds")
 path.processed.testing.r1519 <- file.path(indir.deepdata.r1520,"RCCS_processed_participants_testing_230328.rds")
+
+# I believe this comes from melodie?
+path.census.eligible <- file.path(gitdir, 'data/RCCS_census_eligible_individuals_221209.csv')
 

@@ -1,14 +1,13 @@
 get.dall <- function(path, make_flowchart=TRUE)
 {
     # Load data: exclude round 20 as incomplete
-    dall <- fread(path)
-    dall <- unique(dall[ROUND >= 16 & ROUND <= 19])
-
-    # remove useless cols:
+    dall <- fread(path) |> 
+        subset(ROUND >= 16 & ROUND <= 19) |> 
+        subset(SEX != "") |>  unique()
     dall[, CURR_ID := NULL]
     dall <- unique(dall)
 
-    # study dataset keys
+    # check keys are unique
     key_cols <- c('STUDY_ID', 'ROUND')
     setkeyv(dall, key_cols)
     stopifnot(dall[, .N, by=key_cols][, all(N == 1)])
@@ -18,9 +17,6 @@ get.dall <- function(path, make_flowchart=TRUE)
              c('HIV_VL', 'COMM'),
              c('VL_COPIES', 'FC') )
     dall[, HIV_AND_VL := ifelse( HIV_STATUS == 1 & !is.na(VL_COPIES), 1, 0)]
-
-    # remove individuals without sex reported
-    dall <- dall[! SEX=='']
 
     # make study flowchart if packages are installed 
     if('DiagrammeR' %in% installed.packages() & make_flowchart)
@@ -42,89 +38,125 @@ get.dall <- function(path, make_flowchart=TRUE)
 
 make.study.flowchart <- function(DT)
 {
-    
-    library(DiagrammeR)
-    library(DiagrammeRsvg)
-    library(rsvg)
-    library(htmltools)
-    ls_fchart <- list()
+    # DT <- copy(dall)
+    require(DiagrammeR)
+    require(DiagrammeRsvg)
+    require(rsvg)
+    require(htmltools)
+
+    # define round dates.
+    round_dates <- data.table(
+        ROUND = c(16, 17, 18, 19),
+        BEGIN = c('01/07/2013', '01/02/2015','01/10/2016', '01/06/2018'),
+        END = c('01/01/2015', '01/09/2016', '01/05/2018', '01/05/2019')
+    )
+    nms <- c('BEGIN', "END")
+    .f <- function(x) as.Date(x, format='%d/%m/%Y') |> format("%B %Y")
+    round_dates[, (nms) := lapply(.SD, .f), .SDcols=nms]
+    round_dates[, LAB := paste('from', BEGIN, 'to', END)]
+    round_idx <- DT[, unique(ROUND)]
+
 
     # Get numbers for flowchart
-    ls_fchart[['all']] <- DT[, .(uniqueN(STUDY_ID), .N)]
-    ls_fchart[['pos']] <- DT[HIV_STATUS == 1, .(uniqueN(STUDY_ID), .N)]
-    ls_fchart[['vls']] <- DT[HIV_AND_VL == 1, .(uniqueN(STUDY_ID), .N)]
-    ls_fchart <- lapply(ls_fchart, function(DT) DT[, lapply(.SD, formatC, big.mark=',')])
+    ls_fchart <- list(
+        all = cube(DT, .(uniqueN(STUDY_ID), .N), by='SEX'),
+        pos = cube(DT[HIV_STATUS == 1], .(uniqueN(STUDY_ID), .N), by='SEX'),
+        vls = cube(DT[HIV_AND_VL == 1], .(uniqueN(STUDY_ID), .N), by='SEX')
+    ) |> 
+        lapply( function(D) {D$SEX[3] <- 'ALL'; D}) |> 
+        lapply( function(DT) DT[, lapply(.SD, formatC, big.mark=',')])
 
-    idx <- DT[, unique(ROUND)]
+    # get VL composition by sex.
     statement_for_round <- function(r)
     {
-      .statement <- function(tot,x, y, z)
+      .statement <- function(f_tot,f_x, f_y, f_z, m_tot, m_x, m_y, m_z)
       {
-        .r <- function(a) 
+        .r <- function(a, tot) 
           paste0(formatC(a, big.mark = ','), ' (',format(round(100*a/tot, 2), nsmall=2), '%)')
+
         paste0(
-          "Round ",r, "\n", 
-          formatC(tot, big.mark = ','), " total VL measurements:\\\\l &#8226; ",
-          .r(x), " were vireamic.\\\\l &#8226; ",
-          .r(y), " had low level viraemia.\\\\l &#8226; ",
-          .r(z), " were non-viraemic.\\\\l")
+          "Round ",r, "\n",
+          round_dates[ROUND == r, paste0('(',LAB, ')\n') ],
+
+          "\nAmong men\n",
+          formatC(m_tot, big.mark = ','), " total VL measurements:\\\\l &#8226; ",
+          .r(m_x, m_tot), " were vireamic.\\\\l &#8226; ",
+          .r(m_y, m_tot), " had low level viraemia.\\\\l &#8226; ",
+          .r(m_z, m_tot), " were non-viraemic.\\\\l",
         
+          "\nAmong women\n",
+          formatC(f_tot, big.mark = ','), " total VL measurements:\\\\l &#8226; ",
+          .r(f_x, f_tot), " were vireamic.\\\\l &#8226; ",
+          .r(f_y, f_tot), " had low level viraemia.\\\\l &#8226; ",
+          .r(f_z, f_tot), " were non-viraemic.\\\\l")
       }
-      DT[HIV_AND_VL == 1 & ROUND == r, 
-         .statement(tot=.N,
-                    x=sum(VL_COPIES > 1000),
-                    y=sum(VL_COPIES %between% c(200, 1000)),
-                    z=sum(VL_COPIES < 1000)) ]
+
+      DT[HIV_AND_VL == 1 & ROUND == r, {
+            is.male <- SEX == 'M'
+            VL_COPIES.M <- VL_COPIES[is.male]
+            VL_COPIES.F <- VL_COPIES[!is.male]
+            .statement(
+                m_tot=sum(is.male),
+                m_x=sum(VL_COPIES.M > 1000),
+                m_y=sum(VL_COPIES.M %between% c(200, 1000)),
+                m_z=sum(VL_COPIES.M < 1000),
+                f_tot=sum(!is.male),
+                f_x=sum(VL_COPIES.F > 1000),
+                f_y=sum(VL_COPIES.F %between% c(200, 1000)),
+                f_z=sum(VL_COPIES.F < 1000)
+            ) 
+        }]
     }
-    ls_fchart_round <- lapply(idx, statement_for_round)
-    names(ls_fchart_round) <- paste0('r',idx)
+
+    ls_fchart_round <- lapply(round_idx, statement_for_round)
+    names(ls_fchart_round) <- paste0('r',round_idx)
 
     filename <- file.path(out.dir, 'flowchart_numbers.pdf')
     DiagrammeR::grViz(
-                      "
-                      digraph graph2 {
+          "
+          digraph graph2 {
 
-                          # Graph attributes
-                          graph [splines=line, nodesep=.2]
-                          node [fontsize=15]
-                          edge [arrowsize=.5]
+              # Graph attributes
+              graph [splines=line, nodesep=.2]
+              node [fontsize=15]
+              edge [arrowsize=.5]
 
-                          # node definitions with substituted label text
-                          node [shape = rectangle, width = 7, height=.4]
-                          a [label = '@@1']
-                          b [label = '@@2']
-                          c [label = '@@3']
+              # node definitions with substituted label text
+              node [shape = rectangle, width = 7, height=.4]
+              a [label = '@@1']
+              b [label = '@@2']
+              c [label = '@@3']
 
-                          node [shape = rectangle, width = 1]
-                          r16 [label='@@4']
-                          r17 [label='@@5']
-                          r18 [label='@@6']
-                          r19 [label='@@7']
+              node [shape = rectangle, width = 1]
+              r16 [label='@@4']
+              r17 [label='@@5']
+              r18 [label='@@6']
+              r19 [label='@@7']
 
-                          node [shape = point, width=.001, height=.001, label='']
-                          h; h1; h2; h3; h4
+              node [shape = point, width=.001, height=.001, label='']
+              h; h1; h2; h3; h4
 
-                          # Edge statement
-                          a -> b -> c
-                          edge [arrowhead=none]
-                          c -> h 
-                          {rank=same; arrowhead=none; h1 -> h2 ; h2 -> h; h -> h3; h3 -> h4}
+              # Edge statement
+              a -> b -> c
+              edge [arrowhead=none]
+              c -> h 
+              {rank=same; arrowhead=none; h1 -> h2 ; h2 -> h; h -> h3; h3 -> h4}
 
-                          edge[ tailclip = true, headclip=true, arrowhead=normal]
-                          h1 -> r16
-                          h2 -> r17
-                          h3 -> r18
-                          h4 -> r19
-                      }
+              edge[ tailclip = true, headclip=true, arrowhead=normal]
+              h1 -> r16
+              h2 -> r17
+              h3 -> r18
+              h4 -> r19
+          }
 
-                      [1]: paste0(ls_fchart[['all']][[1]], ' study participants, accounting for ', ls_fchart[['all']][[2]], ' visits.')
-                      [2]: paste0(ls_fchart[['pos']][[1]], ' HIV positive participants, accounting for ', ls_fchart[['pos']][[2]], ' visits.')
-                      [3]: paste0(ls_fchart[['vls']][[1]], ' HIV positive participants with VL measurements,\\naccounting for ', ls_fchart[['vls']][[2]], ' visits.')
-                      [4]: ls_fchart_round$r16
-                      [5]: ls_fchart_round$r17
-                      [6]: ls_fchart_round$r18
-                      [7]: ls_fchart_round$r19
-                      ")  |> export_svg() |> charToRaw() |> rsvg_pdf(filename)
+          [1]: paste0(ls_fchart[['all']][SEX=='ALL'][[2]], ' study participants, accounting for ', ls_fchart[['all']][[2]], ' visits.')
+          [2]: paste0(ls_fchart[['pos']][SEX=='ALL'][[2]], ' HIV positive participants, accounting for ', ls_fchart[['pos']][[3]], ' visits.')
+          [3]: paste0(ls_fchart[['vls']][SEX=='ALL'][[2]], ' HIV positive participants with VL measurements,\\naccounting for ', ls_fchart[['vls']][[3]], ' visits.')
+          [4]: ls_fchart_round$r16
+          [5]: ls_fchart_round$r17
+          [6]: ls_fchart_round$r18
+          [7]: ls_fchart_round$r19
+          ")  |> export_svg() |> charToRaw() |> rsvg_pdf(filename)
 }
 
 get.glm.data <- function(DT)
@@ -440,10 +472,11 @@ date2numeric <- function( x )
 	tmp <- seq.int(min(DT$AGEYRS), max(DT$AGEYRS))
         tmp1 <- DT[, sort(unique(ROUND))]
 
-	vla <- as.data.table(expand.grid(ROUND=tmp1,
-                                         FC=c('fishing','inland'),
-                                         SEX=c('M','F'),
-                                         AGEYRS=tmp))
+	vla <- expand.grid(
+        ROUND=tmp1,
+        FC=c('fishing','inland'),
+        SEX=c('M','F'),
+        AGEYRS=tmp) |> as.data.table()
 	vla <- vla[, {		
                 z <- which(DT$ROUND==ROUND & DT$FC==FC & DT$SEX==SEX & DT$AGEYRS==AGEYRS)	
                 list(N          = length(z),
@@ -458,10 +491,12 @@ date2numeric <- function( x )
         }, by=names(vla)]
 
 	setnames(vla, c('FC','SEX','AGEYRS'), c('LOC_LABEL','SEX_LABEL','AGE_LABEL'))
-	vla[, LOC:= as.integer(LOC_LABEL=='fishing')]
-	vla[, SEX:= as.integer(SEX_LABEL=='M')]
-	vla[, AGE:= AGE_LABEL-14L]
-	vla[, ROW_ID:= seq_len(nrow(vla))]
+    vla[, `:=` (
+        LOC= as.integer(LOC_LABEL=='fishing'),
+        SEX= as.integer(SEX_LABEL=='M'),
+        AGE= AGE_LABEL-14L,
+        ROW_ID= seq_len(nrow(vla))
+    )]
 
         # Extract selected fields
         cols <- c('ROUND', 'LOC_LABEL', 'SEX_LABEL', 'AGE_LABEL', 'LOC', 'SEX', 'AGE', 'ROW_ID')

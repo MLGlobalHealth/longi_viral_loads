@@ -105,7 +105,7 @@ sapply(R_scripts, source) |> invisible()
 source(file.path(gitdir.functions, 'preprocessing_helpers.R'))
 # source(file.path(gitdir.functions,'base_utilities.R') )
 source(file.path(gitdir.functions, 'vl_testing_helpers.R'))
-source(file.path(gitdir.scripts,'phsc_vl_helpers.R'))
+source(file.path(gitdir.functions,'phsc_vl_helpers.R'))
 
 # set up parallel backend if want
 if(parallelise)
