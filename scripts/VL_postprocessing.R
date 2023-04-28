@@ -29,6 +29,7 @@ source( file.path(gitdir.R,'base_utilities.R') )
 source( file.path(gitdir.R,'base_plots.R') )
 source( file.path(gitdir.R,'dictionaries.R') )
 source( file.path(gitdir.functions,'plotting_main_figures.R') )
+source( file.path(gitdir.functions,'postprocessing_helpers.R') )
 source( file.path(gitdir.functions,'phsc_vl_helpers.R') )
 
 # source command line options, stored in args. Then subset
@@ -87,6 +88,8 @@ tmp <- make.unaids.plots(DT=dcens)
 
 # Summarised analyes
 # __________________
+
+# TODO: modify plots according to Oli's feedback. 
 
 cat('--- Plot Posteriors for fishing analyses ---\n')
 p <- plot.all.gps(loc='fishing')

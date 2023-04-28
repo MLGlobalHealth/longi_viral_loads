@@ -8,8 +8,6 @@ dfacets <- list(
 
 plot.all.gps <- function( loc='fishing')
 {
-    # rda_files <- list.files(outdir, pattern='.rda', full.names=T)
-
     # Plotting helpers
     # ________________
 

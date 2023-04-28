@@ -26,25 +26,29 @@ get.dall <- function(path, make_flowchart=TRUE)
 get.census.eligible <- function(rounds=args$round)
 {
     # Recall that COUNT and TOTAL_COUNT do not agree with HIV_N and N in our vla.
-    # why? I removed (very few) HIV+ without VLs (only reason?)
-    vla <- .preprocess.ds.oli(dall)
-    vla <- .preprocess.make.vla(vla, select=c('N', 'HIV_N', 'VLNS_N'))
+    # why? I removed (very few) HIV+ without VLs (79)
 
-    .load.dcens <- function(file)
-    {
-        cols <- c('ROUND', 'COMM', 'AGEYRS', 'SEX', 'ELIGIBLE')
-        dcens <- fread(file) |> 
-            subset(ROUND %in% rounds, select=cols) |> 
-            setnames(c('COMM', 'AGEYRS', 'SEX'), paste0(c('LOC', 'AGE', 'SEX'), '_LABEL'))
-        stopifnot('empty dcens after round subsetting'=nrow(dcens)>0)
+    cols <- c('ROUND', 'COMM', 'AGEYRS', 'SEX', 'ELIGIBLE')
 
-        dcens[, ROUND := as.integer(ROUND)]
-        dcens <- merge(vla, dcens, by=c('ROUND', 'LOC_LABEL', 'SEX_LABEL','AGE_LABEL'))
-        dcens[, `:=` (SEX=NULL, AGE=NULL, LOC=NULL, ROW_ID=NULL)]
-        dcens
-    }
-    dcens <- .load.dcens(path.census.eligible)
+    dcens <- fread(path.census.eligible) |> 
+        subset(ROUND %in% rounds, select=cols) |> 
+        setnames(c('COMM', 'AGEYRS', 'SEX'), paste0(c('LOC', 'AGE', 'SEX'), '_LABEL'))
+    stopifnot('empty dcens after round subsetting'=nrow(dcens)>0)
+
+    dcens[, ROUND := as.integer(ROUND)]
+
     return(dcens)
+}
+
+get.participants.positives.unsuppressed <- function(DALL)
+{
+    # DALL <- copy(dall)
+    DALL |> 
+        .preprocess.ds.oli() |> 
+        .preprocess.make.vla(select=c('N', 'HIV_N', 'VLNS_N'))  |> str()
+
+    dnppu[, (c('LOC', 'SEX', 'AGE', 'ROW_ID')) := NULL ]
+    dnppu
 }
 
 .get.dcomm <- function()
@@ -502,14 +506,18 @@ date2numeric <- function( x )
 
 .preprocess.make.vla <- function(DT, select=c('N', 'HIV_N', 'VLNS_N', 'ARV_N', 'VL_MEAN', 'VL_SD', 'VL_MEAN_SD', 'HIV_N'))
 {
+    # DT <- copy(dall)
 	tmp <- seq.int(min(DT$AGEYRS), max(DT$AGEYRS))
-        tmp1 <- DT[, sort(unique(ROUND))]
+    tmp1 <- DT[, sort(unique(ROUND))]
 
 	vla <- expand.grid(
         ROUND=tmp1,
         FC=c('fishing','inland'),
         SEX=c('M','F'),
-        AGEYRS=tmp) |> as.data.table()
+        AGEYRS=tmp, 
+        stringsAsFactors = FALSE
+    ) |> as.data.table()
+
 	vla <- vla[, {		
                 z <- which(DT$ROUND==ROUND & DT$FC==FC & DT$SEX==SEX & DT$AGEYRS==AGEYRS)	
                 list(N          = length(z),
