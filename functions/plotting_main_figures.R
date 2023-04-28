@@ -6,32 +6,6 @@ dfacets <- list(
                 comm = setNames(c('Fishing', 'Inland'), c('fishing', 'inland') )
 )
 
-get.census.eligible <- function()
-{
-    # Recall that COUNT and TOTAL_COUNT do not agree with HIV_N and N in our vla.
-    # why? I removed (very few) HIV+ without VLs (only reason?)
-    vla <- .preprocess.ds.oli(dall)
-    vla <- .preprocess.make.vla(vla, select=c('N', 'HIV_N', 'VLNS_N'))
-
-    .load.dcens <- function(file)
-    {
-        dcens <- fread(file)
-        setnames(dcens,
-                 c('COMM', 'AGEYRS', 'SEX'),
-                 paste0(c('LOC', 'AGE', 'SEX'), '_LABEL'))
-        dcens <- dcens[ ! ROUND %like% '15']
-        dcens[, ROUND := as.integer(ROUND)]
-        cols <- grep('LABEL|ELIGIBLE$|ROUND', names(dcens), value=TRUE)
-        dcens <- dcens[, ..cols]
-        dcens <- merge(vla, dcens,
-                        by=c('ROUND', 'LOC_LABEL', 'SEX_LABEL','AGE_LABEL'))
-        dcens[, `:=` (SEX=NULL, AGE=NULL, LOC=NULL)]
-        dcens
-    }
-    dcens <- .load.dcens(path.census.eligible)
-    dcens
-}
-
 plot.all.gps <- function( loc='fishing')
 {
     # rda_files <- list.files(outdir, pattern='.rda', full.names=T)
@@ -50,40 +24,6 @@ plot.all.gps <- function( loc='fishing')
     drounds[, LABS:=paste0(LABS, START, ' to ', END)]
     round_labs <- drounds$LABS
     names(round_labs) <- drounds$ROUND
-
-    .load.draw.dfiles <- function(lab)
-    {
-        lab2 <- fcase(
-              lab %like% 'prevalence', "prev.hiv.by.age",
-              lab %like% 'suppAmongInfected', "nsinf.by.age",
-              lab %like% 'suppAmongPop', "nspop.by.age",
-              default=NA
-        )
-        stopifnot(! is.na(lab2) )
-
-        dfiles <- grep( lab, rda_files, value=TRUE)
-
-        # dfit contains the posterior, draw the empirical data
-        dfit <- list()
-        draw <- list()
-        for (file in dfiles)
-        {
-            cat('Loading file:', basename(file), '...\n')
-            tmp_env <- new.env()
-            load(file, envir=tmp_env)
-            rlang::env_has(tmp_env, 'DT')
-            dfit[[file]] <- tmp_env[[lab2]]
-            draw[[file]] <- tmp_env[["DT"]]
-        }
-        rm(tmp_env)
-        dfit <- rbindlist(dfit, idcol='ROUND')
-        draw <- rbindlist(draw)
-        .f <- function(x) as.integer(gsub('^.*?round([0-9]{2}).*?$', '\\1', x))
-        dfit[, ROUND := .f(ROUND)]
-
-        stopifnot("ROUND" %in% names(draw) & "ROUND" %in% names(dfit))
-        list(draw, dfit)
-    }
 
     .plot.hiv.prevalence <- function(DFIT, DRAW)
     {
@@ -186,23 +126,20 @@ plot.all.gps <- function( loc='fishing')
     # Load HIV+ prev data
     # ___________________
 
-    tmp <- .load.draw.dfiles( "prevalence" )
-    draw <- tmp[[1]]
+    tmp <- load.summarised.draws.from.files("prevalence", files=rda_files, include.raw=TRUE)
+    data_raw <- tmp[[1]]
     dfit <- tmp[[2]]
-    p1 <- .plot.hiv.prevalence(dfit[LOC_LABEL==loc], draw[LOC_LABEL==loc])
+    p1 <- .plot.hiv.prevalence(dfit[LOC_LABEL==loc], data_raw[LOC_LABEL==loc])
 
-    tmp <- .load.draw.dfiles( 'suppAmongInfected')
-    draw <- tmp[[1]]
+    tmp <- load.summarised.draws.from.files("suppAmongInfected", files=rda_files, include.raw=TRUE)
+    data_raw <- tmp[[1]]
     dfit <- tmp[[2]]
-    p2 <- .plot.supp.hiv(dfit[LOC_LABEL==loc], draw[LOC_LABEL==loc])
+    p2 <- .plot.supp.hiv(dfit[LOC_LABEL==loc], data_raw[LOC_LABEL==loc])
 
-    tmp <- .load.draw.dfiles( 'suppAmongPop')
-    draw <- tmp[[1]]
+    tmp <- load.summarised.draws.from.files("suppAmongPop", files=rda_files, include.raw=TRUE)
+    data_raw <- tmp[[1]]
     dfit <- tmp[[2]]
-    p3 <- .plot.unsupp.pop(dfit[LOC_LABEL==loc], draw[LOC_LABEL==loc])
-
-    names(draw)
-    draw[ ROUND==19 & SEX_LABEL=="M" & AGE_LABEL %between% c(30, 35) & LOC_LABEL == loc, .(AGE_LABEL, N, HIV_N, VLNS_N, F=VLNS_N/N)]
+    p3 <- .plot.unsupp.pop(dfit[LOC_LABEL==loc], data_raw[LOC_LABEL==loc])
 
     # Merge together
 
@@ -222,44 +159,6 @@ make.table.unaids.goals <- function(age_group_width=5)
 {
     # Helpers
     .p <- scales::label_percent(accuracy=.01)
-
-    .load.dfit <- function(lab)
-    {
-
-        lab2 <- fcase(
-                      lab %like% 'prevalence', "prev.hiv.by.age",
-                      lab %like% 'suppAmongInfected', "nsinf.by.age",
-                      lab %like% 'suppAmongPop', "nspop.by.age",
-                      default=NA
-        )
-        stopifnot(! is.na(lab2))
-        dfiles <- grep( lab, dfiles, value=TRUE)
-
-        # dfit contains the posterior
-        dfit <- list()
-        for (file in dfiles)
-        {
-            cat('Loading file:', basename(file), '...\n')
-            tmp_env <- new.env()
-            load(file, envir=tmp_env)
-            rlang::env_has(tmp_env, 'DT')
-            dfit[[file]] <- tmp_env[[lab2]]
-            # draw[[file]] <- tmp_env[["DT"]]
-        }
-        rm(tmp_env)
-        dfit <- rbindlist(dfit, idcol='ROUND')
-        .f <- function(x) as.integer(gsub('^.*?round([0-9]{2}).*?$', '\\1', x))
-        dfit[, ROUND := .f(ROUND)]
-
-        stopifnot("ROUND" %in% names(dfit))
-
-        # Fix age groups
-        dfit <- dfit[AGE_LABEL %% 1 == .5]
-        dfit[ , AGEYRS := AGE_LABEL - .5 ]
-        dfit[ , AGE_LABEL := NULL]
-
-        dfit
-    }
 
     .aggregate_by_agebins <- function(DT, width=age_group_width)
     {
@@ -345,8 +244,8 @@ make.table.unaids.goals <- function(age_group_width=5)
     cat('Focus on last round only for this table...\n')
     dfiles <- grep(last.round,rda_files, value=TRUE)
 
-    dprev <- .load.dfit('prevalence')
-    dsuppinf <- .load.dfit('suppAmongInfected')
+    dprev <- load.summarised.draws.from.files('prevalence', files=dfiles , include.raw=FALSE)
+    dsuppinf <- load.summarised.draws.from.files('suppAmongInfected', files=dfiles , include.raw=FALSE)
 
     # Merge with census eligible 
     # __________________________
@@ -393,44 +292,6 @@ make.table.unaids.goals <- function(age_group_width=5)
 
 make.unaids.plots <- function(DT)
 {
-    .load.dfit <- function(lab)
-    {
-        # decide which chain to load
-        lab2 <- fcase(
-            lab %like% 'prevalence', "prev.hiv.by.age",
-            lab %like% 'suppAmongInfected', "nsinf.by.age",
-            lab %like% 'suppAmongPop', "nspop.by.age",
-            default=NA
-        )
-        stopifnot(! is.na(lab2))
-
-        # get rdas filenames containing the fit
-        dfiles <- grep( lab, rda_files, value=TRUE)
-
-        # dfit will store contains the posterior
-        dfit <- list()
-        for (file in dfiles)
-        {
-            cat('Loading file:', basename(file), '...\n')
-            tmp_env <- new.env()
-            load(file, envir=tmp_env)
-            dfit[[file]] <- tmp_env[[lab2]]
-            rm(tmp_env)
-        }
-
-        # Join the estimates by round 
-        dfit <- rbindlist(dfit, idcol='ROUND')
-        .f <- function(x) as.integer(gsub('^.*?round([0-9]{2}).*?$', '\\1', x))
-        dfit[, ROUND := .f(ROUND)]
-        stopifnot("ROUND" %in% names(dfit))
-
-        # Fix age groups: do not extract "half year" ages as 24.5
-        dfit <- dfit[AGE_LABEL %% 1 == .5]
-        dfit[ , AGEYRS := AGE_LABEL - .5 ]
-        dfit[ , AGE_LABEL := NULL]
-
-        dfit
-    }
 
     .aggregate_by_agebins <- function(DT, width=age_group_width)
     {
@@ -560,8 +421,9 @@ make.unaids.plots <- function(DT)
     max.round <- DT[, max(ROUND)]
     dunaids <- DT[ROUND==max.round]
     dunaids_allround <- copy(DT)
-    dprev <- .load.dfit('prevalence')
-    dsupp_pop <- .load.dfit('suppAmongPop')
+    
+    dprev <- load.summarised.draws.from.files("prevalence", files=rda_files, include.raw=FALSE)
+    dsupp_pop <- load.summarised.draws.from.files("suppAmongPop", files=rda_files, include.raw=FALSE)
 
     # Get the posterior estimate for the number of
     # HIV cases & of viraemic (unsuppressed) individuals among eligible. 
@@ -679,7 +541,7 @@ make.unaids.plots <- function(DT)
     tmp[, PARTICIPATION_STATUS_OUT := PARTICIPATION_STATUS_IN*(ELIGIBLE-N)/N]
 
     # Estimate distribution of viramic status among out-of-study individuals
-    # TODO: (?) If we want to change HIV homogeneity assumptions, here:
+    # NOTE: (?) If we want to change HIV homogeneity assumptions, here:
     cols <- grep('PARTICIPATION_STATUS', names(tmp), value=TRUE)
     tmp <- melt(tmp, measure.vars=cols,
          value.name='count',

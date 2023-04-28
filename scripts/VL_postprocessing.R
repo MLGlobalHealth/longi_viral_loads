@@ -24,10 +24,6 @@ file.exists(
         path.census.eligible
 ) |> all() |> stopifnot()
 
-make_paper_numbers <- TRUE
-if(make_paper_numbers)
-    ppr_numbers <- list()
-
 # helpers
 source( file.path(gitdir.R,'base_utilities.R') )
 source( file.path(gitdir.R,'base_plots.R') )
@@ -35,86 +31,54 @@ source( file.path(gitdir.R,'dictionaries.R') )
 source( file.path(gitdir.functions,'plotting_main_figures.R') )
 source( file.path(gitdir.functions,'phsc_vl_helpers.R') )
 
+# source command line options, stored in args. Then subset
+source( file.path(gitdir.R,'options.R') )
+opts_vec <- c('viremic.viral.load', 'detectable.viral.load', 'out.dir.prefix', 'indir','round', 'jobname')
+args <- args[ names(args) %in% opts_vec]
 
-################
-#   OPTIONS    #
-################
+# other setup
+#------------
 
-option_list <- list(
-    make_option(
-        "--viremic-viral-load",
-        type = "numeric",
-        default = 1000,
-        help = "Duration of acute phase, in years [Defaults to 2 months]", 
-        dest = 'viremic.viral.load'
-    ),
-    make_option(
-        "--vl-detectable",
-        type = "numeric",
-        default = 150,
-        help = "Duration of acute phase, in years [Defaults to 2 months]", 
-        dest = 'viremic.viral.load'
-    ),
-    make_option(
-        "--indir",
-        type = "character",
-        default = '/home/andrea/HPC/ab1820/home/projects/2022/longvl/',
-        help = "Path to output directory where model fits are stored [Defaults to my directory]", 
-        dest = 'indir'
-    ),
-    make_option(
-        "--outdir",
-        type = "character",
-        default = '/home/andrea/HPC/ab1820/home/projects/2022/longvl/',
-        help = "Path to output directory where to store results [Defaults to my directory]", 
-        dest = 'out.dir.prefix'
-    ),
-    make_option(
-        "--round",
-        type = "numeric",
-        default = c(16,17,18,19),
-        help = "Path to output directory where to store results [Defaults to my directory]", 
-        dest = 'round'
-    )
-)
+make_paper_numbers <- TRUE
+if(make_paper_numbers)
+    ppr_numbers <- list()
 
-args <-  parse_args(OptionParser(option_list = option_list))
-print(args)
+
+VL_DETECTABLE = args$vl.detectable
+VIREMIC_VIRAL_LOAD = args$viremic.viral.load
+# plot requisite from nature med: 
+naturemed_reqs() # stores them in nm_reqs
+# output directory with rda files
+out.dir <- args$out.dir.prefix
+vl.out.dir <- file.path(out.dir, paste0('vl_', VIREMIC_VIRAL_LOAD) )
+.f <- function(x) dir.create(file.path(vl.out.dir, x)) |> suppressWarnings()
+sapply(c('figures', 'tables'), .f)
+stopifnot(dir.exists(vl.out.dir))
 
 ################
 #     MAIN     #
 ################
 
-VL_DETECTABLE = args$vl.detectable
-VIREMIC_VIRAL_LOAD = args$viremic.viral.load
+rda_files <- list.files.from.output.directory('.rda')
 
-# plot requisite from nature med: 
-naturemed_reqs() # stores them in nm_reqs
-
-# output directory with rda files
-out.dir <- args$out.dir.prefix
-vl.out.dir <- file.path(out.dir, paste0('vl_', VIREMIC_VIRAL_LOAD) )
-vl.out.dir
-
-.f <- function(x) dir.create(file.path(vl.out.dir, x)) |> suppressWarnings()
-sapply(c('figures', 'tables'), .f)
-stopifnot(dir.exists(vl.out.dir))
-
-# get rda paths for fitted models
-rda_files <- list.files(args$indir, pattern='.rda', full.names=T, recursive=TRUE)
-rda_files <- grep(paste0('vl_', args$viremic.viral.load), rda_files, value=T)
-# get data 
-dall <- get.dall(path.hivstatusvl.r1520, make_flowchart=FALSE)
-
+# get data
+# TODO: fix flowchart (first row + explain why missing vl...) 
+dall <- get.dall(path.hivstatusvl.r1520, make_flowchart=TRUE)
 
 # Get census eligible and compare with participants 
 # __________________________________________________
 
 # we need to chose whether to use the smoothed version, or the actual counts (`.count`)
+by_vars <- c('ROUND', 'SEX_LABEL', 'LOC_LABEL')
 dcens <- get.census.eligible()
-dcens[, .(N_ELIGIBLE=sum(ELIGIBLE)), by=c('ROUND', 'SEX_LABEL', 'LOC_LABEL')] |> 
+dcens[, .(N_ELIGIBLE=sum(ELIGIBLE)), by=by_vars] |> 
     dcast(ROUND + SEX_LABEL ~ LOC_LABEL, value.var='N_ELIGIBLE' ) |>
     kable(caption = 'number of census eligible by round, sex and location')
+
+# merge with number of participant -> positives -> not suppressed
+# NOTE: NA eligibles for AGE_LABEL == 50. May be mismatch in how age is defined here and in phyloflows `get_census_eligible` count
+dcens <- get.participants.positives.unsuppressed(dall) |> 
+    merge(dcens, y=_, by=c(by_vars, 'AGE_LABEL'), all.x=TRUE, all.y=TRUE)
 last.round <- dcens[, max(ROUND)] 
 
 cat('--- Make UNAIDS objectives plot ---\n')

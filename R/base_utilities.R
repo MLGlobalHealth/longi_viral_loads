@@ -42,6 +42,23 @@ savefile <- function(data, filename, overwrite=FALSE)
     return(nvim_cmd_to_open_file)
 }
 
+
+list.files.from.output.directory <- function(pattern, indir=args$indir, vl=args$viremic.viral.load, jobname=args$jobname, rounds=NULL )
+{
+    # extracts files from the output directory specified by args$vl and args$jobname
+    dir <- file.path(indir, paste0('vl_', vl))
+    files <- list.files( dir, pattern=pattern, full.names = TRUE, recursive = TRUE)
+    
+    # subset to file containing roundRR in their basename 
+    if(! is.null(rounds) )
+    {
+        labels <- paste0('round', rounds) |> paste(collapse = '|')
+        files <- files[ basename(files) %like% labels ]
+    }
+
+    return(files)
+}
+
 catn <- function(x) cat('\n----', x, '----\n')
 
 empty2NA <- function(DT)

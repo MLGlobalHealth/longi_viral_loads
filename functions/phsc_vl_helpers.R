@@ -13,9 +13,7 @@ get.dall <- function(path, make_flowchart=TRUE)
     stopifnot(dall[, .N, by=key_cols][, all(N == 1)])
 
     # rename variables according to Oli's old script + remove 1 unknown sex
-    setnames(dall,
-             c('HIV_VL', 'COMM'),
-             c('VL_COPIES', 'FC') )
+    setnames(dall, c('HIV_VL', 'COMM'), c('VL_COPIES', 'FC') )
     dall[, HIV_AND_VL := ifelse( HIV_STATUS == 1 & !is.na(VL_COPIES), 1, 0)]
 
     # make study flowchart if packages are installed 
@@ -23,6 +21,30 @@ get.dall <- function(path, make_flowchart=TRUE)
         make.study.flowchart(dall)
 
     return(dall)
+}
+
+get.census.eligible <- function(rounds=args$round)
+{
+    # Recall that COUNT and TOTAL_COUNT do not agree with HIV_N and N in our vla.
+    # why? I removed (very few) HIV+ without VLs (only reason?)
+    vla <- .preprocess.ds.oli(dall)
+    vla <- .preprocess.make.vla(vla, select=c('N', 'HIV_N', 'VLNS_N'))
+
+    .load.dcens <- function(file)
+    {
+        cols <- c('ROUND', 'COMM', 'AGEYRS', 'SEX', 'ELIGIBLE')
+        dcens <- fread(file) |> 
+            subset(ROUND %in% rounds, select=cols) |> 
+            setnames(c('COMM', 'AGEYRS', 'SEX'), paste0(c('LOC', 'AGE', 'SEX'), '_LABEL'))
+        stopifnot('empty dcens after round subsetting'=nrow(dcens)>0)
+
+        dcens[, ROUND := as.integer(ROUND)]
+        dcens <- merge(vla, dcens, by=c('ROUND', 'LOC_LABEL', 'SEX_LABEL','AGE_LABEL'))
+        dcens[, `:=` (SEX=NULL, AGE=NULL, LOC=NULL, ROW_ID=NULL)]
+        dcens
+    }
+    dcens <- .load.dcens(path.census.eligible)
+    return(dcens)
 }
 
 .get.dcomm <- function()
@@ -111,7 +133,8 @@ make.study.flowchart <- function(DT)
     ls_fchart_round <- lapply(round_idx, statement_for_round)
     names(ls_fchart_round) <- paste0('r',round_idx)
 
-    filename <- file.path(out.dir, 'flowchart_numbers.pdf')
+    filename <- file.path(vl.out.dir, 'flowchart_numbers.pdf')
+    cat('Saving',  filename, '\n')
     DiagrammeR::grViz(
           "
           digraph graph2 {
@@ -438,33 +461,43 @@ date2numeric <- function( x )
 
 .preprocess.ds.oli <- function(DT, rm.na.vl=TRUE)
 {
-        # DT <- copy(dall)
-        DT <- subset(DT, AGEYRS <= 50)
+    # DT <- copy(dall)
+    DT <- subset(DT, AGEYRS <= 50)
 
-        # remove HIV+ individuals with missing VLs and 
-        if(rm.na.vl)
-                DT <- subset(DT, HIV_STATUS==0 | HIV_AND_VL==1)
+    if(rm.na.vl)
+    {
+        DT <- DT[,{
+            idx_posnovl <- HIV_STATUS == 1 & HIV_AND_VL == 0
+            np <- sum(HIV_STATUS)
+            n <- sum(idx_posnovl)
+            sprintf('removing %d out of %d out of HIV positive individuals without VL.', n, np)
+            .SD[!idx_posnovl]
+        },]
+    }
 
-        # consider only ARVMED for infected
-        set(DT, DT[, which(ARVMED==1 & HIV_STATUS==0)], 'ARVMED', 0) 
-        
-        # define VL_COPIES for uninfected
-        set(DT, NULL, 'VLC', DT$VL_COPIES)
-        set(DT, DT[,which(HIV_STATUS==0)], 'VLC', 0)
-        
-        # define undetectable VL (machine-undetectable)
-        # define suppressed VL (according to WHO criteria)	
-        set(DT, NULL, 'VLU', DT[, as.integer(VLC<VL_DETECTABLE)])
-        set(DT, NULL, 'VLS', DT[, as.integer(VLC<VIREMIC_VIRAL_LOAD)])
-        set(DT, NULL, 'VLD', DT[, as.integer(VLC>=VL_DETECTABLE)])
-        set(DT, NULL, 'VLNS', DT[, as.integer(VLC>=VIREMIC_VIRAL_LOAD)])
-        set(DT, NULL, 'HIV_AND_VLD', DT[, as.integer(VLD==1 & HIV_AND_VL==1)])
-        
-        # reset VLC below machine detectable to 0
-        set(DT, DT[, which(HIV_AND_VL==1 & VLU==1)], 'VLC', 0)
-        setkey(DT, ROUND, FC, SEX, AGEYRS)
+    # consider only ARVMED for infected
+    set(DT, DT[, which(ARVMED==1 & HIV_STATUS==0)], 'ARVMED', 0) 
+    
+    # define VL_COPIES for uninfected
+    set(DT, NULL, 'VLC', DT$VL_COPIES)
+    set(DT, DT[,which(HIV_STATUS==0)], 'VLC', 0)
+    
+    # define undetectable VL (machine-undetectable)
+    # define suppressed VL (according to WHO criteria)	
+    DT[, `:=` (
+        VLU = as.integer(VLC<VL_DETECTABLE),
+        VLS = as.integer(VLC<VIREMIC_VIRAL_LOAD),
+        VLD = as.integer(VLC>=VL_DETECTABLE),
+        VLNS = as.integer(VLC>=VIREMIC_VIRAL_LOAD)
+    )]
+    DT[, HIV_AND_VLD := as.integer(VLD==1 & HIV_AND_VL==1)]
+    
+    # reset VLC below machine detectable to 0 
+    DT[which(HIV_AND_VL==1 & VLU==1), VLC := 0]
 
-        DT
+    setkey(DT, ROUND, FC, SEX, AGEYRS)
+
+    DT
 }
 
 .preprocess.make.vla <- function(DT, select=c('N', 'HIV_N', 'VLNS_N', 'ARV_N', 'VL_MEAN', 'VL_SD', 'VL_MEAN_SD', 'HIV_N'))
