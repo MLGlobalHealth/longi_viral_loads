@@ -12,6 +12,7 @@ Concerning ARV: JS: "the main interest was to capture the round-specific intervi
 
 - DESCRIBE: `new questionnaire data`
 
+- The census eligible path I have in gitdir.data was produced with Melodies script but additionaly including round 19. NOTE: should find where this is
 
 # Ideas:
 
