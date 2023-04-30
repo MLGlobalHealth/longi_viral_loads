@@ -43,9 +43,9 @@ get.census.eligible <- function(rounds=args$round)
 get.participants.positives.unsuppressed <- function(DALL)
 {
     # DALL <- copy(dall)
-    DALL |> 
+    dnppu <- DALL |> 
         .preprocess.ds.oli() |> 
-        .preprocess.make.vla(select=c('N', 'HIV_N', 'VLNS_N'))  |> str()
+        .preprocess.make.vla(select=c('N', 'HIV_N', 'VLNS_N'))  
 
     dnppu[, (c('LOC', 'SEX', 'AGE', 'ROW_ID')) := NULL ]
     dnppu

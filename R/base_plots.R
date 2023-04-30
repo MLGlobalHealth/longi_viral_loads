@@ -2,7 +2,6 @@
 # Set default theme #
 #####################
 
-theme_set(theme_bw())
 geom.text.size = 5/14*7
 update_geom_defaults("text", list(size = geom.text.size))
 
@@ -10,12 +9,15 @@ update_geom_defaults("text", list(size = geom.text.size))
 GeomLabel$default_aes$family <- 'sans'
 
 # set default theme to bw and with better looking facets.
-theme_set(
+theme_default <- function(...) {
     theme_bw() +
-    theme(
+    theme( 
         legend.position = "bottom",
-        strip.background = element_blank())
-)
+        strip.background = element_blank(),
+        ...
+    )
+}
+theme_set( theme_default() )
 
 
 #########################
@@ -39,6 +41,8 @@ ggsave2 <- function(p, file, w, h, LALA=vl.out.dir, u='in')
     cat('Saving', filename, '...\n')
     ggsave(p, filename=file.path(LALA,filename2), width=w, height=h, units=u)
     ggsave(p, filename=file.path(LALA, filename), width=w, height=h, units=u)	
+    zathura_cmd <- paste0('zathura ', file.path(LALA, filename), ' &')
+    return(zathura_cmd)
 }
 
 naturemed_reqs <- function() 
@@ -127,10 +131,10 @@ ggsave_nature <- function(filename, p, LALA=vl.out.dir, w=18,h=24, add_reqs=TRUE
 palettes <- list(
 
     sex=c(
-        M="#F4B5BD",
-        F="#85D4E3",
-        Male="#F4B5BD",
-        Female="#85D4E3"
+        F="#F4B5BD",
+        M="#85D4E3",
+        Female="#F4B5BD",
+        Male="#85D4E3"
         ),
 
     comm = c(
@@ -179,6 +183,13 @@ palettes <- list(
         `Female 15-19`= "#eec8f5"
     ), 
 
+    round = c(
+        `16` = ,
+        `17` = ,
+        `18` = ,
+        `19` = ,
+    ),
+
     NULL
 )
 
@@ -188,6 +199,13 @@ palettes <- list(
 
 # prettify_... functions add a variable to the data table. 
 # labs_from_dictionaries returns a function that transforms variables to their labels through the use of dictionaries.
+
+remove_pretty <- function(DT)
+{
+    nms <- names(DT) %which.like% '_LAB$'
+    DT[, (nms) := NULL ]
+    return(DT)
+}
 
 prettify_round <- function(DT)
 {
@@ -200,8 +218,14 @@ prettify_round <- function(DT)
 prettify_sex <- function(DT)
 {
     nms <- names(DT)
-    if("SEX" %in% nms & ! "SEX_LAB" %in% nms)
-    DT[, SEX_LAB :=  sex_dictionary[SEX]]
+    if("SEX_LAB" %in% nms)
+    return(DT)
+
+    if("SEX" %in% nms)
+        DT[, SEX_LAB :=  sex_dictionary[SEX]]
+
+    if("SEX_LABEL" %in% nms)
+        DT[, SEX_LAB :=  sex_dictionary[SEX_LABEL]]
     return(DT)
 }
 

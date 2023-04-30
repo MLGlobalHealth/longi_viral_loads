@@ -11,109 +11,97 @@ plot.all.gps <- function( loc='fishing')
     # Plotting helpers
     # ________________
 
-    # Cleanly format round facets
-
-    drounds <- data.table(
-                          ROUND=16:19,
-                          LABS=paste0('Round ', 16:19, ':\n'),
-                          START=c('07/2013', '02/2015', '10/2016','06/2018'),
-                          END=c('01/2015', '09/2016', '05/2018','05/2019')
-    )
-    drounds[, LABS:=paste0(LABS, START, ' to ', END)]
-    round_labs <- drounds$LABS
-    names(round_labs) <- drounds$ROUND
-
-    .plot.hiv.prevalence <- function(DFIT, DRAW)
+    .plot.hiv.prevalence <- function(DFIT, DRAW, include.point=TRUE)
     {
         ppDT <- copy(DRAW)
         cols <- c('M', 'CU', 'CL')
         ppDT[, (cols) := binconf(HIV_N, N, return.df=T), ]
 
         tmp <- DFIT[ROUND == 16, .(M, AGE_LABEL, SEX_LABEL)]
-        tmp1 <- ppDT[, max(M, na.rm=T) + 0.01]
+        # y_upper_limit <- ppDT[, max(M, na.rm=T) + 0.01]
+        y_upper_limit <- fifelse(loc == 'fishing', yes=.75, no=.4)
 
         ggplot(DFIT, aes(x=AGE_LABEL, colour=SEX_LABEL)) + 		
-                geom_ribbon(aes( ymin=CL, ymax=CU, fill=SEX_LABEL), alpha=0.2, col=NA) +
-                geom_line(aes( y=M)) +
-                geom_line(data=tmp,aes(y=M), linetype='dotted') +
-                scale_x_continuous( expand=c(0,0) ) + 
-                scale_y_continuous(labels=scales:::percent, expand=c(0,0), limits=c(0,tmp1)) +
-                scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-                scale_fill_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-                facet_wrap(~ ROUND, ncol=4, labeller=labeller(ROUND=round_labs)) +
-                geom_point(data=ppDT, aes(y=M, pch=SEX_LABEL, size=N)) +
-                scale_size(range = c(0, 3)) +
-                theme_bw() +
-                theme(legend.position='bottom') + 
-                labs(x='\nage at visit (years)', 
-                     y='HIV prevalence\n(95% credible interval)', 
-                     pch='gender', fill='gender', color='gender',
-                     size='population size'
-                )
+            geom_ribbon(aes( ymin=CL, ymax=CU, fill=SEX_LABEL), alpha=0.2, col=NA) +
+            geom_line(aes( y=M)) +
+            geom_line(data=tmp,aes(y=M), linetype='dotted') +
+            scale_x_continuous( expand=c(0,0) ) + 
+            scale_y_continuous(labels=scales:::percent, expand=c(0,0), limits=c(0,y_upper_limit)) +
+            scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
+            scale_fill_manual(values=c('M'='royalblue3','F'='deeppink2')) +
+            facet_wrap(~ ROUND, ncol=4, labeller=labeller(ROUND=round_labs)) + {
+            if(include.point) geom_point(data=ppDT, aes(y=M, pch=SEX_LABEL, size=N))
+            } + 
+            scale_size(range = c(0, 3)) +
+            theme_default() + 
+            labs(x='\nage at visit (years)', 
+                y='HIV prevalence\n(95% credible interval)', 
+                pch='gender', fill='gender', color='gender',
+                size='population size'
+            )
     }
 
-    .plot.supp.hiv <- function(DFIT, DRAW)
+    .plot.supp.hiv <- function(DFIT, DRAW, include.point=TRUE)
     {
         # DFIT = dfit[LOC_LABEL==loc]; DRAW =  draw[LOC_LABEL==loc])
         ppDT <- copy(DRAW)
         cols <- c('M', 'CU', 'CL')
         ppDT[, (cols) := binconf(HIV_N - VLNS_N, HIV_N, return.df=T)]
-
         tmp <- DFIT[ROUND == 16, .(M, AGE_LABEL, SEX_LABEL)]
-        tmp1 <- ppDT[, max(M, na.rm=T) + 0.01]
+        y_upper_limit <- ppDT[, max(M, na.rm=T) + 0.01]
 
         ggplot(DFIT, aes(x=AGE_LABEL, colour=SEX_LABEL)) + 
-                geom_ribbon(aes( ymin=CL, ymax=CU, fill=SEX_LABEL), alpha=0.2, col=NA) +
-                geom_line(aes( y=M)) +
-                geom_line(data=tmp,aes(y=M), linetype='dotted') +
-                geom_hline(yintercept=c(0.9^2, 0.95^2), linetype='dashed') +
-                geom_richtext(size=2.5, fill=NA, label.color=NA, color='black',
-                              aes(15, 0.9^2, 
-                                  label = 'UNAIDS 0.90<sup>2</sup>', 
-                                  vjust = 'bottom', hjust='left')) + 
-                geom_richtext(size=2.5, fill=NA, label.color=NA, color='black',
-                              aes(15, 0.95^2, 
-                                  label = 'UNAIDS 0.95<sup>2</sup>', 
-                                  vjust = 'bottom', hjust='left')) + 
-                scale_x_continuous( expand=c(0,0) ) + 
-                scale_y_continuous(labels=scales:::percent, expand=c(0,0), limits=c(0,1)) +
-                scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-                scale_fill_manual(values=c('M'='royalblue3','F'='deeppink2')) +
-                facet_wrap(~ ROUND, ncol=4, labeller=labeller(ROUND=round_labs)) +
-                geom_point(data=ppDT, aes(y=M, pch=SEX_LABEL, size=N)) +
-                scale_size(range = c(0, 3)) +
-                theme_bw() +
-                theme(legend.position='bottom') + 
-                labs(x='\nage at visit (years)', 
-                     y='HIV+ individuals with suppressed viral load\n(95% credible interval)\n', 
-                     colour='gender', fill='gender',
-                     pch='gender', 
-                     size='population size'
-                )
+            geom_ribbon(aes( ymin=CL, ymax=CU, fill=SEX_LABEL), alpha=0.2, col=NA) +
+            geom_line(aes( y=M)) +
+            geom_line(data=tmp,aes(y=M), linetype='dotted') +
+            geom_hline(yintercept=c(0.9^2, 0.95^2), linetype='dashed') +
+            # geom_richtext(size=2.5, fill=NA, label.color=NA, color='black',
+            #               aes(15, 0.9^2, 
+            #                   label = 'UNAIDS 0.90<sup>2</sup>', 
+            #                   vjust = 'bottom', hjust='left')) + 
+            # geom_richtext(size=2.5, fill=NA, label.color=NA, color='black',
+            #               aes(15, 0.95^2, 
+            #                   label = 'UNAIDS 0.95<sup>2</sup>', 
+            #                   vjust = 'bottom', hjust='left')) + 
+            scale_x_continuous( expand=c(0,0) ) + 
+            scale_y_continuous(labels=scales:::percent, expand=c(0,0), limits=c(0,1)) +
+            scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
+            scale_fill_manual(values=c('M'='royalblue3','F'='deeppink2')) + {
+                if(include.point) geom_point(data=ppDT, aes(y=M, pch=SEX_LABEL, size=N)) 
+            } +  
+            facet_wrap(~ ROUND, ncol=4, labeller=labeller(ROUND=round_labs)) +
+            scale_size(range = c(0, 3)) +
+            theme_default() +
+            labs(x='\nage at visit (years)', 
+                 y='HIV+ individuals with suppressed viral load\n(95% credible interval)\n', 
+                 colour='gender', fill='gender',
+                 pch='gender', 
+                 size='population size'
+            )
     }
 
-    .plot.unsupp.pop <- function(DFIT, DRAW)
+    .plot.unsupp.pop <- function(DFIT, DRAW, include.point=TRUE)
     {
         ppDT <- copy(DRAW)
         cols <- c('M', 'CU', 'CL')
         ppDT[, (cols) := binconf( VLNS_N, N, return.df=T)]
 
         tmp <- DFIT[ROUND == 16, .(M, AGE_LABEL, SEX_LABEL)]
-        tmp1 <- ppDT[, max(M, na.rm=T) + 0.01]
+        y_upper_limit <- fifelse(loc=='fishing', yes=.45, no=.15)
 
         p <- ggplot(DFIT, aes(x=AGE_LABEL,colour=SEX_LABEL)) + 		
             geom_ribbon(aes(ymin=CL, ymax=CU, fill=SEX_LABEL), colour=NA, alpha=0.2) +			
             geom_line(aes(x=AGE_LABEL, y=M)) +
-            geom_line(data=tmp,aes(y=M), linetype='dotted') +
-            geom_point(data=ppDT, aes(y=M, pch=SEX_LABEL, size=N)) +
+            geom_line(data=tmp,aes(y=M), linetype='dotted') + {
+                if(include.point) geom_point(data=ppDT, aes(y=M, pch=SEX_LABEL, size=N))
+            } +
             scale_x_continuous( expand=c(0,0) ) + 
-            scale_y_continuous(labels=scales:::percent, limits=c(0,tmp1), expand=c(0,0)) +
+            scale_y_continuous(labels=scales:::percent, limits=c(0, y_upper_limit ), expand=c(0,0)) +
             scale_colour_manual(values=c('M'='royalblue3','F'='deeppink2')) +
             scale_fill_manual(values=c('M'='royalblue3','F'='deeppink2')) +
             scale_size(range = c(0, 3)) +
             facet_wrap(~ ROUND, ncol=4, labeller=labeller(ROUND=round_labs)) +
-            theme_bw() +
-            theme(legend.position='bottom') +
+            theme_default() +
             labs(x='\nage at visit (years)', 
                  y='population with unsuppressed viral load\n(95% credible interval)\n', 
                  pch='gender', colour='gender', fill='gender',
@@ -125,23 +113,25 @@ plot.all.gps <- function( loc='fishing')
     # ___________________
 
     tmp <- load.summarised.draws.from.files("prevalence", files=rda_files, include.raw=TRUE)
-    data_raw <- tmp[[1]]
-    dfit <- tmp[[2]]
-    p1 <- .plot.hiv.prevalence(dfit[LOC_LABEL==loc], data_raw[LOC_LABEL==loc])
+    data_raw <- tmp[[1]] |> subset(LOC_LABEL == loc)
+    dfit <- tmp[[2]] |> subset(LOC_LABEL == loc)
+    p1 <- .plot.hiv.prevalence(dfit, data_raw)
+    p1.noraw <- .plot.hiv.prevalence(dfit, data_raw, include.point=FALSE)
 
     tmp <- load.summarised.draws.from.files("suppAmongInfected", files=rda_files, include.raw=TRUE)
-    data_raw <- tmp[[1]]
-    dfit <- tmp[[2]]
-    p2 <- .plot.supp.hiv(dfit[LOC_LABEL==loc], data_raw[LOC_LABEL==loc])
+    data_raw <- tmp[[1]] |> subset(LOC_LABEL == loc)
+    dfit <- tmp[[2]] |> subset(LOC_LABEL == loc)
+    p2 <- .plot.supp.hiv(dfit, data_raw)
+    p2.noraw <- .plot.supp.hiv(dfit, data_raw, include.point=FALSE)
 
     tmp <- load.summarised.draws.from.files("suppAmongPop", files=rda_files, include.raw=TRUE)
-    data_raw <- tmp[[1]]
-    dfit <- tmp[[2]]
-    p3 <- .plot.unsupp.pop(dfit[LOC_LABEL==loc], data_raw[LOC_LABEL==loc])
+    data_raw <- tmp[[1]] |> subset(LOC_LABEL == loc)
+    dfit <- tmp[[2]] |> subset(LOC_LABEL == loc)
+    p3 <- .plot.unsupp.pop(dfit, data_raw)
+    p3.noraw <- .plot.unsupp.pop(dfit, data_raw, include.point=FALSE)
 
     # Merge together
-
-    mod <-  theme(strip.background = element_blank(), strip.text.x = element_blank()) + rremove("xlab")
+    mod <-  theme(strip.text.x = element_blank()) + rremove("xlab")
     p <- ggarrange(p1 + rremove("xlab"),
               p2 + mod,
               p3 + mod, 
@@ -149,8 +139,16 @@ plot.all.gps <- function( loc='fishing')
               ncol=1,
               common.legend = TRUE,
               legend='bottom'
-    )
-    p
+    ) |>  annotate_figure( top=text_grob(community_dictionary[['long']][loc], size=12) )
+    p.noraw <- ggarrange(p1.noraw + rremove("xlab"),
+              p2.noraw + mod,
+              p3.noraw + mod, 
+              align="v",
+              ncol=1,
+              common.legend = TRUE,
+              legend='bottom'
+    ) |>  annotate_figure( top=text_grob(community_dictionary[['long']][loc], size=12))
+    list(withraw=p, noraw=p.noraw)
 }
 
 make.table.unaids.goals <- function(age_group_width=5)
@@ -669,4 +667,130 @@ make.unaids.plots <- function(DT)
 
     plot.unaids.goals(out)
     out
+}
+
+
+plot.empirical.prob.of.suppression.with.age <- function(DT=dcens)
+{
+    # DT <- copy(dcens)
+    by_vars <- c('ROUND', 'SEX_LABEL', 'LOC_LABEL')
+    dcumulative <- DT[, {
+        stopifnot(!is.unsorted(AGE_LABEL))
+        out <- list(
+            AGE_LABEL = AGE_LABEL,
+            CUMULATIVE_N = cumsum(N),
+            CUMULATIVE_HIV_N = cumsum(HIV_N),
+            CUMULATIVE_VLNS_N = cumsum(VLNS_N),
+            SUM_N = sum(N),
+            SUM_HIV_N = sum(HIV_N),
+            SUM_VLNS_N = sum(VLNS_N)
+        )
+        with(out, {
+            binints0 <- Hmisc::binconf(n= CUMULATIVE_HIV_N, x=CUMULATIVE_VLNS_N, return.df = TRUE)
+            binints1 <- Hmisc::binconf(n= CUMULATIVE_N, x=CUMULATIVE_VLNS_N, return.df = TRUE)
+            binints2 <- Hmisc::binconf(n= SUM_VLNS_N, x=CUMULATIVE_VLNS_N, return.df = TRUE)
+            binints3 <- Hmisc::binconf(n= SUM_HIV_N, x=CUMULATIVE_HIV_N, return.df = TRUE)
+            names(binints0) <- paste0(c('M', 'CL', 'CU'), '_AMONG_POS')
+            names(binints1) <- paste0(c('M', 'CL', 'CU'), '_AMONG_PARTICIPANTS')
+            names(binints2) <- paste0(c('M', 'CL', 'CU'), '_AMONG_TOTNS')
+            names(binints3) <- paste0(c('M', 'CL', 'CU'), '_AMONG_TOTHIV')
+            out <- cbind(out, binints0, binints1, binints2, binints3)
+        })
+    }, by=by_vars] |> 
+        prettify_labels()
+
+    .plot.probability.suppression.below.age.in.group <- function(DT, .y, .ymin, .ymax, group='')
+    {
+        DT |>
+            ggplot(aes(x=AGE_LABEL, y={{.y}}, ymin={{.ymin}}, ymax={{.ymax}}, color=SEX_LAB)) + 
+                geom_point() +
+                geom_linerange() +
+                facet_grid( SEX_LAB + LOC_LABEL ~ ROUND, labeller = labeller(ROUND=round_labs, LOC_LABEL=community_dictionary[['short']])) + 
+                theme_default() +
+                scale_color_manual(values=palettes$sex) + 
+                scale_y_continuous(expand=c(0,0), labels=scales::percent ) +
+                labs(
+                    x='Age', 
+                    y=paste0('Empirical probability of being unsuppressed at age <= x (among ', group,')'),
+                    color='Gender'
+                )
+    }
+
+    .plot.cdf.of.age.given.group <- function(DT, .y, .ymin, .ymax, group, include.uncertainty=FALSE)
+    {
+
+        DT |> ggplot(aes(x=AGE_LABEL, y={{ .y }}, ymin= {{ .ymin }}, ymax= {{ .ymax }}, color=ROUND_LAB)) + 
+            geom_line(aes( linetype = ROUND_LAB )) + {
+                if(include.uncertainty) geom_linerange()
+            } +
+            facet_grid( LOC_LABEL ~ SEX_LAB, labeller =  labeller(LOC_LABEL=community_dictionary[['short']]) ) +
+            theme_default() +
+            scale_y_continuous(expand=c(0,0), labels=scales::percent ) +
+            # scale_color_manual() + 
+            viridis::scale_color_viridis(discrete=TRUE, begin=.2, end=1) + 
+            labs(
+                x='Age', 
+                y=paste0('Empirical CDF of', group), 
+                linetype='Interview round',
+                color='Interview round'
+            )
+    }
+
+    .perform.kstest.across.rounds <- function(DT, VAR)
+    {
+        DT[, {
+            lapply(16:19, function(r) {
+                rep.int(x=AGE_LABEL[ROUND == r], times=get(VAR)[ROUND == r] )
+            }) -> samples 
+            names(samples) <- 16:19
+            out <- CJ(unique(ROUND), unique(ROUND))[V1 < V2]
+            out[, `:=` (IDX1=V1-15, IDX2=V2-15)]
+            out[, KS.PVALUE := ks.test(samples[[IDX1]], samples[[IDX2]])$p.value, by=c('IDX1', 'IDX2') ]
+            out
+        }, by=c('SEX_LABEL', 'LOC_LABEL')]
+    }
+
+    p1 <- .plot.probability.suppression.below.age.in.group(dcumulative, .y=M_AMONG_POS, .ymin=CL_AMONG_POS, .ymax=CU_AMONG_POS, group='HIV positive participants')
+    filename <- 'prob_supp_belowage_among_hivp.pdf'
+    ggsave2(p1, file=filename, LALA=vl.out.dir.figures , w=25, h=20, u='cm')
+
+    p2 <- .plot.probability.suppression.below.age.in.group(dcumulative, .y=M_AMONG_PARTICIPANTS, .ymin=CL_AMONG_PARTICIPANTS, .ymax=CU_AMONG_PARTICIPANTS, group='all participants')
+    filename <- 'prob_supp_belowage_among_parts.pdf'
+    ggsave2(p2, file=filename, LALA=vl.out.dir.figures , w=25, h=20, u='cm')
+
+    p3 <- .plot.cdf.of.age.given.group(dcumulative, .y=M_AMONG_TOTNS, group='non-suppression')
+    filename <- 'ecdf_age_nonsupp.pdf'
+    ggsave2(p3, file=filename, LALA=vl.out.dir.figures , w=25, h=20, u='cm')
+
+    p4 <- plot.cdf.of.age.given.group(dcumulative, .y=M_AMONG_TOTHIV,  group='HIV positives')
+    filename <- 'ecdf_age_positives.pdf'
+    ggsave2(p4, file=filename, LALA=vl.out.dir.figures , w=25, h=20, u='cm')
+
+
+    # however this does not account for prevalence and participation.
+    # What is the probability of a participant to be suppressed 
+
+    # Kolmo-Smirno to test temporal differences in these distributions.
+    ks.vlns <- .perform.kstest.across.rounds(DT=DT, VAR='VLNS_N')[, GROUP := 'VLNS_N']
+    ks.hivn <- .perform.kstest.across.rounds(DT=DT, VAR='HIV_N')[, GROUP := 'HIV_N']
+    ks.part <- .perform.kstest.across.rounds(DT=DT, VAR='N')[, GROUP := 'N']
+    ks.results <- rbind(ks.vlns, ks.hivn, ks.part)
+
+    if(0)
+    {
+        ks.vlns[, table(KS.PVALUE < .05)]
+        ks.vlns[KS.PVALUE < .05]
+        ks.hivn[, table(KS.PVALUE < .05)]
+        ks.hivn[KS.PVALUE < .05]
+        ks.part[, table(KS.PVALUE < .05)]
+        ks.part[KS.PVALUE < .05]
+    }
+
+    list(
+        p_supp_hiv=p1, 
+        p_supp_parts=p2, 
+        p_cdf_supp=p1, 
+        p_cdf_hiv=p2, 
+        ks=ks.results
+    )
 }

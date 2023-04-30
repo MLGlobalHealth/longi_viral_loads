@@ -1,6 +1,7 @@
 gitdir.stan <- file.path(gitdir, 'stan')
 gitdir.functions <- file.path(gitdir, 'functions')
 gitdir.scripts <- file.path(gitdir, 'scripts')
+gitdir.data <- file.path(gitdir, 'data')
 
 # simplify sourcing of all R/*.R helpers
 gitdir.R <- file.path(gitdir, 'R')

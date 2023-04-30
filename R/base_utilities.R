@@ -83,6 +83,9 @@ na2zero <- function(x){
     x[is.na(x)] <-0; x
 }
 
+`%which.like%` <- function(x, rgx)
+    x[x %like% rgx]
+
 ############################
 # Project-specific helpers #
 ############################
@@ -100,7 +103,6 @@ round2factor <- function(x)
     x <- gsub('\\.5', 'S', x)
     as.factor(x)
 }
-
 
 commcode2commtype <- function(x)
 {

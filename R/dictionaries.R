@@ -44,8 +44,22 @@ answers_dict <- list(
     )
 )
 
-sex_dictionary <- c(M='Male', F='Female')
+community_dictionary <- list(
+    short = c(
+        'F'='Fishing',
+        'I'='Inland',
+        'fishing'='Fishing',
+        'inland'='Inland'
+    ),
+    long = c(
+        'F'='Fishing communities',
+        'I'='Inlan communitiesd',
+        'fishing'='Fishing communities',
+        'inland'='Inland communities'
+    )
+)
 
+sex_dictionary <- c(M='Male', F='Female')
 
 round_dictionary = c(
     'R016'="Round 16", 
@@ -60,6 +74,18 @@ round_dictionary = c(
     '20'="Round 20", 
     'AGGR' = "Aggregate over rounds"
 )
+
+drounds <- data.table(
+    ROUND=16:19,
+    LABS=paste0('Round ', 16:19, ':\n'),
+    START=c('07/2013', '02/2015', '10/2016','06/2018'),
+    END=c('01/2015', '09/2016', '05/2018','05/2019')
+) 
+drounds[, LABS:=paste0(LABS, START, ' to ', END)]
+
+round_labs <- drounds$LABS
+names(round_labs) <- drounds$ROUND
+
 
 dall_dictionaries <- list( 
     TEST_YEAR_AGO=c(

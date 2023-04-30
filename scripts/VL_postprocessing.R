@@ -52,9 +52,10 @@ naturemed_reqs() # stores them in nm_reqs
 # output directory with rda files
 out.dir <- args$out.dir.prefix
 vl.out.dir <- file.path(out.dir, paste0('vl_', VIREMIC_VIRAL_LOAD) )
-.f <- function(x) dir.create(file.path(vl.out.dir, x)) |> suppressWarnings()
-sapply(c('figures', 'tables'), .f)
-stopifnot(dir.exists(vl.out.dir))
+vl.out.dir.figures <- file.path(vl.out.dir, 'figures')
+vl.out.dir.tables <- file.path(vl.out.dir, 'tables')
+dir.create(vl.out.dir.tables) |> suppressWarnings()
+dir.create(vl.out.dir.figures) |> suppressWarnings()
 
 ################
 #     MAIN     #
@@ -85,21 +86,134 @@ last.round <- dcens[, max(ROUND)]
 cat('--- Make UNAIDS objectives plot ---\n')
 tmp <- make.unaids.plots(DT=dcens)
 
+cat('--- Empirical CDF for HIV positive participants with suppressed viral load---\n')
+tmp <- plot.empirical.prob.of.suppression.with.age(dcens)
+
 
 # Summarised analyes
 # __________________
 
-# TODO: modify plots according to Oli's feedback. 
-
 cat('--- Plot Posteriors for fishing analyses ---\n')
-p <- plot.all.gps(loc='fishing')
+
+p.list <- plot.all.gps(loc='fishing')
 filename <- 'main_allanalyses_fishing.pdf'
-ggsave2(p, file=filename, LALA=file.path(vl.out.dir, 'figures') , w=18, h=24, u='cm')
+ggsave2(p.list[['noraw']], file=filename, LALA=vl.out.dir.figures , w=20, h=24, u='cm')
+filename <- 'main_allanalyses_fishing_withraw.pdf'
+ggsave2(p.list[['withraw']], file=filename, LALA=vl.out.dir.figures , w=20, h=24, u='cm')
 
 cat('--- Plot Posteriors for inland analyses ---\n')
-p <- plot.all.gps(loc='inland')
+
+p.list <- plot.all.gps(loc='inland')
 filename <- 'main_allanalyses_inland.pdf'
-ggsave2(p, file=filename, LALA=file.path(vl.out.dir, 'figures'), w=18, h=24, u='cm')
+ggsave2(p.list[['noraw']], file=filename, LALA=vl.out.dir.figures, w=20, h=24, u='cm')
+filename <- 'main_allanalyses_inland_withraw.pdf'
+ggsave2(p.list[['withraw']], file=filename, LALA=vl.out.dir.figures, w=20, h=24, u='cm')
+
+
+# Unaids table
+# ____________
+
+cat('--- Make UNAIDS goals table ---\n')
+tmp <- make.table.unaids.goals()
+print(xtable::xtable(tmp), 
+      include.rownames=FALSE, 
+      hline.after=c(-1, seq(0, nrow(tmp), nrow(tmp)/4)),
+      file=file.path(vl.out.dir, 'tables', 'main_unaids_table.tex'))
+xtable::xtable(tmp)
+
+# Compare Prevalence of suppression among HIV+
+# ____________________________________________
+
+cat('-- Comparing prevalence of suppression among HIV+ ---\n')
+tmp <- vl.vlprops.by.comm.gender.loc(dall)
+vlc <- tmp$DT
+tmp <- make.map.220810(dall, vlc, 'PVLNSofHIV_MEAN')
+
+
+# Compare Rate of Change
+# ______________________
+
+
+compare.suppression <- function()
+{ .load.dre <- function(lab)
+    {
+
+        lab2 <- fcase(
+                      lab %like% 'prevalence', "prev.hiv.by.age",
+                      lab %like% 'suppAmongInfected', "nsinf.by.age",
+                      lab %like% 'suppAmongPop', "nspop.by.age",
+                      default=NA
+        )
+        stopifnot(! is.na(lab2))
+
+        # dre contains posterior samples
+        dre <- list()
+
+        for (file in dfiles)
+        {
+            tmp_env <- new.env()
+            load(file, envir=tmp_env)
+
+            idx <- tmp_env$DT[, seq(min(AGE_LABEL), max(AGE_LABEL + 1), .5) ]
+            idx <- data.table(Var2=seq_along(idx), AGE_LABEL=idx)
+
+            cols <- grep('^p_predict', names(tmp_env$re), value=TRUE)
+            tmp <- tmp_env$re[cols]
+            .f <- function(x) as.data.table(reshape2::melt(x))
+            tmp <- lapply(tmp, .f)
+
+            .f <- function(x)
+            {
+                y <- merge(x, idx, by='Var2')
+                y[, Var2 := NULL]
+            }
+            tmp <- lapply(tmp, .f)
+
+            dre[[file]] <- tmp
+        }
+        rm(tmp_env)
+
+        .f <- function(x) as.integer(gsub('^.*?round([0-9]{2}).*?$', '\\1', x))
+        names(dre) <- .f(names(dre)) 
+
+        dre
+    }
+
+    .label.sex.loc <- function(lst)
+    {
+        idx <- data.table(
+                          .id=c('00', '01', '10', '11'),
+                          SEX_LABEL=c('F', 'F', 'M', 'M'),
+                          LOC_LABEL=c('inland', 'fishing', 'inland','fishing')
+        )
+
+        tmp <- rbindlist(lst, idcol=T)
+            # scale_color_manual() + 
+            labs(
+                x='Age', 
+                y='Empirical CDF of non-suppression', 
+                color='Gender'
+            )
+
+}
+
+# Summarised analyes
+# __________________
+
+cat('--- Plot Posteriors for fishing analyses ---\n')
+p.list <- plot.all.gps(loc='fishing')
+filename <- 'main_allanalyses_fishing.pdf'
+ggsave2(p.list[['noraw']], file=filename, LALA=vl.out.dir.figures , w=20, h=24, u='cm')
+filename <- 'main_allanalyses_fishing_withraw.pdf'
+ggsave2(p.list[['withraw']], file=filename, LALA=vl.out.dir.figures , w=20, h=24, u='cm')
+
+cat('--- Plot Posteriors for inland analyses ---\n')
+p.list <- plot.all.gps(loc='inland')
+filename <- 'main_allanalyses_inland.pdf'
+ggsave2(p.list[['noraw']], file=filename, LALA=vl.out.dir.figures, w=20, h=24, u='cm')
+filename <- 'main_allanalyses_inland_withraw.pdf'
+ggsave2(p.list[['withraw']], file=filename, LALA=vl.out.dir.figures, w=20, h=24, u='cm')
+
 
 # Unaids table
 # ____________
