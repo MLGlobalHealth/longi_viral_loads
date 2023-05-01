@@ -109,3 +109,16 @@ postproc_dictionaries <- list(
         'OUT'='out-of-study'
     )
 )
+
+# to work together with my_labs() function
+my_labs_dictionary <- c(
+    AGE = 'Age',
+    AGEYRS = 'Age',
+    AGE_LABEL = 'Age',
+    AGE_LAB = 'Age',
+    COMM = 'Community type', 
+    COMM_NUM = 'Community number', 
+    FC = 'Community type', 
+    SEX = 'Gender',
+    VL_COPIES = 'Viral Load Copies'
+)

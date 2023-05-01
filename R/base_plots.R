@@ -183,12 +183,6 @@ palettes <- list(
         `Female 15-19`= "#eec8f5"
     ), 
 
-    round = c(
-        `16` = ,
-        `17` = ,
-        `18` = ,
-        `19` = ,
-    ),
 
     NULL
 )
@@ -267,4 +261,32 @@ labs_from_dictionaries <- function(dict)
     return(f)
 }
 
+my_labs <- function (..., title = waiver(), subtitle = waiver(), caption = waiver(), tag = waiver(), alt = waiver(), alt_insight = waiver()) 
+{
+    # requires my_labs_dictionary
 
+    p <- ggplot_build(last_plot())
+    
+    # copied from labs
+    args <- rlang:::dots_list(..., title = title, subtitle = subtitle, 
+        caption = caption, tag = tag, alt = alt, alt_insight = alt_insight, 
+        .ignore_empty = "all")
+    is_waive <- vapply(args, ggplot2:::is.waive, logical(1))
+    args <- args[!is_waive]
+    args <- args[!duplicated(names(args))]
+    args <- ggplot2:::rename_aes(args)
+
+    # only consider aesthetics with only one variable used.
+    mapps <- lapply(p$plot$mapping, all.vars)
+    idx <- sapply(mappings, length) == 1
+    mapps_one_var <- mapps[idx]
+    # exclude args defined in ...
+    mapps_final <- mapps[! names(mapps) %in% names(args)]
+    # transform labels according to my_labs_dictionary
+    mapps_final <- lapply(mapps_final, function(x){
+        unname(my_labs_dictionary[x])
+    })
+
+    args <- c(args, mapps_final)
+    structure(args, class='labels')
+}
