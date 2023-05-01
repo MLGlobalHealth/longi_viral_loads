@@ -47,8 +47,9 @@ if(make_paper_numbers)
 
 VL_DETECTABLE = args$vl.detectable
 VIREMIC_VIRAL_LOAD = args$viremic.viral.load
-# plot requisite from nature med: 
+
 naturemed_reqs() # stores them in nm_reqs
+
 # output directory with rda files
 out.dir <- args$out.dir.prefix
 vl.out.dir <- file.path(out.dir, paste0('vl_', VIREMIC_VIRAL_LOAD) )
@@ -64,8 +65,8 @@ dir.create(vl.out.dir.figures) |> suppressWarnings()
 rda_files <- list.files.from.output.directory('.rda')
 
 # get data
-# TODO: fix flowchart (first row + explain why missing vl...) 
 dall <- get.dall(path.hivstatusvl.r1520, make_flowchart=TRUE)
+
 
 # Get census eligible and compare with participants 
 # __________________________________________________

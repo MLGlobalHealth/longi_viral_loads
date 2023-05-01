@@ -82,7 +82,6 @@ make.study.flowchart <- function(DT)
     round_dates[, LAB := paste('from', BEGIN, 'to', END)]
     round_idx <- DT[, unique(ROUND)]
 
-
     # Get numbers for flowchart
     ls_fchart <- list(
         all = cube(DT, .(uniqueN(STUDY_ID), .N), by='SEX'),
@@ -92,32 +91,37 @@ make.study.flowchart <- function(DT)
         lapply( function(D) {D$SEX[3] <- 'ALL'; D}) |> 
         lapply( function(DT) DT[, lapply(.SD, formatC, big.mark=',')])
 
+    ls_fchart_dropped <- list(
+        neg  = DT[ HIV_STATUS == 0, list(uniqueN(STUDY_ID), .N)] ,
+        novl = DT[ HIV_STATUS == 1 & HIV_AND_VL == 0 , list(uniqueN(STUDY_ID), .N)]
+    ) |> lapply( function(DT) DT[, lapply(.SD, formatC, big.mark=',')])
+
     # get VL composition by sex.
     statement_for_round <- function(r)
     {
-      .statement <- function(f_tot,f_x, f_y, f_z, m_tot, m_x, m_y, m_z)
-      {
-        .r <- function(a, tot) 
-          paste0(formatC(a, big.mark = ','), ' (',format(round(100*a/tot, 2), nsmall=2), '%)')
+        .statement <- function(f_tot,f_x, f_y, f_z, m_tot, m_x, m_y, m_z)
+        {
+            .r <- function(a, tot) 
+            paste0(formatC(a, big.mark = ','), ' (',format(round(100*a/tot, 2), nsmall=2), '%)')
 
-        paste0(
-          "Round ",r, "\n",
-          round_dates[ROUND == r, paste0('(',LAB, ')\n') ],
+            paste0(
+                "Round ",r, "\n",
+                round_dates[ROUND == r, paste0('(',LAB, ')\n') ],
 
-          "\nAmong men\n",
-          formatC(m_tot, big.mark = ','), " total VL measurements:\\\\l &#8226; ",
-          .r(m_x, m_tot), " were vireamic.\\\\l &#8226; ",
-          .r(m_y, m_tot), " had low level viraemia.\\\\l &#8226; ",
-          .r(m_z, m_tot), " were non-viraemic.\\\\l",
-        
-          "\nAmong women\n",
-          formatC(f_tot, big.mark = ','), " total VL measurements:\\\\l &#8226; ",
-          .r(f_x, f_tot), " were vireamic.\\\\l &#8226; ",
-          .r(f_y, f_tot), " had low level viraemia.\\\\l &#8226; ",
-          .r(f_z, f_tot), " were non-viraemic.\\\\l")
-      }
+                "\nAmong men\n",
+                formatC(m_tot, big.mark = ','), " individuals with VL measurements:\\\\l &#8226; ",
+                .r(m_x, m_tot), " were vireamic.\\\\l &#8226; ",
+                .r(m_y, m_tot), " had low level viraemia.\\\\l &#8226; ",
+                .r(m_z, m_tot), " were non-viraemic.\\\\l",
 
-      DT[HIV_AND_VL == 1 & ROUND == r, {
+                "\nAmong women\n",
+                formatC(f_tot, big.mark = ','), " individuals with VL measurements:\\\\l &#8226; ",
+                .r(f_x, f_tot), " were vireamic.\\\\l &#8226; ",
+                .r(f_y, f_tot), " had low level viraemia.\\\\l &#8226; ",
+                .r(f_z, f_tot), " were non-viraemic.\\\\l")
+        }
+
+        DT[HIV_AND_VL == 1 & ROUND == r, {
             is.male <- SEX == 'M'
             VL_COPIES.M <- VL_COPIES[is.male]
             VL_COPIES.F <- VL_COPIES[!is.male]
@@ -139,51 +143,62 @@ make.study.flowchart <- function(DT)
 
     filename <- file.path(vl.out.dir, 'flowchart_numbers.pdf')
     cat('Saving',  filename, '\n')
-    DiagrammeR::grViz(
-          "
-          digraph graph2 {
+    DiagrammeR::grViz("
+        digraph graph2 {
 
-              # Graph attributes
-              graph [splines=line, nodesep=.2]
-              node [fontsize=15]
-              edge [arrowsize=.5]
+        # Graph attributes
+        graph [splines=line, nodesep=.2]
+        node [fontsize=15]
+        edge [arrowsize=.5]
 
-              # node definitions with substituted label text
-              node [shape = rectangle, width = 7, height=.4]
-              a [label = '@@1']
-              b [label = '@@2']
-              c [label = '@@3']
+        # node definitions with substituted label text
+        node [shape = rectangle, width = 7, height=.4]
+        a [label = '@@1']
+        b [label = '@@2']
+        c [label = '@@3']
 
-              node [shape = rectangle, width = 1]
-              r16 [label='@@4']
-              r17 [label='@@5']
-              r18 [label='@@6']
-              r19 [label='@@7']
+        node [shape = rectangle, width = 1]
+        r16 [label='@@4']
+        r17 [label='@@5']
+        r18 [label='@@6']
+        r19 [label='@@7']
 
-              node [shape = point, width=.001, height=.001, label='']
-              h; h1; h2; h3; h4
+        node [shape = rectangle, width = 6, height=.4]
+        out1 [label='@@8']
+        out2 [label='@@9']
 
-              # Edge statement
-              a -> b -> c
-              edge [arrowhead=none]
-              c -> h 
-              {rank=same; arrowhead=none; h1 -> h2 ; h2 -> h; h -> h3; h3 -> h4}
+        node [shape = point, width=.001, height=.001, label='']
+        h; h1; h2; h3; h4; 
 
-              edge[ tailclip = true, headclip=true, arrowhead=normal]
-              h1 -> r16
-              h2 -> r17
-              h3 -> r18
-              h4 -> r19
-          }
+        # Edge statements
+        m1 -> b 
+        m2 -> c 
+        {rank=same; m1 -> out1}
+        {rank=same; m2 -> out2}
+        edge [arrowhead=none]
+        c -> h 
+        a -> m1 
+        b -> m2 
+        {rank=same; arrowhead=none; h1 -> h2 ; h2 -> h; h -> h3; h3 -> h4}
+        edge[ tailclip = true, headclip=true, arrowhead=normal]
+        h1 -> r16
+        h2 -> r17
+        h3 -> r18
+        h4 -> r19
+        }
 
-          [1]: paste0(ls_fchart[['all']][SEX=='ALL'][[2]], ' study participants, accounting for ', ls_fchart[['all']][[2]], ' visits.')
-          [2]: paste0(ls_fchart[['pos']][SEX=='ALL'][[2]], ' HIV positive participants, accounting for ', ls_fchart[['pos']][[3]], ' visits.')
-          [3]: paste0(ls_fchart[['vls']][SEX=='ALL'][[2]], ' HIV positive participants with VL measurements,\\naccounting for ', ls_fchart[['vls']][[3]], ' visits.')
-          [4]: ls_fchart_round$r16
-          [5]: ls_fchart_round$r17
-          [6]: ls_fchart_round$r18
-          [7]: ls_fchart_round$r19
-          ")  |> export_svg() |> charToRaw() |> rsvg_pdf(filename)
+        [1]: with(ls_fchart$all[SEX=='ALL'], paste0(V1, ' study participants, \\naccounting for ', N, ' visits over 4 interview rounds.'))
+        [2]: with(ls_fchart$pos[SEX=='ALL'], paste0(V1, ' HIV positive participants, \\naccounting for ', N, ' visits over 4 interview rounds.'))
+        [3]: with(ls_fchart$vls[SEX=='ALL'], paste0(V1, ' HIV positive participants with VL measurements, \\naccounting for ', N, ' visits over 4 interview rounds.'))
+        [4]: ls_fchart_round$r16
+        [5]: ls_fchart_round$r17
+        [6]: ls_fchart_round$r18
+        [7]: ls_fchart_round$r19
+        [8]: with(ls_fchart_dropped$neg, sprintf('%s tested negative at least once\\naccounting for %s visits over 4 interview rounds.', V1, N))
+        [9]: with(ls_fchart_dropped$novl, sprintf('%s without VL measurement, \\naccounting for %s visits over 4 interview rounds.', V1, N))
+
+        ")  |> export_svg() |> charToRaw() |> rsvg_pdf(filename)
+
 }
 
 get.glm.data <- function(DT)
