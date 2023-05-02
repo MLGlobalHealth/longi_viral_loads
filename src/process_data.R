@@ -18,32 +18,16 @@ require(readxl)
 # Paths # 
 #########
 
-usr <- Sys.info()[['user']]
-if(usr == 'andrea')
-{
-    indir.repository <-'~/git/longi_viral_loads'
-    indir.deepsequence.data <- '~/Documents/Box/ratmann_pangea_deepsequencedata'
-    indir.deepsequence.analyses   <- '~/Documents/Box/ratmann_deepseq_analyses/live/PANGEA2_RCCS1519_UVRI'
-    out.dir <- '/media/andrea/SSD/2022/longvl'
-}else{
-    indir.repository <-'~/git/longi_viral_loads'
-    indir.deepsequence.data <- '/rds/general/project//ratmann_pangea_deepsequencedata/live'
-    indir.deepsequence.analyses   <- '/rds/general/project/ratmann_deepseq_analyses/live/PANGEA2_RCCS1519_UVRI'
-}
-
-
-file.viral.loads1 <- file.path(indir.deepsequence.data, 'RCCS_R15_R20', "Quest_R015_R020_VOIs_May062022.csv")
-file.viral.loads2 <- file.path(indir.deepsequence.data, 'RCCS_R15_R20', "Allpcr_data_for_R015_R020_study_ids.xlsx")
-file.negative.participants <- file.path(indir.deepsequence.data, 'RCCS_R15_R20', 'R016_R020_Data_for_HIVnegatives.csv')
-file.community.keys <- file.path(indir.deepsequence.analyses,'community_names.csv')
+gitdir <- here::here()
+source(file.path(gitdir, 'R/paths.R'))
 
 ###########
 # HELPERS #
 ###########
 
-source(file.path(indir.repository, 'functions', 'base_utilities.R'))
-source(file.path(indir.repository, 'functions', 'preprocessing_helpers.R'))
-source(file.path(indir.repository, 'functions', 'plotting_functions.R'))
+source(file.path(gitdir.R, 'base_utilities.R'))
+source(file.path(gitdir.functions, 'preprocessing_helpers.R'))
+source(file.path(gitdir.functions, 'plotting_functions.R'))
 
 .dict.class <- function(x)
 {
@@ -53,7 +37,6 @@ source(file.path(indir.repository, 'functions', 'plotting_functions.R'))
     unname(nms[x])
 }
 
-
 ########
 # MAIN #
 ########
@@ -62,10 +45,11 @@ source(file.path(indir.repository, 'functions', 'plotting_functions.R'))
 THRESHOLD <- 50
 fix.incoherent.arv.reporting <- 1
 fix.death.dates <- 1
-save.images <- 1
+save.images <- FALSE
 
 # explore dataset
-dvl <- fread(file.viral.loads1)
+dvl <- read.csv(path.viral.loads1, fill=TRUE, comment.char="") |> 
+    as.data.table()
 setkey(dvl, study_id, hivdate)
 
 cat('Excluding R20:')
@@ -118,7 +102,7 @@ tmp <- sapply(c('dsero','darv','dcd4','dintdates','ddeath', 'dlocate', 'dbirth')
 stopifnot(all(tmp))
 
 # load Allpcr dataset and substitute missing hiv_vl 
-tmp <- fill_na_vls_with_allpcr_data(file=file.viral.loads2)
+tmp <- fill_na_vls_with_allpcr_data(file=path.viral.loads2)
 cat('The new dataset provided viral load measurements in rounds:\n')
 tmp$tbl
 dvl <- tmp$dvl
@@ -277,19 +261,21 @@ if(save.images) # STUDY NA VL MEASUREMENTS
 }
 
 # save dvl in R15_R20 folder:
-filename <- file.path(indir.deepsequence.data,
-                      'RCCS_R15_R20',
-                      "viral_loads_r15r20_processed_220727.csv")
+filename <- file.path(indir.deepdata.r1520, "viral_loads_r15r20_processed_230502.csv")
+
 if( ! file.exists(filename) )
-        fwrite(dvl, filename)
+{
+    sprintf('Saving file %s ...', filename) |> cat()
+    fwrite(dvl, filename)
+}else{
+    sprintf('File %s already exists...', filename) |> catn()
+}
 
 
 # Process darv
 #_____________
 
-melt(darv, 
-     id.vars="study_id",
-) -> tmp
+melt(darv, id.vars="study_id",) -> tmp
 
 tmp[, round := round2numeric( gsub('^.*med', '', variable) )]
 tmp[, variable := gsub('^(.*med).*$', '\\1', variable) ]
@@ -315,7 +301,7 @@ darv[ , arvmed := {
 # Negative Participants #
 #########################
 
-dneg <- fread(file.negative.participants)
+dneg <- fread(path.negatives.r1520)
 
 # remove conf_age
 dneg[ ageyrs != conf_age]
@@ -333,15 +319,17 @@ setkeyv(tbl, by_cols)
 # tbl
 
 # remove columns not in dvl and merge
-dneg[, `:=` (hiv_vl=0, HIV_STATUS=0)]
-dvl[,  `:=` (HIV_STATUS=1)]
+dneg[, `:=` (hiv_vl=0, HIV_STATUS=0, int_date=NULL)]
+dvl[,  `:=` (HIV_STATUS=1, int_date=NULL)]
 
-stopifnot(names(dvl) %in% names(dneg))
+
+# stopifnot(names(dvl) %in% names(dneg))
+stopifnot(names(dneg) %in% names(dvl))
 idx <- names(dneg) %in% names(dvl)
 cols <- names(dneg)[idx]
 dvl[, hivdate := as.Date(hivdate)]
 
-dall <- rbind(dneg[, ..cols], dvl)
+dall <- rbind(dneg, dvl[, ..cols]) |> suppressWarnings()
 
 dall <- merge(dall, darv[, .(study_id, round, arvmed)], 
       by=c('study_id', 'round'), all.x=TRUE)
@@ -353,20 +341,23 @@ setnames(dall, names(dall), toupper(names(dall)) )
 cols <- c('STUDY_ID', 'ROUND', 'SEX', 'AGEYRS' , 'COMM', 'COMM_NUM',  'CURR_ID', 'HIV_STATUS', 'HIV_VL', 'HIVDATE', 'ARVMED')
 setcolorder(dall, cols)
 
-# write to file
-filename <- file.path(indir.deepsequence.data, 
-         'RCCS_R15_R20', 
-         'all_participants_hivstatus_vl_220729.csv')
-if( ! file.exists(filename) )
-        fwrite(dall, filename)
 
+# write to file
+filename <- file.path(indir.deepdata.r1520,'all_participants_hivstatus_vl_230502.csv')
+if( ! file.exists(filename) )
+{
+    sprintf('Saving file %s...', filename) |> catn()
+    fwrite(dall, filename)
+}else{
+    sprintf('File %s already exists...', filename) |> catn()
+}
+
+files <- list.files( indir.deepdata.r1520, pattern="viral", full.names =TRUE)
+lapply(files, fread) |> 
+    lapply(function(DT) DT[, .(uniqueN(study_id)), by='round'])
 
 if(0)
 {
-    ###########
-    #  EXTRA  #
-    ###########
-
     if(0)
     {
         # participants moving from inland to fishing communities.
@@ -393,7 +384,6 @@ if(0)
     cat('Trajectories for round 16 and larger')
     dclass_16 <- define_trajectories(dvl_16)
     plot_classification(DT=dvl_16, dclass_16)
-
 
     # process outputs of relational database
     # __
