@@ -12,11 +12,11 @@ participant_comm2mode <- function(DT, quietly=FALSE)
 {
     if(!quietly)
     {
-        cat(
-        'Some participants travelled in fishing and inland communities.\n',
-        'We only want to attribute one classification to each of these. \n',
-        'So, set community to mode of where measurements were taken inland/fishing,\n',
-        'with preference for fishing\n')
+            cat(
+            'Some participants travelled in fishing and inland communities.\n',
+            'We only want to attribute one classification to each of these. \n',
+            'So, set community to mode of where measurements were taken inland/fishing,\n',
+            'with preference for fishing\n')
     }
 
     getmode <- function(x){
@@ -397,20 +397,22 @@ count_vls_by_round <- function(DT=dvl, rnd, subset_n=NULL, quietly=TRUE)
 
 fix_visit_dates_before_1990 <- function(DT)
 {
-        idx <- DT[hivdate <= '1990-01-01', {
-                cat(.N, 'observation dated before 1990. Redate based on age\n'); study_id}
-        ]
-        tmp <- DT[study_id %in% idx, .(study_id, ageyrs, hivdate)]
-        tmp <- tmp[, {
-                z <- ageyrs[which.min(hivdate)]
-                tmp <- hivdate + 365*(z - ageyrs);
-                list(hivdate2=mean(tmp[-which.min(hivdate)]), ageyrs=z)
-        }, by='study_id']
+    # DT <- copy(dvl)
+    DT[, hivdate := as.Date(hivdate)]
+    idx <- DT[hivdate <= '1990-01-01', {
+            cat(.N, 'observation dated before 1990. Redate based on age\n'); study_id}
+    ]
+    tmp <- DT[study_id %in% idx, .(study_id, ageyrs, hivdate)]
+    tmp <- tmp[, {
+            z <- ageyrs[which(hivdate==min(hivdate))]
+            tmp <- hivdate + 365*(z - ageyrs);
+            list(hivdate2=mean(tmp[-which.min(hivdate)]), ageyrs=z)
+    }, by='study_id']
 
-        setkey(DT, study_id, ageyrs)
-        setkey(tmp, study_id, ageyrs)
+    setkey(DT, study_id, ageyrs)
+    setkey(tmp, study_id, ageyrs)
 
-        DT[tmp, hivdate:=hivdate2]
+    DT[tmp, hivdate:=hivdate2]
 }
 
 followup_viremic_suppressed_by_type <- function(DT)

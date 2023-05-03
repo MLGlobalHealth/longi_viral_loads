@@ -125,6 +125,13 @@ ggsave_nature <- function(filename, p, LALA=vl.out.dir, w=18,h=24, add_reqs=TRUE
 }
 
 ####################
+# ggplot helper shortcuts
+####################
+
+scale_y_expand_lower0 <- scale_y_continuous(expand = expansion(mult = c(0, .1)))
+scale_y_percentage <- scale_y_continuous(labels=scales::label_percent(), expand=expansion(mult=0)) 
+
+####################
 # specify palettes #
 ####################
 
@@ -183,6 +190,11 @@ palettes <- list(
         `Female 15-19`= "#eec8f5"
     ), 
 
+    hivstatus =  c(
+        `HIV positive` = "#FF585D",
+        `NA` = "#A9A9A9",
+        `HIV negative` = "#3EB595"
+    ),
 
     NULL
 )
@@ -234,15 +246,31 @@ prettify_participation_status <- function(DT)
     return(DT)
 }
 
+prettify_hivstatus <- function(DT)
+{
+    nms <- names(DT)
+    if('HIV LAB' %in% nms | ! 'HIV' %in% nms)
+        return(DT)
+
+    DT[, HIV_LAB := data.table::fcase(
+        HIV==1, 'HIV positive',
+        HIV==0, 'HIV negative',
+        default = NA_character_
+    ) ]
+
+    DT
+}
+
 
 prettify_labels <- function(DT)
 {
     # preforms all of the above
     nms <- names(DT)
 
-    DT <- prettify_sex(DT)
-    DT <- prettify_round(DT)
-    DT
+    DT |>  
+        prettify_sex() |> 
+        prettify_round() |> 
+        prettify_hivstatus()
 }
 
 labs_from_dictionaries <- function(dict)
@@ -278,7 +306,7 @@ my_labs <- function (..., title = waiver(), subtitle = waiver(), caption = waive
 
     # only consider aesthetics with only one variable used.
     mapps <- lapply(p$plot$mapping, all.vars)
-    idx <- sapply(mappings, length) == 1
+    idx <- sapply(mapps, length) == 1
     mapps_one_var <- mapps[idx]
     # exclude args defined in ...
     mapps_final <- mapps[! names(mapps) %in% names(args)]
@@ -290,3 +318,9 @@ my_labs <- function (..., title = waiver(), subtitle = waiver(), caption = waive
     args <- c(args, mapps_final)
     structure(args, class='labels')
 }
+
+dfacets <- list(
+    sex = setNames(c('Male', 'Female'), c('M', 'F')),
+    comm = setNames(c('Fishing', 'Inland'), c('fishing', 'inland') )
+)
+

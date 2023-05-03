@@ -15,6 +15,8 @@ if(usr=='andrea')
 {
     indir.deepdata <- '/home/andrea/HPC/project/ratmann_pangea_deepsequencedata/live'
     indir.deepsequence_analyses <- '/home/andrea/HPC/project/ratmann_xiaoyue_jrssc2022_analyses/live/PANGEA2_RCCS1519_UVRI'
+
+   OUTDIR <- '/home/andrea/HPC/ab1820/home/projects/2022/longvl'
 }
 
 indir.deepdata.r1520 <- file.path(indir.deepdata, 'RCCS_R15_R20')
