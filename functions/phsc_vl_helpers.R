@@ -727,7 +727,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT, refit=FALSE, vl.out.dir.=vl.o
     vla <- .preprocess.make.vla(DT, select=tmp)
 
     # Stan file locations
-    file.stan <- file.path(path.stan, 'vl_binomial_gp.stan')
+    file.stan <- file.path(gitdir.stan, 'vl_binomial_gp.stan')
     
     .fit.stan.and.plot.by.round <- function(DT, itr=10e3, wrmp=5e2, chns=1, cntrl=list(max_treedepth= 15, adapt_delta= 0.999))
     {
@@ -998,8 +998,8 @@ vl.prevalence.by.gender.loc.age.icar<- function(DT)
         vla <- .preprocess.make.vla(DT, select=tmp)
 
         # Stan file locations
-        file.stan.1 <- file.path(path.stan, 'vl_prevalence_by_gender_loc_age_icar_1.stan')
-        file.stan.2 <- file.path(path.stan, 'vl_prevalence_by_gender_loc_age_icar_2.stan')
+        file.stan.1 <- file.path(gitdir.stan, 'vl_prevalence_by_gender_loc_age_icar_1.stan')
+        file.stan.2 <- file.path(gitdir.stan, 'vl_prevalence_by_gender_loc_age_icar_2.stan')
 
         .fit.stan.and.plot.by.round <- function(DT, iter=20e3, warmup=5e2, chains=1, control = list(max_treedepth= 15, adapt_delta= 0.999))
         {
@@ -1217,8 +1217,8 @@ vl.meanviralload.by.gender.loc.age.icar<- function(DT)
     ggsave(p, filename=filename, w=6, h=10)
 
     # Stan file locations
-    file.stan.1 <- file.path(path.stan, 'vl_meanviralload_by_gender_loc_age_icar.stan')
-    file.stan.2 <- file.path(path.stan, 'vl_meanviralload_by_gender_loc_age_icar2.stan')
+    file.stan.1 <- file.path(gitdir.stan, 'vl_meanviralload_by_gender_loc_age_icar.stan')
+    file.stan.2 <- file.path(gitdir.stan, 'vl_meanviralload_by_gender_loc_age_icar2.stan')
 
     stan.model <- stan_model(file=file.stan.1, model_name= 'icar_age_interactions')
 
@@ -1316,7 +1316,7 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=v
     vla <- .preprocess.make.vla(DT, select=c('N', 'HIV_N', 'VLNS_N', 'ARV_N'))
     # NOTE: ARV_N == 0
 
-    file.stan.1 <- file.path(path.stan, 'vl_binomial_gp.stan')
+    file.stan.1 <- file.path(gitdir.stan, 'vl_binomial_gp.stan')
 
     .fit.stan.and.plot.by.round <- function(DT, itr=10e3, wrmp=5e2, chns=1, cntrl = list(max_treedepth= 15, adapt_delta= 0.999))
     {
@@ -1700,9 +1700,9 @@ vl.suppofinfected.by.gender.loc.age.icar<- function(DT, refit=FALSE)
     vla <- .preprocess.make.vla(DT, select=c('N', 'HIV_N', 'VLNS_N', 'ARV_N'))
 
     # Stan file locations
-    file.stan.1 <- file.path(path.stan, 'vl_suppofinfected_by_gender_loc_age_icar_1.stan')
+    file.stan.1 <- file.path(gitdir.stan, 'vl_suppofinfected_by_gender_loc_age_icar_1.stan')
 
-    # list.files(path.stan, pattern='suppofinfected')
+    # list.files(gitdir.stan, pattern='suppofinfected')
     stan.model1 <- stan_model(file.stan.1, model_name= 'icar_age_interactions')
 
     .fit.stan.and.plot.by.round <- function(DT , iter=20e3, warmup=5e2, chains=1, control = list(max_treedepth= 15, adapt_delta= 0.999))
@@ -2017,7 +2017,7 @@ vl.suppofpop.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=vl.out
     vla <- .preprocess.make.vla(DT, select=tmp)
 
     # Stan file locations
-    file.stan <- file.path(path.stan, 'vl_binomial_gp.stan')
+    file.stan <- file.path(gitdir.stan, 'vl_binomial_gp.stan')
 
     .fit.stan.and.plot.by.round <- function(DT, itr=10e3, wrmp=5e2, chns=1, cntrl = list(max_treedepth= 15, adapt_delta= 0.999))
     {
@@ -2294,7 +2294,7 @@ vl.suppofpop.by.gender.loc.age.icar<- function(DT)
     tmp <- c('N', 'HIV_N', 'VLNS_N', 'ARV_N')
     vla <- .preprocess.make.vla(DT, select=tmp)
 
-    file.stan.2 <- file.path(path.stan, 'vl_suppofpop_by_gender_loc_age_icar_1.stan')
+    file.stan.2 <- file.path(gitdir.stan, 'vl_suppofpop_by_gender_loc_age_icar_1.stan')
     stan.model2 <- stan_model(file.stan.2, model_name= 'icar_age_interactions')
 
 
