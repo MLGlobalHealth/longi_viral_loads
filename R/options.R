@@ -5,6 +5,48 @@ library(optparse)
 
 option_list <- list(
     make_option(
+        "--refit",
+        type = "logical",
+        default = FALSE,
+        help = "Flag on whether to re-run the stan models even if already exist [Defaults to FALSE]",
+        dest = "refit"
+    ),
+    make_option(
+        "--run-gp-prevl",
+        type = "logical",
+        default = FALSE,
+        help = "Flag on whether to run the Stan model for prevalence [Defaults to FALSE] ",
+        dest = "run.gp.prevl"
+    ),
+    make_option(
+        "--run-icar-mean-vl",
+        type = "logical",
+        default = FALSE,
+        help = "Flag on whether to run the Stan model for population level viral loads [Defaults to FALSE] ",
+        dest = "run.icar.mean.vl"
+    ),
+    make_option(
+        "--run-gp-supp-hiv",
+        type = "logical",
+        default = FALSE,
+        help = "Flag on whether to run the Stan model for suppression among HIV positive [Defaults to FALSE] ",
+        dest = "run.gp.supp.hiv"
+    ),
+    make_option(
+        "--run-gp-supp-pop",
+        type = "logical",
+        default = FALSE,
+        help = "Flag on whether to run the Stan model for suppression among population [Defaults to FALSE] ",
+        dest = "run.gp.supp.pop"
+    ),
+    make_option(
+        "--run-comm-analysis",
+        type = "logical",
+        default = FALSE,
+        help = "Flag on whether to run the Stan GLM model for community-level suppression [Defaults to FALSE] ",
+        dest = "run.comm.analysis"
+    ),
+    make_option(
         "--viremic-viral-load",
         type = "numeric",
         default = 1000,
@@ -43,7 +85,7 @@ option_list <- list(
         "--jobname",
         type = "character",
         default = NA_character_,
-        help = "Jobname used to indicate model run",
+        help = "Jobname used to identify model run",
         dest= "jobname"
     )
 )

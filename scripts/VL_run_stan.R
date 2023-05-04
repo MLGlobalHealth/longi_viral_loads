@@ -3,116 +3,51 @@
 # TODO: check why we do not have any ARVMED == 2
 # TODO: discuss: we are removing individuals with missing VLs: they are very little
 
-################
-# DEPENDENCIES #
-################
-
-library(data.table)
-library(ggplot2)
-library(Hmisc)
-library(rstan)
-library(optparse)
-library(here)
+library(data.table) |> suppressPackageStartupMessages()
+library(ggplot2)    |> suppressPackageStartupMessages()
+library(Hmisc)      |> suppressPackageStartupMessages()
+library(rstan)      |> suppressPackageStartupMessages()
+library(optparse)   |> suppressPackageStartupMessages()
+library(here)       |> suppressPackageStartupMessages()
 
 ################
 #    PATHS     #
 ################
 
-gitdir <- here()
+# automatically finding the github directory may be complicated 
+# if script is called outside from it.
+self_relative_path <- 'scripts/VL_run_stan.R'
+parallelise <- FALSE
+
+if( interactive() )
+{
+    here::i_am(self_relative_path)
+    gitdir <- here::here()
+} else {
+    cmd <- commandArgs()
+    cmd <- cmd[cmd %like% 'file']
+    gitdir <- gsub(paste0("--file=(.*)/", self_relative_path, '$'), "\\1", cmd)
+}
+
+# helpers
 source(file.path(gitdir, "R/paths.R"))
+source(file.path(gitdir.R, "base_plots.R"))
+source(file.path(gitdir.R, "base_utilities.R"))
+source(file.path(gitdir.functions, "phsc_vl_helpers.R"))
+
+# options
+source(file.path(gitdir.R, 'options.R'))
+args <- args[names(args) %like% '^run|viral.load|jobname|indir|out.dir|refit|round']
+print(args)
+
+# parallel backend (use multiple cores if local)
+if (parallelise) 
+    source(file.path(gitdir.R, "local_cores_parallelisation.R"))
 
 file.exists(path.hivstatusvl.r1520) |>
     all() |>
     stopifnot()
 
-# helpers
-source(file.path(gitdir.R, "base_plots.R"))
-source(file.path(gitdir.R, "base_utilities.R"))
-source(file.path(gitdir.scripts, "phsc_vl_helpers.R"))
-start_parallel_backend <- FALSE
-if (start_parallel_backend) {
-    source(file.path(gitdir.R, "local_cores_parallelisation.R"))
-}
-
-################
-#   OPTIONS    #
-################
-
-option_list <- list(
-    make_option(
-        "--refit",
-        type = "logical",
-        default = FALSE,
-        help = "Flag on whether to re-run the stan models even if already exist [Defaults to FALSE]",
-        dest = "refit"
-    ),
-    make_option(
-        "--run-gp-prevl",
-        type = "logical",
-        default = FALSE,
-        help = "Flag on whether to run the Stan model for prevalence [Defaults to FALSE] ",
-        dest = "run.gp.prevl"
-    ),
-    make_option(
-        "--run-icar-mean-vl",
-        type = "logical",
-        default = FALSE,
-        help = "Flag on whether to run the Stan model for population level viral loads [Defaults to FALSE] ",
-        dest = "run.icar.mean.vl"
-    ),
-    make_option(
-        "--run-gp-supp-hiv",
-        type = "logical",
-        default = FALSE,
-        help = "Flag on whether to run the Stan model for suppression among HIV positive [Defaults to FALSE] ",
-        dest = "run.gp.supp.hiv"
-    ),
-    make_option(
-        "--run-gp-supp-pop",
-        type = "logical",
-        default = FALSE,
-        help = "Flag on whether to run the Stan model for suppression among population [Defaults to FALSE] ",
-        dest = "run.gp.supp.pop"
-    ),
-    make_option(
-        "--run-comm-analysis",
-        type = "logical",
-        default = FALSE,
-        help = "Flag on whether to run the Stan GLM model for community-level suppression [Defaults to FALSE] ",
-        dest = "run.comm.analysis"
-    ),
-    make_option(
-        "--viremic-viral-load",
-        type = "numeric",
-        default = 1000,
-        help = "Duration of acute phase, in years [Defaults to 2 months]",
-        dest = "viremic.viral.load"
-    ),
-    make_option(
-        "--vl-detectable",
-        type = "numeric",
-        default = 150,
-        help = "Duration of acute phase, in years [Defaults to 2 months]",
-        dest = "viremic.viral.load"
-    ),
-    make_option(
-        "--outdir",
-        type = "character",
-        default = "/home/andrea/HPC/ab1820/home/projects/2022/longvl/",
-        help = "Path to output directory where to store results [Defaults to my directory]",
-        dest = "out.dir.prefix"
-    ),
-    make_option(
-        "--round",
-        type = "numeric",
-        default = c(16, 17, 18, 19),
-        help = "Path to output directory where to store results [Defaults to my directory]",
-        dest = "round"
-    )
-)
-
-args <- parse_args(OptionParser(option_list = option_list))
-print(args)
 
 ################
 #     MAIN     #
@@ -125,16 +60,14 @@ stopifnot(all(args$round %in% 16:19))
 VL_DETECTABLE <- args$vl.detectable
 VIREMIC_VIRAL_LOAD <- args$viremic.viral.load
 
-# specify and create output directories
-args$out.dir.prefix
+# specify and create output directories as func(vl, jobname)
 stopifnot(dir.exists(args$out.dir.prefix))
 out.dir <- file.path(args$out.dir.prefix)
-
-
-vl.out.dir <- out.dir
-if (usr == "andrea") {
-    vl.out.dir <- file.path(out.dir, paste0("vl_", VIREMIC_VIRAL_LOAD))
-}
+suffix <- paste0("vl_", VIREMIC_VIRAL_LOAD)
+suffix <- fifelse(is.na(args$jobname), 
+    yes=suffix, 
+    no=paste0( suffix,'-',args$jobname))
+vl.out.dir <- file.path( out.dir, suffix)
 dir.create(vl.out.dir, showWarnings = FALSE)
 
 # get data
@@ -472,8 +405,6 @@ if (args$run.comm.analysis) {
         ggsave2(p_ranges, file = filename, w = 9, h = 12)
     }
 }
-
-# stop('end of experiment')
 
 # Estimate HIV prevalence
 # ________________________
