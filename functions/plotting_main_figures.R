@@ -2,8 +2,8 @@
     paste0(round(100*x, 2), '%')
 
 dfacets <- list(
-                sex = setNames(c('Male', 'Female'), c('M', 'F')),
-                comm = setNames(c('Fishing', 'Inland'), c('fishing', 'inland') )
+    sex = setNames(c('Male', 'Female'), c('M', 'F')),
+    comm = setNames(c('Fishing', 'Inland'), c('fishing', 'inland') )
 )
 
 plot.all.gps <- function( loc='fishing')

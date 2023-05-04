@@ -44,7 +44,6 @@ make_paper_numbers <- TRUE
 if(make_paper_numbers)
     ppr_numbers <- list()
 
-
 VL_DETECTABLE = args$vl.detectable
 VIREMIC_VIRAL_LOAD = args$viremic.viral.load
 
@@ -396,3 +395,4 @@ if(0)
             facet_wrap(~ROUND)
     tmp
 }
+
