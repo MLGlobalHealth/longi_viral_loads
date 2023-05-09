@@ -149,6 +149,7 @@ if (0) # Study ARVMED
     }
 
 if (args$run.comm.analysis) {
+
     library(patchwork)
     library(rstanarm)
     library(tidybayes)
@@ -157,36 +158,36 @@ if (args$run.comm.analysis) {
     library(lme4)
     library(modelsummary)
 
+    source(file.path(gitdir.functions, 'community_level.R'))
+
     # create output directory
     glm.out.dir <- file.path(vl.out.dir, "glm")
 
-    # helper fs
-    inverse.logit <- function(x) {
-        exp(x) / (exp(x) + 1)
-    }
+    # get VL data by comm
+    vlc <- vl.vlprops.by.comm.gender.loc(dall, write.csv = FALSE)$DT
 
-    # tmp$p for plot and tmp$DT for 'vlc' datatable
-    tmp <- vl.vlprops.by.comm.gender.loc(dall, write.csv = FALSE)
-    vlc <- copy(tmp$DT)
+    # Plot VIRAEMIA by community-round + binom hypothesis testing
+    # ___________________________________________________________
 
-    p <- ggplot(vlc, aes(x = ROUND)) +
-        # scale_x_continuous(labels=scales:::percent) +
-        scale_y_continuous(labels = scales:::percent) +
-        # geom_linerange(aes(ymin=PVLNSofHIV_CL, ymax=PVLNSofHIV_CU), alpha=0.2) +
-        # geom_errorbarh(aes(y=PVLNS_MEAN, xmin=PHIV_CL, xmax=PHIV_CU), alpha=0.2) +
-        geom_line(aes(y = PVLNSofHIV_MEAN, colour = FC, group = COMM_NUM)) +
-        geom_text(aes(y = PVLNSofHIV_MEAN, label = COMM_NUM), size = 4) +
-        facet_grid(~SEX) +
-        scale_colour_manual(values = palettes$comm) +
-        theme_bw() +
-        theme(legend.position = "bottom") +
-        labs(
-            x = "Survey Round",
-            y = "proportion unsuppressed HIV among infected\n",
-            colour = "location"
-        )
+    p_full <- vlc |> plot.prev.viraemia.amonghiv.by.comm.round()
     filename <- file.path("220729_longitudinal_PVLNSofHIV_by_comm_sex.pdf")
-    ggsave2(p, file = filename, LALA = glm.out.dir, w = 9, h = 12)
+    ggsave2(p_full, file = filename, LALA = glm.out.dir, w = 9, h = 12)
+
+    # perform test on simple model assuming P of suppression for every ind.
+    tmp0 <- simple.binomial.tests.by.community(vlc)
+    means <- tmp0[, list(
+        FC=c('inland', 'fishing'),
+        P_ROUND_SEX=rep(unique(P_ROUND_SEX),times=2)
+        ), by=c('SEX', 'ROUND')]
+    signif <- tmp0[P_COMB_FISHER <= .05, .(SEX, COMM_NUM)] 
+
+    p_onlysig <- vlc |> 
+        merge(signif, by=c('SEX', 'COMM_NUM')) |> 
+        plot.prev.viraemia.amonghiv.by.comm.round(MEANS=means) 
+    p_onlysig <- vlc |> plot.prev.viraemia.amonghiv.by.comm.round()
+    filename <- file.path("220729_longitudinal_PVLNSofHIV_by_comm_sex_onlysignificant.pdf")
+    ggsave2(p_onlysig, file = filename, LALA = glm.out.dir, w = 9, h = 12)
+
 
     if (0) {
         p_map <- make.map.220810(copy(dall), copy(vlc))
@@ -201,51 +202,7 @@ if (args$run.comm.analysis) {
     dglm[, ROUND := as.factor(ROUND)]
     dglm[, ROUNDi := as.integer(ROUND) - 1]
 
-    # Get agresti-coull intervals
-    cols <- c("HIV_N", "VLNS_N", "N")
-    by_cols <- c("FC2", "COMM_NUM", "AGEGROUP", "SEX_LABEL", "ROUND")
-    # by_cols <- c('FC2', 'COMM_NUM', 'SEX_LABEL', 'ROUND')
-
-    dglm[, lapply(.SD, sum),
-        .SDcols = cols,
-        by = by_cols
-    ][,
-        Hmisc::binconf(n = HIV_N + 4, x = VLNS_N + 1, method = "wilson", return.df = TRUE),
-        by = by_cols
-    ] -> dvl_agresti
-
-    dvl_agresti |> ggplot(aes(x = ROUND, y = logit(PointEst), color = FC2, linetype = FC2)) +
-        geom_line(aes(group = COMM_NUM)) +
-        facet_grid(AGEGROUP ~ SEX_LABEL) +
-        labs(
-            x = "Round",
-            y = "Logit suppression",
-            title = "Community-level suppression trajectories",
-            subtitle = "(Agresti-coull intervals adding 1 VLNS of 4 HIV_pos)"
-        ) -> p1
-    filename <- "edaglm_logitprev_vs_round_by_agesexcomm.png"
-    ggsave2(p1, file = filename, LALA = glm.out.dir, w = 9, h = 8)
-
-    # aggregate by = something else
-    dvl_agresti[,
-        {
-            z19 <- which(ROUND == "19")
-            z16 <- which(ROUND == "16")
-            list(Delta = PointEst[z19] - PointEst[z16])
-        },
-        by = c("FC2", "COMM_NUM", "AGEGROUP", "SEX_LABEL")
-    ][,
-        .(DIFF = median(Delta)),
-        by = c("FC2", "SEX_LABEL")
-    ] |> dcast(FC2 ~ SEX_LABEL, value.var = "DIFF")
-
-    dvl_agresti |> ggplot(aes(x = as.factor(COMM_NUM), y = PointEst, color = as.factor(ROUND))) +
-        geom_point() +
-        facet_grid(SEX_LABEL ~ .) +
-        theme(axis.text.x = element_text(angle = 90)) +
-        labs(x = "Community Label", y = "Proportion of suppressed among study participants", color = "Round") -> p
-    filename <- "edaglm_proprsupp_by_community_round_sex.png"
-    ggsave2(p1, file = filename, LALA = glm.out.dir, w = 9, h = 8)
+    # tmp0 <- agresti.coull.exploration(dglm)
 
     # What's the best way to set priors and hyperprios? Maybe look at 8 schools examples.
     # Also: http://mc-stan.org/rstanarm/articles/glmer.html
@@ -254,73 +211,14 @@ if (args$run.comm.analysis) {
 
     # FIT AND SAVE MODELS
     # ___________________
-
-    # GLM on slopes
-    glm_slopes <- fit.glm.model(
-        suffix = "supppofpart_slopes_fit.rds",
-        formula = VLNS_N / HIV_N ~ ROUNDi * (AGEGROUP + SEX + FC)
+    
+    fit_allinteract <- fit.glm.model(
+        formula = VLNS_N / HIV_N ~ (AGEGROUP*SEX_LABEL*FC*ROUND) + (1|COMM_NUM),
+        suffix="suppofpart_allinteractions.rds"
     )
 
-    # GLM anova like, without random effects
-    glm_anova <- fit.glm.model(
-        formula = VLNS_N / HIV_N ~ ROUND * AGEGROUP * SEX * FC,
-        suffix = "supppofpart_anova_fit.rds"
-    )
+    compare.random.effects(fit_allinteract)
 
-    # without random effects (base)
-    glm_base <- fit.glm.model(
-        formula = VLNS_N / HIV_N ~ FC + ROUND:AGESEX + (1 | COMM_NUM),
-        suffix = "suppofpart_base_fit.rds"
-    )
-
-    # with random effects by community
-    glm_reffs <- fit.glm.model(
-        formula = VLNS_N / HIV_N ~ FC + ROUND:AGESEX + (1 | COMM_NUM),
-        suffix = "suppofpart_glmer_fit.rds"
-    )
-
-    # model from the 5th december
-    glm_5dec <- fit.glm.model(
-        formula = VLNS_N / HIV_N ~ SEX_LABEL + AGEGROUP + (1 | ROUND:FC) + (1 | COMM_NUM),
-        suffix = "suppofpart_5thdec.rds"
-    )
-
-    # Take "most significant effects" from the anova model
-    Glm3MostSignificant <- fit.glm.model(
-        formula = VLNS_N / HIV_N ~ (1 | AGEGROUP:SEX_LABEL) + (1 | ROUND:FC) + (1 | COMM_NUM),
-        suffix = "suppofpar_6mostsignificantanova.rds"
-    )
-
-    # Full Anova
-    FullAnovaFormula <- VLNS_N / HIV_N ~
-        (1 | SEX_LABEL) + (1 | ROUND) + (1 | AGEGROUP) + (1 | FC) +
-        (1 | SEX_LABEL:ROUND) + (1 | SEX_LABEL:AGEGROUP) + (1 | SEX_LABEL:FC) + (1 | ROUND:AGEGROUP) + (1 | ROUND:FC) + (1 | AGEGROUP:FC) +
-        (1 | SEX_LABEL:ROUND:AGEGROUP) + (1 | SEX_LABEL:ROUND:FC) + (1 | ROUND:AGEGROUP:FC) +
-        (1 | SEX_LABEL:ROUND:AGEGROUP:FC)
-
-    fit <- glmer(
-        data = dglm,
-        formula = FullAnovaFormula,
-        weights = HIV_N,
-        family = binomial(link = "logit")
-    )
-
-    glm_fullanova <- fit.glm.model(
-        formula = FullAnovaFormula,
-        suffix = "suppofpart_fullanova.rds"
-    )
-
-    if (0) # random fctions we can use
-        {
-            summary(fit) |> str()
-            summary(fit)$ngrps
-            summary(fit)$vcov
-            summary(fit)$varcor |>
-                as.data.table() |>
-                ggplot(aes(x = grp, y = sdcor)) +
-                geom_point() +
-                coord_flip()
-        }
 
     #
     # ANALYSE
@@ -329,21 +227,12 @@ if (args$run.comm.analysis) {
     # loo for leave one out cross validation!
 
     p_slopes <- analyse_glm_model(glm_slopes, "slopes")
-    view_list_ggplots(p_slopes, 1)
 
     loo(glm_slopes) |> plot()
 
     glm_model_choice <- copy(glm_5dec)
 
-    # get effective sample size
-    tmp <- as.data.frame(summary(glm_model_choice)) |> as.data.table(keep.rownames = TRUE)
-    tmp <- tmp[!rn %in% "log-posterior", {
-        z1 <- which.min(n_eff)
-        z2 <- which.max(Rhat)
-        list(n = n_eff[z1], pn = rn[z1], R = Rhat[z2], pR = rn[z2])
-    }]
-    cat("Minimum effective sample size:", tmp$n, "for parameter", tmp$pn, "\n")
-    cat("Maximum Rhat:", tmp$R, "for parameter", tmp$pR, "\n")
+    get.effective.sample.size.glm(glm_model_choice)
 
     # help('prior_summary.stanreg')
     prior_summary(glm_model_choice)
@@ -401,7 +290,7 @@ if (args$run.comm.analysis) {
             labs(x = "Posterior", y = "Community level random effects", color = "Community type")
         p_ranges
 
-        filename <- file.path("comm_stanglm_diagnostics_comm_random_effects.png")
+        filename <- file.path("comm_stanglm_diagnostics_comm_random_effects.pdf")
         ggsave2(p_ranges, file = filename, w = 9, h = 12)
     }
 }

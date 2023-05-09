@@ -53,7 +53,7 @@ get.participants.positives.unsuppressed <- function(DALL)
 
 .get.dcomm <- function()
 {
-    path <- file.path(indir.deepanalyses.xiaoyue, 'PANGEA2_RCCS1519_UVRI', 'community_names.csv')
+    path <- file.path(indir.deepsequence_analyses, 'community_names.csv')
     dcomm <- fread(path)
     .f <- function(x)
         fcase(x %like% '^f', 'fishing', x %like% '^t', 'trading', x %like% '^a', 'agrarian')
@@ -201,146 +201,7 @@ make.study.flowchart <- function(DT)
 
 }
 
-get.glm.data <- function(DT)
-{
 
-    # get community data
-    dcomm <- .get.dcomm()
-
-    DT <- copy(dall)
-    DT <- .preprocess.ds.oli(DT)
-    DT[ COMM_NUM==22, COMM_NUM:=1 ]
-
-    .f <- function(x,y)
-        as.vector( unname ( binconf(sum(x), length(y) )  ) )
-
-    vlc <- DT[, {
-        z  <- .f( HIV_STATUS == 1, HIV_STATUS)
-        z2 <- .f( VLNS == 1, VLNS )
-        z3 <- .f( VLNS == 1, which(HIV_STATUS == 1) )
-        list(FC=FC[1],
-             N= length(HIV_STATUS),
-             HIV_N = sum(HIV_STATUS == 1),
-             VLNS_N = sum(VLNS == 1))		
-    }, by=c('ROUND', 'COMM_NUM','SEX', 'AGEYRS')]
-
-    # setkey(vlc, SEX, PHIV_MEAN)
-    vlc[, SEX := factor(SEX, levels=c('M', 'F'), labels=c('men', 'women'))]
-    vlc <- merge(vlc, dcomm[, .(COMM_NUM, FC2=TYPE) ] , by='COMM_NUM', all.x=TRUE)
-
-    # additional columns
-    comm_lvls <- vlc[, sort(unique(COMM_NUM)), by='FC2'][, V1, ]
-    vlc[, SEX_LABEL := fifelse(SEX == 'women', yes='F', no='M')]
-    vlc[, AGEGROUP := cut(AGEYRS, breaks=c(15, 24.01, 25, 34.01, 35, 50.01)-.01 ) ]
-    .gs <- function(x) { y <- gsub(']|\\(', ' ', x);gsub(',', '_', y) }
-    vlc[, AGEGROUP := .gs(AGEGROUP)]
-    vlc
-}
-
-fit.glm.model <- function(formula, suffix, .outdir=glm.out.dir )
-{
-    # Loads or runs a stan model.
-
-    stopifnot(is.character(suffix))
-    filename <- file.path(.outdir, suffix )
-
-    FileExists <- file.exists(filename)
-    HasRandomEffects <- length(lme4::findbars(formula))>0
-    NamesFormula <- unique(all.names(formula))
-    NamesFormula <- NamesFormula[NamesFormula %like% '[A-z]']
-    NamesFormulaExist <- all(NamesFormula %in% names(dglm))
-
-    if( FileExists  )
-    {
-
-        cat('Loading fit...\n')
-        fit <- readRDS(filename)
-
-    }else if( NamesFormulaExist & HasRandomEffects ){
-
-        fit <- stan_glmer(
-            data=dglm,
-            formula=formula,
-            weights=HIV_N,
-            prior_intercept = normal( prior.pars$intercept.mean, 5),
-            family=binomial(link='logit'))
-        saveRDS(fit, filename)
-
-
-    }else if( NamesFormulaExist & ! HasRandomEffects ){
-
-        fit <- stan_glm(
-            data=dglm,
-            formula=formula,
-            weights=HIV_N,
-            prior_intercept = normal( prior.pars$intercept.mean, 5),
-            family=binomial(link='logit'))
-        saveRDS(fit, filename)
-
-    }else{
-
-        stop('Model not found, and could not be run due to missing columns.\n')
-
-    }
-
-    return(fit)
-
-}
-
-analyse_glm_model <- function(glm, prefix)
-{
-    # what need to be analysed:
-    # - convergence
-    # - pair plots 
-    # - posterior predictive checks. 
-
-    glm <- copy(glm_5dec)
-    summ <- summary(glm) |> as.data.table(keep.rownames = TRUE)
-
-    # Get diagnostics and print
-    summ[ ! rn %in% 'log-posterior', {
-            z1 <- which.min(n_eff);
-            z2 <- which.max(Rhat);
-            list( NEFF=n_eff[z1], V_NEFF=rn[z1], RHAT=Rhat[z2], V_RHAT=rn[z2])
-    } ] -> diagns
-
-    cat('Minimum effective sample size:', diagns$NEFF, 'for parameter', diagns$V_NEFF, '\n')
-    cat('Maximum Rhat:',diagns$RHAT, 'for parameter', diagns$V_RHAT, '\n')
-
-    
-    # get a table of the fit
-    if ( 0 )
-        modelsummary(glm, output = 'DT') # not optimal 4 models with multiple pars.
-
-    # bayesplot::available_ppc()
-
-    ## TOCLEAN 
-    # POSTERIOR PREDICTIVE CHECKS
-    # https://mc-stan.org/rstanarm/reference/plot.stanreg.html
-    p_check <- pp_check(glm_model_choice)
-    filename <- file.path('comm_stanglm_diagnostics_ppcheck_density.png')
-    ggsave2(p_check, file=filename, w=9, h=8)
-
-    pp_check(glm_model_choice, plotfun = "boxplot", nreps = 10, notch = FALSE)
-    pp_check(glm_model_choice, plotfun = "scatter_avg") # y vs. average yrep
-    pp_check(glm_model_choice, plotfun = "hist", nreps=3) # y vs. average yrep
-
-    # Posterior vs prior
-    p <- posterior_vs_prior( glm_model_choice) +
-        guides(color=FALSE) + theme(axis.text.x = element_text(angle = 90))
-    filename <- file.path( 'comm_stanglm_diagnostics_postvsprior.png')
-    ggsave2(p, file=filename, w=9, h=6)
-
-    # Statistical 'significance': probability of direction
-    p_direction(glm_model_choice)
-    library('sjPlot')
-    sjPlot::tab_model(glm_model_choice)
-
-    tmp <- modelsummary(glm_model_choice, statistic='mad', output='markdown')
-    tmp
-
-
-}
 
 .get.prior.ranges <- function(stan.data, DT, shape, scale)
 {
@@ -665,44 +526,36 @@ vl.vlprops.by.comm.gender.loc<- function(DT, write.csv=FALSE)
     vlc <- merge(vlc, dcomm[, .(COMM_NUM, FC2=TYPE) ] , by='COMM_NUM', all.x=TRUE)
 
 
-    p_inf <- ggplot(vlc) +
+    p_inf <- ggplot(vlc, aes(x=PHIV_MEAN, y=PVLNSofHIV_MEAN)) +
         scale_x_continuous(labels=scales:::percent) +
         scale_y_continuous(labels=scales:::percent) +
-        geom_errorbar(aes(x=PHIV_MEAN, ymin=PVLNSofHIV_CL, ymax=PVLNSofHIV_CU), alpha=0.2) +
-        geom_errorbarh(aes(y=PVLNSofHIV_MEAN, xmin=PHIV_CL, xmax=PHIV_CU), alpha=0.2) +
-        geom_point(aes(x=PHIV_MEAN, y=PVLNSofHIV_MEAN, colour=FC2)) +
-        geom_text(aes(x=PHIV_MEAN, y=PVLNSofHIV_MEAN, label=COMM_NUM), size=2) +
+        geom_errorbar(aes( ymin=PVLNSofHIV_CL, ymax=PVLNSofHIV_CU), alpha=0.2) +
+        geom_errorbarh(aes( xmin=PHIV_CL, xmax=PHIV_CU), alpha=0.2) +
+        geom_point(aes( colour=FC2)) +
+        geom_text(aes( label=COMM_NUM), size=2) +
         facet_grid(ROUND~SEX) +
         # scale_colour_manual(values=palettes$comm) + 
         scale_colour_manual(values= palettes$comm2) +
-        theme_bw() +
-        theme(legend.position='bottom') + 
-        labs(x='\nHIV prevalence', 
-             y='proportion unsuppressed HIV among infected\n', 
-             colour='community type')
-        p_inf
+        theme_default() + 
+        my_labs(color='Community type')
 
-
-    filename <- file.path('220729_hivnotsuppofhiv_vs_hivprev_by_round_gender_fishinland.pdf')
+    filename <- '220729_hivnotsuppofhiv_vs_hivprev_by_round_gender_fishinland.pdf'
     ggsave2(p_inf, file=filename, LALA=glm.out.dir, w=9, h=12)
 
 
-    p_pop <- ggplot(vlc) +
+    p_pop <- ggplot(vlc, aes(x=PHIV_MEAN,y=PVLNS_MEAN)) +
         scale_x_continuous(labels=scales:::percent) +
         scale_y_continuous(labels=scales:::percent) +
-        geom_errorbar(aes(x=PHIV_MEAN, ymin=PVLNS_CL, ymax=PVLNS_CU), alpha=0.2) +
-        geom_errorbarh(aes(y=PVLNS_MEAN, xmin=PHIV_CL, xmax=PHIV_CU), alpha=0.2) +
-        geom_point(aes(x=PHIV_MEAN, y=PVLNS_MEAN, colour=FC)) +
-        geom_text(aes(x=PHIV_MEAN, y=PVLNS_MEAN, label=COMM_NUM), size=2) +
+        geom_errorbar(aes( ymin=PVLNS_CL, ymax=PVLNS_CU), alpha=0.2) +
+        geom_errorbarh(aes( xmin=PHIV_CL, xmax=PHIV_CU), alpha=0.2) +
+        geom_point(aes( y=PVLNS_MEAN, colour=FC2)) +
+        geom_text(aes( y=PVLNS_MEAN, label=COMM_NUM), size=2) +
         facet_grid(ROUND~SEX) +
         scale_colour_manual(values=palettes$comm2) + 
-        theme_bw() +
-        theme(legend.position='bottom') + 
-        labs(x='\nHIV prevalence', 
-             y='proportion unsuppressed HIV among population\n', 
-             colour='community type')
+        theme_default() +
+        my_labs(colour="Community type")
 
-    filename <- file.path('220729_hivnotsuppofpop_vs_hivprev_by_round_gender_fishinland.pdf')
+    filename <- '220729_hivnotsuppofpop_vs_hivprev_by_round_gender_fishinland.pdf'
     ggsave2(p_pop, file=filename,LALA=glm.out.dir, w=9, h=12)
 
     if(write.csv)
