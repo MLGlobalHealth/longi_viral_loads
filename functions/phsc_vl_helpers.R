@@ -51,17 +51,6 @@ get.participants.positives.unsuppressed <- function(DALL)
     dnppu
 }
 
-.get.dcomm <- function()
-{
-    path <- file.path(indir.deepsequence_analyses, 'community_names.csv')
-    dcomm <- fread(path)
-    .f <- function(x)
-        fcase(x %like% '^f', 'fishing', x %like% '^t', 'trading', x %like% '^a', 'agrarian')
-    dcomm[, TYPE:=.f(COMM_NUM_A)]
-    dcomm[, COMM_NUM:=as.integer(COMM_NUM_RAW)]
-    dcomm
-}
-
 make.study.flowchart <- function(DT)
 {
     # DT <- copy(dall)

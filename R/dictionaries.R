@@ -117,10 +117,12 @@ postproc_dictionaries <- list(
 my_labs_dictionary <- c(
     AGE = "Age",
     AGEYRS = "Age",
+    AGEGROUP = "Age group",
     AGE_LABEL = "Age",
     AGE_LAB = "Age",
     COMM = "Community type",
     COMM_NUM = "Community number",
+    FIRST_VISIT = "First participant",
     FC = "Community type",
     FC2 = "Community type",
     HIV = "HIV status",

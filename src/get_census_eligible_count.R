@@ -129,9 +129,9 @@ ncen <- re[, {
 }, by=c('ROUND', 'TYPE', 'SEX')]
 ncen <- merge(ncen, re, by=c('ROUND', 'TYPE', 'SEX', 'AGEYRS', 'ELIGIBLE'))
 
-p_ncen <- plot.n.census.eligible.smooth()
-filename <- "Smooth_census_eligible_count_all_round.png"
-ggsave2(p_ncen, file=filename, LALA=outdir)
+p_ncen <- plot.n.census.eligible.smooth(ncen)
+filename <- "Smooth_census_eligible_count_all_round.pdf"
+ggsave2(p_ncen, file=filename, LALA=outdir, w=10, h=10)
 
 # choose smoothing 50
 ncen[, ELIGIBLE_SMOOTH := ELIGIBLE_SMOOTH.50]
@@ -140,7 +140,7 @@ ncen <- select(ncen, -c('ELIGIBLE_SMOOTH.25', 'ELIGIBLE_SMOOTH.50', 'ELIGIBLE_SM
 
 
 # save
-filename <- file.path(indir.repository, 'data', 'census_eligible_individuals_table_230514.csv')
+filename <- file.path(gitdir.data, 'census_eligible_individuals_table_230514.csv')
 fwrite(ncen, filename , row.names = F)
 
 # make a table for paper writing.
@@ -171,8 +171,8 @@ dcomm_N <- dcomm[, .(N_COMM=uniqueN(COMM_IDX)), by='TYPE']
 ncen_table <- merge( ncen_table, dcomm_N, by='TYPE' )
 ncen_table[, (new_cols) := lapply(.SD,  function(x) as.integer(x/N_COMM)), .SDcols=cols]
 
-filename <- file.path(indir.repository, 'data', 'census_eligible_individuals_table_230514.rds')
-fwrite(ncen, filename , row.names = F)
+filename <- file.path(gitdir.data, 'census_eligible_individuals_table_230514.rds')
+fwrite(ncen_table, filename , row.names = F)
 
 
 # NOTE: we may also want to study participation rates here

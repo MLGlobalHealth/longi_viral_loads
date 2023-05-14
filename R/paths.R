@@ -1,6 +1,7 @@
 gitdir.stan <- file.path(gitdir, 'stan')
 gitdir.functions <- file.path(gitdir, 'functions')
 gitdir.scripts <- file.path(gitdir, 'scripts')
+gitdir.src <- file.path(gitdir, 'src')
 gitdir.data <- file.path(gitdir, 'data')
 
 # simplify sourcing of all R/*.R helpers
@@ -29,6 +30,7 @@ path.viral.loads2 <- file.path(indir.deepdata.r1520, "Allpcr_data_for_R015_R020_
 path.quest_r1520_220830 <- file.path(indir.deepdata.r1520, 'Quest_R015_R020_VOIs_August302022.csv')
 path.quest_r1519_221207 <- file.path(indir.deepdata.r1520, 'quest_R15_R19_VoIs_Dec072022.csv')
 path.community.types <- file.path(indir.deepdata.r1518, 'community_names.csv')
+path.community.idx <- file.path(indir.deepdata.r1518, 'community_id_index.csv')
 path.negatives.r1520 <- file.path(indir.deepdata.r1520, 'R016_R020_Data_for_HIVnegatives.csv')
 path.hivres.r0914 <- file.path(indir.deepdata.r0914, "HIV_R09_R14.csv")
 
