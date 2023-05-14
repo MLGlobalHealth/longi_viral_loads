@@ -258,3 +258,29 @@ plot_scatter_cd4vl_bygroup <- function(DCD4=dcd4, DVL=dvl, group, filename=NULL)
         if(! is.null(filename))    ggplot2(filename, p1, 8,8)
         p1
 }
+
+
+plot.n.census.eligible.smooth <- function(DT){
+  
+    tmp <- subset(DT, ! ROUND %like% '15',
+        select=c('TYPE', 'SEX', 'AGEYRS', 'ROUND', 'ELIGIBLE', 'ELIGIBLE_SMOOTH.25', 'ELIGIBLE_SMOOTH.50', 'ELIGIBLE_SMOOTH.75')) |> 
+        melt.data.table(id.vars = c('TYPE', 'SEX', 'AGEYRS', 'ELIGIBLE', 'ROUND'),
+            variable.name = 'SMOOTH_PAR') |> 
+        prettify_labels()
+
+    tmp[,  SMOOTH_PAR := gsub('^.*\\.([0-9]+)', '\\1', SMOOTH_PAR)  ]
+
+    df_label <- tmp[, .(
+        diff = round(abs(sum(ELIGIBLE) - sum(value))), 
+        ylevel = 900 - 3 * as.integer(SMOOTH_PAR)),
+    by =  c('TYPE', 'SEX', 'SMOOTH_PAR', 'ROUND')]
+
+    p <- ggplot(tmp, aes(x = AGEYRS)) +
+        geom_bar(data = unique(tmp[, .(TYPE, SEX_LAB, AGEYRS, ELIGIBLE, ROUND_LAB)]), aes(y = ELIGIBLE), stat = 'identity', alpha = 0.5) +
+        geom_line(aes(y = value, col = SMOOTH_PAR)) +
+        labs(y = 'Census eligible individuals', x = 'Age', color='Loess parameter') +
+        facet_grid(ROUND_LAB~TYPE + SEX_LAB) +
+        theme_default() + 
+        geom_label(data = df_label, aes(x = 49, y = ylevel, label=diff, col = SMOOTH_PAR), size = 3, label.size = NA)
+    p
+}

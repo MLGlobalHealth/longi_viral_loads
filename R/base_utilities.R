@@ -113,3 +113,35 @@ commcode2commtype <- function(x)
         x %like% '^t', 'trading')
     return(out)
 }
+
+get.dcomm <- function(split.inland=TRUE)
+{
+    dcomm <- fread(path.community.types)
+
+    .f <- function(x)
+        fifelse(x %like% '^f', yes='fishing', no='inland')
+
+    if(split.inland){
+        .f <- function(x)
+            fcase(x %like% '^f', 'fishing', x %like% '^t', 'trading', x %like% '^a', 'agrarian')
+    }
+
+    dcomm[, TYPE:=.f(COMM_NUM_A)]
+    dcomm[, COMM_NUM:=as.integer(COMM_NUM_RAW)]
+    dcomm
+}
+
+get.dcomm.idx <- function(comm_num, split.inland=TRUE)
+{
+    dcomm2 <- fread(path.community.idx) |> setkey('comm_num')
+    dcomm2[data.table(comm_num=comm_num)]$comm_id
+}
+
+split.agegroup <- function(x)
+{
+    breaks <- c(15, 20, 25, 30, 35, 40, 45, 50)
+    n_breaks <- length(breaks)
+    labels <- paste(breaks[-n_breaks], breaks[-1] - 1, sep='-' )
+
+    cut(x, breaks=breaks, labels=labels, include.lowest = TRUE, right=FALSE)
+}

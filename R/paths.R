@@ -31,6 +31,9 @@ path.quest_r1519_221207 <- file.path(indir.deepdata.r1520, 'quest_R15_R19_VoIs_D
 path.community.types <- file.path(indir.deepdata.r1518, 'community_names.csv')
 path.negatives.r1520 <- file.path(indir.deepdata.r1520, 'R016_R020_Data_for_HIVnegatives.csv')
 path.hivres.r0914 <- file.path(indir.deepdata.r0914, "HIV_R09_R14.csv")
+
+# for get_census_eligible_count.R
+path.flow.r1518 <- file.path(indir.deepdata.r1518, 'FlowR15_R18_VoIs_221118.csv')
 path.flow.r19 <- file.path(indir.deepdata.r1520, 'flowR19_VOIs.dta')
 
 # obtained from process_data.R (also have a 230502 version)
