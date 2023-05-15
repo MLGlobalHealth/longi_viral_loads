@@ -17,6 +17,8 @@ source(file.path(gitdir.functions, 'plotting_functions.R'))
 
 
 outdir <- '/home/andrea/HPC/ab1820/home/projects/2022/longvl'
+outdir.figures <- file.path(outdir, 'figures')
+outdir.tables <- file.path(outdir, 'tables')
 
 
 # load files
@@ -29,9 +31,12 @@ dcomm[, `:=` (
 flow.1518 <- fread(path.flow.r1518)
 flow.19 <- as.data.table(read_dta(path.flow.r19))
 
-#
-# combine flow across rounds
-# 
+basename(path.flow.r1518)
+basename(path.flow.r19)
+
+##################################
+catn("combine flow across rounds")
+##################################
 
 cols_flow <- c('comm_num', 'locate1', 'locate2', 'resident', 'ageyrs', 'sex', 'round', 'curr_id')
 
@@ -46,9 +51,9 @@ flow <- lapply(
 is_all_unique <- flow[, .N , by=c('curr_id','round')][, all(N==1) ]
 stopifnot(is_all_unique)
 
-#
-# Find census eligible count
-#
+##################################
+catn("Find census eligible count")
+##################################
 
 # find  community
 flow <- merge(flow, dcomm, by.x = 'comm_num', by.y = 'COMM_NUM')
@@ -109,7 +114,10 @@ re <- re[order(ROUND, SEX, TYPE, AGEYRS)]
 re[, SEX_INDEX := ifelse(SEX == 'M', 1, 0)]
 re[, COMM_INDEX := ifelse(TYPE == 'fishing', 1, 0)]
 
-# find smooth count with loess smooth
+###########################################
+catn("find smooth count with loess smooth")
+###########################################
+
 rounds <- unique(re$ROUND)
 ageyrs_topredict <- re[, sort(unique(AGEYRS))]
 
@@ -131,7 +139,7 @@ ncen <- merge(ncen, re, by=c('ROUND', 'TYPE', 'SEX', 'AGEYRS', 'ELIGIBLE'))
 
 p_ncen <- plot.n.census.eligible.smooth(ncen)
 filename <- "Smooth_census_eligible_count_all_round.pdf"
-ggsave2(p_ncen, file=filename, LALA=outdir, w=10, h=10)
+ggsave2(p_ncen, file=filename, LALA=outdir.figures, w=10, h=10)
 
 # choose smoothing 50
 ncen[, ELIGIBLE_SMOOTH := ELIGIBLE_SMOOTH.50]
@@ -139,8 +147,11 @@ ncen <- select(ncen, -c('ELIGIBLE_SMOOTH.25', 'ELIGIBLE_SMOOTH.50', 'ELIGIBLE_SM
 
 
 
-# save
-filename <- file.path(gitdir.data, 'census_eligible_individuals_table_230514.csv')
+##############
+catn("saving")
+##############
+
+filename <- file.path(gitdir.data, 'census_eligible_individuals_230514.csv')
 fwrite(ncen, filename , row.names = F)
 
 # make a table for paper writing.
@@ -149,6 +160,10 @@ fwrite(ncen, filename , row.names = F)
         x[is.na(x)] <- sub 
     return(x)
 }
+
+##################
+catn("Make table")
+##################
 
 # get numbers
 ncen_table <- subset(ncen, ! ROUND  %like% '15') |> 
@@ -171,7 +186,7 @@ dcomm_N <- dcomm[, .(N_COMM=uniqueN(COMM_IDX)), by='TYPE']
 ncen_table <- merge( ncen_table, dcomm_N, by='TYPE' )
 ncen_table[, (new_cols) := lapply(.SD,  function(x) as.integer(x/N_COMM)), .SDcols=cols]
 
-filename <- file.path(gitdir.data, 'census_eligible_individuals_table_230514.rds')
+filename <- file.path(outdir.tables, 'census_eligible_individuals_table_230514.rds')
 fwrite(ncen_table, filename , row.names = F)
 
 
