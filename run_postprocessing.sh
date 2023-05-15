@@ -23,14 +23,14 @@ STAN_MODEL=$STAN_MODEL
 JOBNAME=$JOBNAME
   
 # main directory
-CWD=\$PWD/\$JOBNAME
+CWD=\$PWD\$JOBNAME
 
 # directories for figure and table
-mkdir \$CWD
-mkdir \$CWD/figures
-mkdir \$CWD/tables
+#mkdir \$CWD
+#mkdir \$CWD/figures
+#mkdir \$CWD/tables
 
-Rscript \$INDIR/scripts/VL_postprocessing.R -indir --viremic-viral-load $VL --outdir \$CWD --indir \$CWD
+Rscript \$INDIR/scripts/VL_postprocessing.R --viremic-viral-load $VL --outdir \$OUTDIR --indir \$OUTDIR
 
 EOF
 
