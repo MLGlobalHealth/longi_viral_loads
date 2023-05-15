@@ -34,12 +34,15 @@ path.community.idx <- file.path(indir.deepdata.r1518, 'community_id_index.csv')
 path.negatives.r1520 <- file.path(indir.deepdata.r1520, 'R016_R020_Data_for_HIVnegatives.csv')
 path.hivres.r0914 <- file.path(indir.deepdata.r0914, "HIV_R09_R14.csv")
 
+# for first participants: 
+path.participation <- file.path(indir.deepdata.r1520, "RCCS_1strndquest_participation.dta")
+
 # for get_census_eligible_count.R
 path.flow.r1518 <- file.path(indir.deepdata.r1518, 'FlowR15_R18_VoIs_221118.csv')
 path.flow.r19 <- file.path(indir.deepdata.r1520, 'flowR19_VOIs.dta')
 
 # obtained from process_data.R (also have a 230502 version)
-path.hivstatusvl.r1520 <- file.path(indir.deepdata.r1520, 'all_participants_hivstatus_vl_220729.csv')
+path.hivstatusvl.r1520 <- file.path(indir.deepdata.r1520, 'all_participants_hivstatus_vl_230515.csv')
 path.viralloads.processed.r1520 <- file.path(indir.deepdata.r1520, 'viral_loads_r15r20_processed_230502.csv')
 
 # processed files: 

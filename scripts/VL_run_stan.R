@@ -37,7 +37,8 @@ source(file.path(gitdir.functions, "phsc_vl_helpers.R"))
 
 # options
 source(file.path(gitdir.R, 'options.R'))
-args <- args[names(args) %like% '^run|viral.load|jobname|indir|out.dir|refit|round']
+args <- args[names(args) %like% '^run|viral.load|jobname|indir|out.dir|refit|round|^only.firstparticipants']
+if(interactive()){ args$only.firstparticipants <- TRUE } # testing
 print(args)
 
 # parallel backend (use multiple cores if local)
@@ -47,6 +48,8 @@ if (parallelise)
 file.exists(path.hivstatusvl.r1520) |>
     all() |>
     stopifnot()
+
+
 
 
 ################
@@ -63,15 +66,12 @@ VIREMIC_VIRAL_LOAD <- args$viremic.viral.load
 # specify and create output directories as func(vl, jobname)
 stopifnot(dir.exists(args$out.dir.prefix))
 out.dir <- file.path(args$out.dir.prefix)
-suffix <- paste0("vl_", VIREMIC_VIRAL_LOAD)
-suffix <- fifelse(is.na(args$jobname), 
-    yes=suffix, 
-    no=paste0( suffix,'-',args$jobname))
+suffix <- make.suffix(args)
 vl.out.dir <- file.path( out.dir, suffix)
 dir.create(vl.out.dir, showWarnings = FALSE)
 
 # get data
-dall <- get.dall(path = path.hivstatusvl.r1520, make_flowchart = FALSE)
+dall <- get.dall(path = path.hivstatusvl.r1520, only_firstpart = args$only.firstparticipants)
 
 if (0) { # Info for introduction to results
 

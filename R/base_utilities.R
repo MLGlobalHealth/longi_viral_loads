@@ -79,6 +79,24 @@ empty2NA <- function(DT)
     x
 }
 
+empty2naDT <- function(DT)
+{
+    idx <- DT[, sapply(.SD, is.character)]
+    cols <- names(idx)[idx]
+    DT[, (cols) := lapply(.SD, .empty2na), .SDcols = cols]
+    DT
+}
+
+remove.columns.with.unique.entry <- function(DT)
+{
+    idx <- DT[, which(lapply(.SD, uniqueN) == 1)]
+    cols <- names(idx)
+    cat('Removing constant columns, as uninformative:\n')
+    DT[, lapply(.SD,unique) , .SDcols=cols]
+    DT[, (cols):=NULL]
+    return(DT)
+}
+
 na2zero <- function(x){
     x[is.na(x)] <-0; x
 }
@@ -144,4 +162,16 @@ split.agegroup <- function(x)
     labels <- paste(breaks[-n_breaks], breaks[-1] - 1, sep='-' )
 
     cut(x, breaks=breaks, labels=labels, include.lowest = TRUE, right=FALSE)
+}
+
+make.suffix <- function(args)
+{
+    suffix <- paste0("vl_", VIREMIC_VIRAL_LOAD)
+    suffix <- fifelse(args$only.firstparticipants==TRUE, 
+        yes=paste0( suffix,'_firstpart'),
+        no=suffix)
+    suffix <- fifelse(is.na(args$jobname), 
+        yes=suffix, 
+        no=paste0( suffix,'-',args$jobname))
+    return(suffix)
 }

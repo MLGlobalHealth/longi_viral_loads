@@ -1,4 +1,4 @@
-get.dall <- function(path, make_flowchart=TRUE)
+get.dall <- function(path, only_firstpart=FALSE, make_flowchart=FALSE)
 {
     # Load data: exclude round 20 as incomplete
     dall <- fread(path) |> 
@@ -19,6 +19,9 @@ get.dall <- function(path, make_flowchart=TRUE)
     # make study flowchart if packages are installed 
     if('DiagrammeR' %in% installed.packages() & make_flowchart)
         make.study.flowchart(dall)
+
+    if(only_firstpart)
+        dall <- subset(dall, FIRST_PARTICIPATION == TRUE) 
 
     return(dall)
 }

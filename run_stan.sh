@@ -2,10 +2,19 @@
 
 # STAN_MODEL=TODO
 VL="${1:=1000}" 
+FIRSTPART=$2
 echo "VL set to $VL"
 JOBNAME="vl_$VL"
+
+if [[ ! -z "$FIRSTPART" ]]; then
+    JOBNAME="$JOBNAME"_firstpart
+    FIRSTPART="--firstparticipant"
+    echo "Running analyses on first-time participants."
+fi
+
 INDIR="/rds/general/user/ab1820/home/git/longi_viral_loads"
 OUTDIR="/rds/general/user/ab1820/home/projects/2022/longvl"
+
 
 mkdir $OUTDIR/$JOBNAME
 
@@ -36,7 +45,7 @@ CWD=\$PWD/\$JOBNAME/$MODEL
 
 mkdir -p \$CWD
 
-Rscript \$INDIR/scripts/VL_run_stan.R --viremic-viral-load $VL --outdir \$CWD --$MODEL TRUE --round \$ROUND
+Rscript \$INDIR/scripts/VL_run_stan.R --viremic-viral-load $VL --outdir \$CWD --$MODEL TRUE --round \$ROUND $FIRSTPART
 
 cp -R --no-preserve=mode,ownership \$PWD/\$JOBNAME/. \$OUTDIR
 

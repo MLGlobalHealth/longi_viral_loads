@@ -82,6 +82,13 @@ option_list <- list(
         dest = 'round'
     ),
     make_option(
+        "--firstparticipants",
+        type = "logical",
+        default = FALSE,
+        help = "Subsets the analysis to only first-time participants", 
+        dest = 'only.firstparticipants'
+    ),
+    make_option(
         "--jobname",
         type = "character",
         default = NA_character_,
