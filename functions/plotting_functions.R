@@ -9,10 +9,10 @@ plot_visitpairs <- function(DT)
                       legend.position = 'bottom')
 }
 
-plot_rounds_vl_collection <- function(DT, rnd=15, atleast=NULL, community=NULL, filename=NULL)
+plot_rounds_vl_collection <- function(DT, rounds=16:19, atleast=NULL, community=NULL, filename=NULL)
 {
         cols <- c('study_id', 'comm', 'round')
-        dcounts <- DT[round >= rnd & !is.na(hiv_vl), .SD, .SDcols=cols ]
+        dcounts <- DT[round %in%  rounds & !is.na(hiv_vl), .SD, .SDcols=cols ]
         
         subtitle_comm <- ''
         if(!is.null(community))
@@ -54,7 +54,7 @@ plot_rounds_vl_collection <- function(DT, rnd=15, atleast=NULL, community=NULL, 
                                      subtitle_comm,
                                      subtitle_atleast,')'))
 
-        if(! is.null(filename))    ggplot2(filename, p1, 7,5)
+        if(! is.null(filename))    ggsave2(filename, p1, 7,5)
         p1
 }
 
@@ -257,4 +257,60 @@ plot_scatter_cd4vl_bygroup <- function(DCD4=dcd4, DVL=dvl, group, filename=NULL)
 
         if(! is.null(filename))    ggplot2(filename, p1, 8,8)
         p1
+}
+
+
+plot.n.census.eligible.smooth <- function(DT){
+  
+    tmp <- subset(DT, ! ROUND %like% '15',
+        select=c('TYPE', 'SEX', 'AGEYRS', 'ROUND', 'ELIGIBLE', 'ELIGIBLE_SMOOTH.25', 'ELIGIBLE_SMOOTH.50', 'ELIGIBLE_SMOOTH.75')) |> 
+        melt.data.table(id.vars = c('TYPE', 'SEX', 'AGEYRS', 'ELIGIBLE', 'ROUND'),
+            variable.name = 'SMOOTH_PAR') |> 
+        prettify_labels()
+
+    tmp[,  SMOOTH_PAR := gsub('^.*\\.([0-9]+)', '\\1', SMOOTH_PAR)  ]
+
+    df_label <- tmp[, .(
+        diff = round(abs(sum(ELIGIBLE) - sum(value))), 
+        ylevel = 900 - 3 * as.integer(SMOOTH_PAR)),
+    by =  c('TYPE', 'SEX', 'SMOOTH_PAR', 'ROUND')]
+
+    p <- ggplot(tmp, aes(x = AGEYRS)) +
+        geom_bar(data = unique(tmp[, .(TYPE, SEX_LAB, AGEYRS, ELIGIBLE, ROUND_LAB)]), aes(y = ELIGIBLE), stat = 'identity', alpha = 0.5) +
+        geom_line(aes(y = value, col = SMOOTH_PAR)) +
+        labs(y = 'Census eligible individuals', x = 'Age', color='Loess parameter') +
+        facet_grid(ROUND_LAB~TYPE + SEX_LAB) +
+        theme_default() + 
+        geom_label(data = df_label, aes(x = 49, y = ylevel, label=diff, col = SMOOTH_PAR), size = 3, label.size = NA)
+    p
+}
+
+plot.proportion.firstparticipants.by.vars <- function(DT, by_cols = c('ROUND','TYPE'))
+{
+    # DT <- copy(dfirstround); by_cols = c('ROUND','TYPE')
+    tmp <- cube( dfirstround, 
+        j = list(
+            N_FIRST = sum(ROUND == QST_1STRND), 
+            N_REPEATED = sum(ROUND != QST_1STRND), 
+            N_TOT = .N
+        ), by = by_cols )
+    tmp[, (by_cols) := lapply(.SD, function(x){
+        x[is.na(x)] <- "Total"; x
+    } ), .SDcols = by_cols ]
+    tmp[, P_FIRST := N_FIRST/N_TOT]
+
+    p_prop_newparts <- tmp |> 
+        subset(ROUND != "Total") |>
+        prettify_labels() |> 
+        ggplot(aes(x=as.integer(ROUND), y=P_FIRST, color=TYPE)) + 
+        geom_line() +
+        scale_y_continuous(
+            labels=scales::label_percent(), 
+            limits=c(0, .4), 
+            expand=expansion(mult=0)
+        ) +  
+        theme_default() +
+        my_labs(x="Interview round", y="Proportion of new participants", color="Community type")
+
+    p_prop_newparts 
 }

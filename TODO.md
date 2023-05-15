@@ -1,16 +1,31 @@
+# Second attempt:
 
-# THRESHOLDs
+## Ideas
 
-Compare results for thresholds given by: 1000 copies/mL; 50 copies/mL 
+poster CROI2020-PVL-poster-200225 rg-1.pptx,
+estimating mean population viral load by age and sex, in different communities and by round of collection.
+The idea is to extend Imogen's analysis to multiple round, with a particular focus on age-shifts (changes in the drivers-profile of the epidemic)
 
-# SAMPLE SIZEs
+More aims in the [google doc](https://docs.google.com/document/d/1w9OYMA2JdW_tzH96oaJgVo3BZTnNb3OmPLuRidxxe-A/edit#)
 
-histogram showing for which rounds the >= 3 groups has NO MEASUREMENTs?
-is the problem that we are still waiting for data?
-(sampe for group >= 2)
+Possible extensions:
+- it would be great if we were able to link PVL to incidence.
+- 'normalise' PVL by sexual contact intensities.
 
 
-# Posterior predictive check:
+## Code
+
+Code shared by Oli at:
+- `Phyloscanner.R.utilities/misc/phyloscan.viral.load.project.R`
+
+## Lit review:
+
+- https://academic.oup.com/cid/article/66/8/1254/4662847?login=true
+- https://www.nejm.org/doi/full/10.1056/nejmoa1702150
+
+
+
+## Posterior predictive check:
 From AkiVethari's [github](https://avehtari.github.io/modelselection/)
 
 - Simulate new datasets with posterior distribution and then check whether our data is consistent with that.
@@ -21,8 +36,6 @@ From AkiVethari's [github](https://avehtari.github.io/modelselection/)
 
 we are using double use of data, so risks of p-value to not be calibrated. For that consider CV.
 (is there an easy way to perform CV in STAN?)
-
-
 
 
 

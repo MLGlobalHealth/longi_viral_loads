@@ -9,149 +9,211 @@ library(ggpubr)
 library(knitr)
 library(Hmisc)
 library(xtable)
+library(here)
+library(optparse)
 
 ################
 #    PATHS     #
 ################
 
-usr <- Sys.info()[['user']]
-if(usr == 'andrea')
-{
-    git.repository <-'~/git/longi_viral_loads'
-    indir.deepsequence.data <- '~/Documents/Box/ratmann_pangea_deepsequencedata'
-    indir.deepanalyses.xiaoyue <- '/home/andrea/HPC/project/ratmann_xiaoyue_jrssc2022_analyses/live'
-    out.dir.prefix <- '/home/andrea/HPC/ab1820/home/projects/2022/longvl/'
-}else if(usr == 'ab1820')
-{
-    git.repository <-'~/git/longi_viral_loads' 
-    indir.deepsequence.data <- '/rds/general/project/ratmann_pangea_deepsequencedata/live/'
-    indir.deepanalyses.xiaoyue <- '/rds/general/project/ratmann_xiaoyue_jrssc2022_analyses/live/'
-    out.dir.prefix <- '/rds/general/user/ab1820/home/projects/2022/longvl'
-}
-
-path.stan <- file.path(git.repository, 'stan')
-path.tests <- file.path(indir.deepsequence.data, 
-                        'RCCS_R15_R20',
-                        "all_participants_hivstatus_vl_220729.csv")
-
-path.census.eligible <- file.path(git.repository, 'data/RCCS_census_eligible_individuals_221209.csv')
-# path.census.eligible.count <- file.path(indir.deepsequence.data, 'RCCS_R15_R18/RCCS_census_eligible_count_220719.csv')
+gitdir <- here()
+source(file.path(gitdir, "R/paths.R"))
 
 file.exists(
-        path.stan,
-        path.tests,
+        path.hivstatusvl.r1520,
         path.census.eligible
 ) |> all() |> stopifnot()
+
+# helpers
+source( file.path(gitdir.R,'base_utilities.R') )
+source( file.path(gitdir.R,'base_plots.R') )
+source( file.path(gitdir.R,'dictionaries.R') )
+source( file.path(gitdir.functions,'plotting_main_figures.R') )
+source( file.path(gitdir.functions,'postprocessing_helpers.R') )
+source( file.path(gitdir.functions,'phsc_vl_helpers.R') )
+
+# source command line options, stored in args. Then subset
+source( file.path(gitdir.R,'options.R') )
+opts_vec <- c('viremic.viral.load', 'detectable.viral.load', 'out.dir.prefix', 'indir','round', 'jobname')
+args <- args[ names(args) %in% opts_vec]
+
+# other setup
+#------------
 
 make_paper_numbers <- TRUE
 if(make_paper_numbers)
     ppr_numbers <- list()
 
-################
-#   OPTIONS    #
-################
-
-option_list <- list(
-    optparse::make_option(
-        "--viremic-viral-load",
-        type = "numeric",
-        default = 200,
-        help = "Duration of acute phase, in years [Defaults to 2 months]", 
-        dest = 'viremic.viral.load'
-    ),
-    optparse::make_option(
-        "--vl-detectable",
-        type = "numeric",
-        default = 150,
-        help = "Duration of acute phase, in years [Defaults to 2 months]", 
-        dest = 'viremic.viral.load'
-    ),
-    optparse::make_option(
-        "--indir",
-        type = "character",
-        default = '/home/andrea/HPC/ab1820/home/projects/2022/longvl/',
-        help = "Path to output directory where model fits are stored [Defaults to my directory]", 
-        dest = 'indir'
-    ),
-    optparse::make_option(
-        "--outdir",
-        type = "character",
-        default = '/home/andrea/HPC/ab1820/home/projects/2022/longvl/',
-        help = "Path to output directory where to store results [Defaults to my directory]", 
-        dest = 'out.dir.prefix'
-    ),
-    optparse::make_option(
-        "--round",
-        type = "numeric",
-        default = c(16,17,18,19),
-        help = "Path to output directory where to store results [Defaults to my directory]", 
-        dest = 'round'
-    )
-)
-
-args <-  optparse::parse_args(optparse::OptionParser(option_list = option_list))
-print(args)
-
-
-################
-#    HELPERS   #
-################
-
-source( file.path(git.repository,'functions/base_utilities.R') )
-source( file.path(git.repository,'functions/plotting_main_figures.R') )
-source( file.path(git.repository,'scripts/phsc_vl_helpers.R'))
-
-################
-#     MAIN     #
-################
-
 VL_DETECTABLE = args$vl.detectable
 VIREMIC_VIRAL_LOAD = args$viremic.viral.load
 
-# plot requisite from nature med: 
 naturemed_reqs() # stores them in nm_reqs
 
 # output directory with rda files
 out.dir <- args$out.dir.prefix
 vl.out.dir <- file.path(out.dir, paste0('vl_', VIREMIC_VIRAL_LOAD) )
+vl.out.dir.figures <- file.path(vl.out.dir, 'figures')
+vl.out.dir.tables <- file.path(vl.out.dir, 'tables')
+dir.create(vl.out.dir.tables) |> suppressWarnings()
+dir.create(vl.out.dir.figures) |> suppressWarnings()
 
-.f <- function(x) dir.create(file.path(vl.out.dir, x))
-sapply(c('figures', 'tables'), .f)
-stopifnot(dir.exists(vl.out.dir))
+################
+#     MAIN     #
+################
 
-# get rda paths for fitted models
-rda_files <- list.files(args$indir, pattern='.rda', full.names=T, recursive=TRUE)
-rda_files <- grep(paste0('vl_', args$viremic.viral.load), rda_files, value=T)
+rda_files <- list.files.from.output.directory('.rda')
 
-# get data 
-dall <- get.dall(path.tests)
+# get data
+dall <- get.dall(path.hivstatusvl.r1520, make_flowchart=TRUE)
+
 
 # Get census eligible and compare with participants 
 # __________________________________________________
 
 # we need to chose whether to use the smoothed version, or the actual counts (`.count`)
+by_vars <- c('ROUND', 'SEX_LABEL', 'LOC_LABEL')
 dcens <- get.census.eligible()
-cat('\n* number of census eligible by round, sex and location *')
-dcens[, .(N_ELIGIBLE=sum(ELIGIBLE)), by=c('ROUND', 'SEX_LABEL', 'LOC_LABEL')] |> 
-    dcast(ROUND + SEX_LABEL ~ LOC_LABEL, value.var='N_ELIGIBLE' ) |> kable()
+dcens[, .(N_ELIGIBLE=sum(ELIGIBLE)), by=by_vars] |> 
+    dcast(ROUND + SEX_LABEL ~ LOC_LABEL, value.var='N_ELIGIBLE' ) |>
+    kable(caption = 'number of census eligible by round, sex and location')
+
+# merge with number of participant -> positives -> not suppressed
+# NOTE: NA eligibles for AGE_LABEL == 50. May be mismatch in how age is defined here and in phyloflows `get_census_eligible` count
+dcens <- get.participants.positives.unsuppressed(dall) |> 
+    merge(dcens, y=_, by=c(by_vars, 'AGE_LABEL'), all.x=TRUE, all.y=TRUE)
 last.round <- dcens[, max(ROUND)] 
 
 cat('--- Make UNAIDS objectives plot ---\n')
 tmp <- make.unaids.plots(DT=dcens)
+
+cat('--- Empirical CDF for HIV positive participants with suppressed viral load---\n')
+tmp <- plot.empirical.prob.of.suppression.with.age(dcens)
 
 
 # Summarised analyes
 # __________________
 
 cat('--- Plot Posteriors for fishing analyses ---\n')
-p <- plot.all.gps(loc='fishing')
+
+p.list <- plot.all.gps(loc='fishing')
 filename <- 'main_allanalyses_fishing.pdf'
-ggsave2(p, file=filename, LALA=file.path(vl.out.dir, 'figures') , w=18, h=24, u='cm')
+ggsave2(p.list[['noraw']], file=filename, LALA=vl.out.dir.figures , w=20, h=24, u='cm')
+filename <- 'main_allanalyses_fishing_withraw.pdf'
+ggsave2(p.list[['withraw']], file=filename, LALA=vl.out.dir.figures , w=20, h=24, u='cm')
 
 cat('--- Plot Posteriors for inland analyses ---\n')
-p <- plot.all.gps(loc='inland')
+
+p.list <- plot.all.gps(loc='inland')
 filename <- 'main_allanalyses_inland.pdf'
-ggsave2(p, file=filename, LALA=file.path(vl.out.dir, 'figures'), w=18, h=24, u='cm')
+ggsave2(p.list[['noraw']], file=filename, LALA=vl.out.dir.figures, w=20, h=24, u='cm')
+filename <- 'main_allanalyses_inland_withraw.pdf'
+ggsave2(p.list[['withraw']], file=filename, LALA=vl.out.dir.figures, w=20, h=24, u='cm')
+
+
+# Unaids table
+# ____________
+
+cat('--- Make UNAIDS goals table ---\n')
+tmp <- make.table.unaids.goals()
+print(xtable::xtable(tmp), 
+      include.rownames=FALSE, 
+      hline.after=c(-1, seq(0, nrow(tmp), nrow(tmp)/4)),
+      file=file.path(vl.out.dir, 'tables', 'main_unaids_table.tex'))
+xtable::xtable(tmp)
+
+# Compare Prevalence of suppression among HIV+
+# ____________________________________________
+
+cat('-- Comparing prevalence of suppression among HIV+ ---\n')
+tmp <- vl.vlprops.by.comm.gender.loc(dall)
+vlc <- tmp$DT
+tmp <- make.map.220810(dall, vlc, 'PVLNSofHIV_MEAN')
+
+
+# Compare Rate of Change
+# ______________________
+
+
+compare.suppression <- function()
+{ .load.dre <- function(lab)
+    {
+
+        lab2 <- fcase(
+                      lab %like% 'prevalence', "prev.hiv.by.age",
+                      lab %like% 'suppAmongInfected', "nsinf.by.age",
+                      lab %like% 'suppAmongPop', "nspop.by.age",
+                      default=NA
+        )
+        stopifnot(! is.na(lab2))
+
+        # dre contains posterior samples
+        dre <- list()
+
+        for (file in dfiles)
+        {
+            tmp_env <- new.env()
+            load(file, envir=tmp_env)
+
+            idx <- tmp_env$DT[, seq(min(AGE_LABEL), max(AGE_LABEL + 1), .5) ]
+            idx <- data.table(Var2=seq_along(idx), AGE_LABEL=idx)
+
+            cols <- grep('^p_predict', names(tmp_env$re), value=TRUE)
+            tmp <- tmp_env$re[cols]
+            .f <- function(x) as.data.table(reshape2::melt(x))
+            tmp <- lapply(tmp, .f)
+
+            .f <- function(x)
+            {
+                y <- merge(x, idx, by='Var2')
+                y[, Var2 := NULL]
+            }
+            tmp <- lapply(tmp, .f)
+
+            dre[[file]] <- tmp
+        }
+        rm(tmp_env)
+
+        .f <- function(x) as.integer(gsub('^.*?round([0-9]{2}).*?$', '\\1', x))
+        names(dre) <- .f(names(dre)) 
+
+        dre
+    }
+
+    .label.sex.loc <- function(lst)
+    {
+        idx <- data.table(
+                          .id=c('00', '01', '10', '11'),
+                          SEX_LABEL=c('F', 'F', 'M', 'M'),
+                          LOC_LABEL=c('inland', 'fishing', 'inland','fishing')
+        )
+
+        tmp <- rbindlist(lst, idcol=T)
+            # scale_color_manual() + 
+            labs(
+                x='Age', 
+                y='Empirical CDF of non-suppression', 
+                color='Gender'
+            )
+
+}
+
+# Summarised analyes
+# __________________
+
+cat('--- Plot Posteriors for fishing analyses ---\n')
+p.list <- plot.all.gps(loc='fishing')
+filename <- 'main_allanalyses_fishing.pdf'
+ggsave2(p.list[['noraw']], file=filename, LALA=vl.out.dir.figures , w=20, h=24, u='cm')
+filename <- 'main_allanalyses_fishing_withraw.pdf'
+ggsave2(p.list[['withraw']], file=filename, LALA=vl.out.dir.figures , w=20, h=24, u='cm')
+
+cat('--- Plot Posteriors for inland analyses ---\n')
+p.list <- plot.all.gps(loc='inland')
+filename <- 'main_allanalyses_inland.pdf'
+ggsave2(p.list[['noraw']], file=filename, LALA=vl.out.dir.figures, w=20, h=24, u='cm')
+filename <- 'main_allanalyses_inland_withraw.pdf'
+ggsave2(p.list[['withraw']], file=filename, LALA=vl.out.dir.figures, w=20, h=24, u='cm')
+
 
 # Unaids table
 # ____________
@@ -333,3 +395,4 @@ if(0)
             facet_wrap(~ROUND)
     tmp
 }
+

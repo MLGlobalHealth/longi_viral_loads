@@ -1,167 +1,199 @@
-get.dall <- function(path, make_flowchart=TRUE)
+get.dall <- function(path, only_firstpart=FALSE, make_flowchart=FALSE)
 {
     # Load data: exclude round 20 as incomplete
-    dall <- fread(path)
-    dall <- unique(dall[ROUND >= 16 & ROUND <= 19])
-
-    # remove useless cols:
+    dall <- fread(path) |> 
+        subset(ROUND >= 16 & ROUND <= 19) |> 
+        subset(SEX != "") |>  unique()
     dall[, CURR_ID := NULL]
     dall <- unique(dall)
 
-    # study dataset keys
+    # check keys are unique
     key_cols <- c('STUDY_ID', 'ROUND')
     setkeyv(dall, key_cols)
     stopifnot(dall[, .N, by=key_cols][, all(N == 1)])
 
     # rename variables according to Oli's old script + remove 1 unknown sex
-    setnames(dall,
-             c('HIV_VL', 'COMM'),
-             c('VL_COPIES', 'FC') )
+    setnames(dall, c('HIV_VL', 'COMM'), c('VL_COPIES', 'FC') )
     dall[, HIV_AND_VL := ifelse( HIV_STATUS == 1 & !is.na(VL_COPIES), 1, 0)]
-
-    # remove individuals without sex reported
-    dall <- dall[! SEX=='']
 
     # make study flowchart if packages are installed 
     if('DiagrammeR' %in% installed.packages() & make_flowchart)
         make.study.flowchart(dall)
 
+    if(only_firstpart)
+        dall <- subset(dall, FIRST_PARTICIPATION == TRUE) 
+
     return(dall)
 }
 
-.get.dcomm <- function()
+get.census.eligible <- function(rounds=args$round)
 {
-    path <- file.path(indir.deepanalyses.xiaoyue, 'PANGEA2_RCCS1519_UVRI', 'community_names.csv')
-    dcomm <- fread(path)
-    .f <- function(x)
-        fcase(x %like% '^f', 'fishing', x %like% '^t', 'trading', x %like% '^a', 'agrarian')
-    dcomm[, TYPE:=.f(COMM_NUM_A)]
-    dcomm[, COMM_NUM:=as.integer(COMM_NUM_RAW)]
-    dcomm
+    # Recall that COUNT and TOTAL_COUNT do not agree with HIV_N and N in our vla.
+    # why? I removed (very few) HIV+ without VLs (79)
+
+    cols <- c('ROUND', 'COMM', 'AGEYRS', 'SEX', 'ELIGIBLE')
+
+    dcens <- fread(path.census.eligible) |> 
+        subset(ROUND %in% rounds, select=cols) |> 
+        setnames(c('COMM', 'AGEYRS', 'SEX'), paste0(c('LOC', 'AGE', 'SEX'), '_LABEL'))
+    stopifnot('empty dcens after round subsetting'=nrow(dcens)>0)
+
+    dcens[, ROUND := as.integer(ROUND)]
+
+    return(dcens)
+}
+
+get.participants.positives.unsuppressed <- function(DALL)
+{
+    # DALL <- copy(dall)
+    dnppu <- DALL |> 
+        .preprocess.ds.oli() |> 
+        .preprocess.make.vla(select=c('N', 'HIV_N', 'VLNS_N'))  
+
+    dnppu[, (c('LOC', 'SEX', 'AGE', 'ROW_ID')) := NULL ]
+    dnppu
 }
 
 make.study.flowchart <- function(DT)
 {
-    
-    library(DiagrammeR)
-    library(DiagrammeRsvg)
-    library(rsvg)
-    library(htmltools)
-    ls_fchart <- list()
+    # DT <- copy(dall)
+    require(DiagrammeR)
+    require(DiagrammeRsvg)
+    require(rsvg)
+    require(htmltools)
+
+    # define round dates.
+    round_dates <- data.table(
+        ROUND = c(16, 17, 18, 19),
+        BEGIN = c('01/07/2013', '01/02/2015','01/10/2016', '01/06/2018'),
+        END = c('01/01/2015', '01/09/2016', '01/05/2018', '01/05/2019')
+    )
+    nms <- c('BEGIN', "END")
+    .f <- function(x) as.Date(x, format='%d/%m/%Y') |> format("%B %Y")
+    round_dates[, (nms) := lapply(.SD, .f), .SDcols=nms]
+    round_dates[, LAB := paste('from', BEGIN, 'to', END)]
+    round_idx <- DT[, unique(ROUND)]
 
     # Get numbers for flowchart
-    ls_fchart[['all']] <- DT[, .(uniqueN(STUDY_ID), .N)]
-    ls_fchart[['pos']] <- DT[HIV_STATUS == 1, .(uniqueN(STUDY_ID), .N)]
-    ls_fchart[['vls']] <- DT[HIV_AND_VL == 1, .(uniqueN(STUDY_ID), .N)]
-    ls_fchart <- lapply(ls_fchart, function(DT) DT[, lapply(.SD, formatC, big.mark=',')])
+    ls_fchart <- list(
+        all = cube(DT, .(uniqueN(STUDY_ID), .N), by='SEX'),
+        pos = cube(DT[HIV_STATUS == 1], .(uniqueN(STUDY_ID), .N), by='SEX'),
+        vls = cube(DT[HIV_AND_VL == 1], .(uniqueN(STUDY_ID), .N), by='SEX')
+    ) |> 
+        lapply( function(D) {D$SEX[3] <- 'ALL'; D}) |> 
+        lapply( function(DT) DT[, lapply(.SD, formatC, big.mark=',')])
 
-    idx <- DT[, unique(ROUND)]
+    ls_fchart_dropped <- list(
+        neg  = DT[ HIV_STATUS == 0, list(uniqueN(STUDY_ID), .N)] ,
+        novl = DT[ HIV_STATUS == 1 & HIV_AND_VL == 0 , list(uniqueN(STUDY_ID), .N)]
+    ) |> lapply( function(DT) DT[, lapply(.SD, formatC, big.mark=',')])
+
+    # get VL composition by sex.
     statement_for_round <- function(r)
     {
-      .statement <- function(tot,x, y, z)
-      {
-        .r <- function(a) 
-          paste0(formatC(a, big.mark = ','), ' (',format(round(100*a/tot, 2), nsmall=2), '%)')
-        paste0(
-          "Round ",r, "\n", 
-          formatC(tot, big.mark = ','), " total VL measurements:\\\\l &#8226; ",
-          .r(x), " were vireamic.\\\\l &#8226; ",
-          .r(y), " had low level viraemia.\\\\l &#8226; ",
-          .r(z), " were non-viraemic.\\\\l")
-        
-      }
-      DT[HIV_AND_VL == 1 & ROUND == r, 
-         .statement(tot=.N,
-                    x=sum(VL_COPIES > 1000),
-                    y=sum(VL_COPIES %between% c(200, 1000)),
-                    z=sum(VL_COPIES < 1000)) ]
+        .statement <- function(f_tot,f_x, f_y, f_z, m_tot, m_x, m_y, m_z)
+        {
+            .r <- function(a, tot) 
+            paste0(formatC(a, big.mark = ','), ' (',format(round(100*a/tot, 2), nsmall=2), '%)')
+
+            paste0(
+                "Round ",r, "\n",
+                round_dates[ROUND == r, paste0('(',LAB, ')\n') ],
+
+                "\nAmong men\n",
+                formatC(m_tot, big.mark = ','), " individuals with VL measurements:\\\\l &#8226; ",
+                .r(m_x, m_tot), " were vireamic.\\\\l &#8226; ",
+                .r(m_y, m_tot), " had low level viraemia.\\\\l &#8226; ",
+                .r(m_z, m_tot), " were non-viraemic.\\\\l",
+
+                "\nAmong women\n",
+                formatC(f_tot, big.mark = ','), " individuals with VL measurements:\\\\l &#8226; ",
+                .r(f_x, f_tot), " were vireamic.\\\\l &#8226; ",
+                .r(f_y, f_tot), " had low level viraemia.\\\\l &#8226; ",
+                .r(f_z, f_tot), " were non-viraemic.\\\\l")
+        }
+
+        DT[HIV_AND_VL == 1 & ROUND == r, {
+            is.male <- SEX == 'M'
+            VL_COPIES.M <- VL_COPIES[is.male]
+            VL_COPIES.F <- VL_COPIES[!is.male]
+            .statement(
+                m_tot=sum(is.male),
+                m_x=sum(VL_COPIES.M > 1000),
+                m_y=sum(VL_COPIES.M %between% c(200, 1000)),
+                m_z=sum(VL_COPIES.M < 1000),
+                f_tot=sum(!is.male),
+                f_x=sum(VL_COPIES.F > 1000),
+                f_y=sum(VL_COPIES.F %between% c(200, 1000)),
+                f_z=sum(VL_COPIES.F < 1000)
+            ) 
+        }]
     }
-    ls_fchart_round <- lapply(idx, statement_for_round)
-    names(ls_fchart_round) <- paste0('r',idx)
+
+    ls_fchart_round <- lapply(round_idx, statement_for_round)
+    names(ls_fchart_round) <- paste0('r',round_idx)
 
     filename <- file.path(vl.out.dir, 'flowchart_numbers.pdf')
-    DiagrammeR::grViz(
-                      "
-                      digraph graph2 {
+    cat('Saving',  filename, '\n')
+    DiagrammeR::grViz("
+        digraph graph2 {
 
-                          # Graph attributes
-                          graph [splines=line, nodesep=.2]
-                          node [fontsize=15]
-                          edge [arrowsize=.5]
+        # Graph attributes
+        graph [splines=line, nodesep=.2]
+        node [fontsize=15]
+        edge [arrowsize=.5]
 
-                          # node definitions with substituted label text
-                          node [shape = rectangle, width = 7, height=.4]
-                          a [label = '@@1']
-                          b [label = '@@2']
-                          c [label = '@@3']
+        # node definitions with substituted label text
+        node [shape = rectangle, width = 7, height=.4]
+        a [label = '@@1']
+        b [label = '@@2']
+        c [label = '@@3']
 
-                          node [shape = rectangle, width = 1]
-                          r16 [label='@@4']
-                          r17 [label='@@5']
-                          r18 [label='@@6']
-                          r19 [label='@@7']
+        node [shape = rectangle, width = 1]
+        r16 [label='@@4']
+        r17 [label='@@5']
+        r18 [label='@@6']
+        r19 [label='@@7']
 
-                          node [shape = point, width=.001, height=.001, label='']
-                          h; h1; h2; h3; h4
+        node [shape = rectangle, width = 6, height=.4]
+        out1 [label='@@8']
+        out2 [label='@@9']
 
-                          # Edge statement
-                          a -> b -> c
-                          edge [arrowhead=none]
-                          c -> h 
-                          {rank=same; arrowhead=none; h1 -> h2 ; h2 -> h; h -> h3; h3 -> h4}
+        node [shape = point, width=.001, height=.001, label='']
+        h; h1; h2; h3; h4; 
 
-                          edge[ tailclip = true, headclip=true, arrowhead=normal]
-                          h1 -> r16
-                          h2 -> r17
-                          h3 -> r18
-                          h4 -> r19
-                      }
+        # Edge statements
+        m1 -> b 
+        m2 -> c 
+        {rank=same; m1 -> out1}
+        {rank=same; m2 -> out2}
+        edge [arrowhead=none]
+        c -> h 
+        a -> m1 
+        b -> m2 
+        {rank=same; arrowhead=none; h1 -> h2 ; h2 -> h; h -> h3; h3 -> h4}
+        edge[ tailclip = true, headclip=true, arrowhead=normal]
+        h1 -> r16
+        h2 -> r17
+        h3 -> r18
+        h4 -> r19
+        }
 
-                      [1]: paste0(ls_fchart[['all']][[1]], ' study participants, accounting for ', ls_fchart[['all']][[2]], ' visits.')
-                      [2]: paste0(ls_fchart[['pos']][[1]], ' HIV positive participants, accounting for ', ls_fchart[['pos']][[2]], ' visits.')
-                      [3]: paste0(ls_fchart[['vls']][[1]], ' HIV positive participants with VL measurements,\\naccounting for ', ls_fchart[['vls']][[2]], ' visits.')
-                      [4]: ls_fchart_round$r16
-                      [5]: ls_fchart_round$r17
-                      [6]: ls_fchart_round$r18
-                      [7]: ls_fchart_round$r19
-                      ")  |> export_svg() |> charToRaw() |> rsvg_pdf(filename)
+        [1]: with(ls_fchart$all[SEX=='ALL'], paste0(V1, ' study participants, \\naccounting for ', N, ' visits over 4 interview rounds.'))
+        [2]: with(ls_fchart$pos[SEX=='ALL'], paste0(V1, ' HIV positive participants, \\naccounting for ', N, ' visits over 4 interview rounds.'))
+        [3]: with(ls_fchart$vls[SEX=='ALL'], paste0(V1, ' HIV positive participants with VL measurements, \\naccounting for ', N, ' visits over 4 interview rounds.'))
+        [4]: ls_fchart_round$r16
+        [5]: ls_fchart_round$r17
+        [6]: ls_fchart_round$r18
+        [7]: ls_fchart_round$r19
+        [8]: with(ls_fchart_dropped$neg, sprintf('%s tested negative at least once\\naccounting for %s visits over 4 interview rounds.', V1, N))
+        [9]: with(ls_fchart_dropped$novl, sprintf('%s without VL measurement, \\naccounting for %s visits over 4 interview rounds.', V1, N))
+
+        ")  |> export_svg() |> charToRaw() |> rsvg_pdf(filename)
+
 }
 
-get.glm.data <- function(DT)
-{
 
-    # get community data
-    dcomm <- .get.dcomm()
-
-    DT <- copy(dall)
-    DT <- .preprocess.ds.oli(DT)
-    DT[ COMM_NUM==22, COMM_NUM:=1 ]
-
-    .f <- function(x,y)
-        as.vector( unname ( binconf(sum(x), length(y) )  ) )
-
-    vlc <- DT[, {
-        z  <- .f( HIV_STATUS == 1, HIV_STATUS)
-        z2 <- .f( VLNS == 1, VLNS )
-        z3 <- .f( VLNS == 1, which(HIV_STATUS == 1) )
-        list(FC=FC[1],
-             N= length(HIV_STATUS),
-             HIV_N = sum(HIV_STATUS == 1),
-             VLNS_N = sum(VLNS == 1))		
-    }, by=c('ROUND', 'COMM_NUM','SEX', 'AGEYRS')]
-
-    # setkey(vlc, SEX, PHIV_MEAN)
-    vlc[, SEX := factor(SEX, levels=c('M', 'F'), labels=c('men', 'women'))]
-    vlc <- merge(vlc, dcomm[, .(COMM_NUM, FC2=TYPE) ] , by='COMM_NUM', all.x=TRUE)
-
-    # additional columns
-    comm_lvls <- vlc[, sort(unique(COMM_NUM)), by='FC2'][, V1, ]
-    vlc[, SEX_LABEL := fifelse(SEX == 'women', yes='F', no='M')]
-    vlc[, AGEGROUP := cut(AGEYRS, breaks=c(15, 24.01, 25, 34.01, 35, 50.01)-.01 ) ]
-    .gs <- function(x) { y <- gsub(']|\\(', ' ', x);gsub(',', '_', y) }
-    vlc[, AGEGROUP := .gs(AGEGROUP)]
-    vlc
-}
 
 .get.prior.ranges <- function(stan.data, DT, shape, scale)
 {
@@ -301,44 +333,59 @@ date2numeric <- function( x )
 
 .preprocess.ds.oli <- function(DT, rm.na.vl=TRUE)
 {
-        # DT <- copy(dall)
-        DT <- subset(DT, AGEYRS <= 50)
+    # DT <- copy(dall)
+    DT <- subset(DT, AGEYRS <= 50)
 
-        # remove HIV+ individuals with missing VLs and 
-        if(rm.na.vl)
-                DT <- subset(DT, HIV_STATUS==0 | HIV_AND_VL==1)
+    if(rm.na.vl)
+    {
+        DT <- DT[,{
+            idx_posnovl <- HIV_STATUS == 1 & HIV_AND_VL == 0
+            np <- sum(HIV_STATUS)
+            n <- sum(idx_posnovl)
+            sprintf('removing %d out of %d out of HIV positive individuals without VL.', n, np)
+            .SD[!idx_posnovl]
+        },]
+    }
 
-        # consider only ARVMED for infected
-        set(DT, DT[, which(ARVMED==1 & HIV_STATUS==0)], 'ARVMED', 0) 
-        
-        # define VL_COPIES for uninfected
-        set(DT, NULL, 'VLC', DT$VL_COPIES)
-        set(DT, DT[,which(HIV_STATUS==0)], 'VLC', 0)
-        
-        # define undetectable VL (machine-undetectable)
-        # define suppressed VL (according to WHO criteria)	
-        set(DT, NULL, 'VLU', DT[, as.integer(VLC<VL_DETECTABLE)])
-        set(DT, NULL, 'VLS', DT[, as.integer(VLC<VIREMIC_VIRAL_LOAD)])
-        set(DT, NULL, 'VLD', DT[, as.integer(VLC>=VL_DETECTABLE)])
-        set(DT, NULL, 'VLNS', DT[, as.integer(VLC>=VIREMIC_VIRAL_LOAD)])
-        set(DT, NULL, 'HIV_AND_VLD', DT[, as.integer(VLD==1 & HIV_AND_VL==1)])
-        
-        # reset VLC below machine detectable to 0
-        set(DT, DT[, which(HIV_AND_VL==1 & VLU==1)], 'VLC', 0)
-        setkey(DT, ROUND, FC, SEX, AGEYRS)
+    # consider only ARVMED for infected
+    set(DT, DT[, which(ARVMED==1 & HIV_STATUS==0)], 'ARVMED', 0) 
+    
+    # define VL_COPIES for uninfected
+    set(DT, NULL, 'VLC', DT$VL_COPIES)
+    set(DT, DT[,which(HIV_STATUS==0)], 'VLC', 0)
+    
+    # define undetectable VL (machine-undetectable)
+    # define suppressed VL (according to WHO criteria)	
+    DT[, `:=` (
+        VLU = as.integer(VLC<VL_DETECTABLE),
+        VLS = as.integer(VLC<VIREMIC_VIRAL_LOAD),
+        VLD = as.integer(VLC>=VL_DETECTABLE),
+        VLNS = as.integer(VLC>=VIREMIC_VIRAL_LOAD)
+    )]
+    DT[, HIV_AND_VLD := as.integer(VLD==1 & HIV_AND_VL==1)]
+    
+    # reset VLC below machine detectable to 0 
+    DT[which(HIV_AND_VL==1 & VLU==1), VLC := 0]
 
-        DT
+    setkey(DT, ROUND, FC, SEX, AGEYRS)
+
+    DT
 }
 
 .preprocess.make.vla <- function(DT, select=c('N', 'HIV_N', 'VLNS_N', 'ARV_N', 'VL_MEAN', 'VL_SD', 'VL_MEAN_SD', 'HIV_N'))
 {
+    # DT <- copy(dall)
 	tmp <- seq.int(min(DT$AGEYRS), max(DT$AGEYRS))
-        tmp1 <- DT[, sort(unique(ROUND))]
+    tmp1 <- DT[, sort(unique(ROUND))]
 
-	vla <- as.data.table(expand.grid(ROUND=tmp1,
-                                         FC=c('fishing','inland'),
-                                         SEX=c('M','F'),
-                                         AGEYRS=tmp))
+	vla <- expand.grid(
+        ROUND=tmp1,
+        FC=c('fishing','inland'),
+        SEX=c('M','F'),
+        AGEYRS=tmp, 
+        stringsAsFactors = FALSE
+    ) |> as.data.table()
+
 	vla <- vla[, {		
                 z <- which(DT$ROUND==ROUND & DT$FC==FC & DT$SEX==SEX & DT$AGEYRS==AGEYRS)	
                 list(N          = length(z),
@@ -353,10 +400,12 @@ date2numeric <- function( x )
         }, by=names(vla)]
 
 	setnames(vla, c('FC','SEX','AGEYRS'), c('LOC_LABEL','SEX_LABEL','AGE_LABEL'))
-	vla[, LOC:= as.integer(LOC_LABEL=='fishing')]
-	vla[, SEX:= as.integer(SEX_LABEL=='M')]
-	vla[, AGE:= AGE_LABEL-14L]
-	vla[, ROW_ID:= seq_len(nrow(vla))]
+    vla[, `:=` (
+        LOC= as.integer(LOC_LABEL=='fishing'),
+        SEX= as.integer(SEX_LABEL=='M'),
+        AGE= AGE_LABEL-14L,
+        ROW_ID= seq_len(nrow(vla))
+    )]
 
         # Extract selected fields
         cols <- c('ROUND', 'LOC_LABEL', 'SEX_LABEL', 'AGE_LABEL', 'LOC', 'SEX', 'AGE', 'ROW_ID')
@@ -408,34 +457,34 @@ date2numeric <- function( x )
 
 vl.get.eligible.round17<- function()
 {
-	require(data.table)
-	
-	infile					<- "~/Dropbox (SPH Imperial College)/Rakai Pangea Meta Data/Data for Fish Analysis Working Group/rakai_elibility.rda"
-	outfile.base			<- "~/Dropbox (SPH Imperial College)/Rakai Fish Analysis/full_run/"
-	load(infile)
-	
-	#	subset to data of interest
-	de	<- as.data.table(eldat)	
-	de	<- subset(de, status%in%c('_Participated','Away','Blood refusal','Missing data','Other','Refused','urine sample'))
-	de	<- subset(de, visit==17)
-	
+    require(data.table)
+    
+    infile <- "~/Dropbox (SPH Imperial College)/Rakai Pangea Meta Data/Data for Fish Analysis Working Group/rakai_elibility.rda"
+    outfile.base <- "~/Dropbox (SPH Imperial College)/Rakai Fish Analysis/full_run/"
+    load(infile)
+    
+    # subset to data of interest
+    de <- as.data.table(eldat)
+    de <- subset(de, status%in%c('_Participated','Away','Blood refusal','Missing data','Other','Refused','urine sample'))
+    de <- subset(de, visit==17)
+
 }
 
 vl.vlprops.by.comm.gender.loc<- function(DT, write.csv=FALSE)
 {
     # DT <- copy(dall)
     DT <- .preprocess.ds.oli(DT)
-	# merge two communities that fully overlap, so we have 40 communities in the end 
+    # merge two communities that fully overlap, so we have 40 communities in the end 
     DT[ COMM_NUM==22, COMM_NUM:=1 ]
 
     # get.community types
     dcomm <- .get.dcomm()
 
-	# calculate HIV prevalence and proportion not suppressed of HIV+ by community and gender
+    # calculate HIV prevalence and proportion not suppressed of HIV+ by community and gender
     .f <- function(x,y)
         as.vector( unname ( binconf(sum(x), length(y) )  ) )
 
-	vlc <- DT[, {
+    vlc <- DT[, {
         z  <- .f( HIV_STATUS == 1, HIV_STATUS)
         z2 <- .f( VLNS == 1, VLNS )
         z3 <- .f( VLNS == 1, which(HIV_STATUS == 1) )
@@ -443,14 +492,14 @@ vl.vlprops.by.comm.gender.loc<- function(DT, write.csv=FALSE)
              N= length(HIV_STATUS),
              PHIV_MEAN= z[1],
              PHIV_CL= z[2],
-             PHIV_CU= z[3],				 
+             PHIV_CU= z[3],
              PVLNS_MEAN= z2[1],
              PVLNS_CL= z2[2],
              PVLNS_CU= z2[3],
              PVLNSofHIV_MEAN= z3[1],
              PVLNSofHIV_CL= z3[2],
-             PVLNSofHIV_CU= z3[3],				 
-             VLC_MEAN= mean(VLC))		
+             PVLNSofHIV_CU= z3[3],
+             VLC_MEAN= mean(VLC))
     }, by=c('ROUND', 'COMM_NUM','SEX')]
 
     .f <- function(m, l, u)
@@ -469,49 +518,41 @@ vl.vlprops.by.comm.gender.loc<- function(DT, write.csv=FALSE)
     vlc <- merge(vlc, dcomm[, .(COMM_NUM, FC2=TYPE) ] , by='COMM_NUM', all.x=TRUE)
 
 
-    p_inf <- ggplot(vlc) +
+    p_inf <- ggplot(vlc, aes(x=PHIV_MEAN, y=PVLNSofHIV_MEAN)) +
         scale_x_continuous(labels=scales:::percent) +
         scale_y_continuous(labels=scales:::percent) +
-        geom_errorbar(aes(x=PHIV_MEAN, ymin=PVLNSofHIV_CL, ymax=PVLNSofHIV_CU), alpha=0.2) +
-        geom_errorbarh(aes(y=PVLNSofHIV_MEAN, xmin=PHIV_CL, xmax=PHIV_CU), alpha=0.2) +
-        geom_point(aes(x=PHIV_MEAN, y=PVLNSofHIV_MEAN, colour=FC2)) +
-        geom_text(aes(x=PHIV_MEAN, y=PVLNSofHIV_MEAN, label=COMM_NUM), size=2) +
+        geom_errorbar(aes( ymin=PVLNSofHIV_CL, ymax=PVLNSofHIV_CU), alpha=0.2) +
+        geom_errorbarh(aes( xmin=PHIV_CL, xmax=PHIV_CU), alpha=0.2) +
+        geom_point(aes( colour=FC2)) +
+        geom_text(aes( label=COMM_NUM), size=2) +
         facet_grid(ROUND~SEX) +
         # scale_colour_manual(values=palettes$comm) + 
         scale_colour_manual(values= palettes$comm2) +
-        theme_bw() +
-        theme(legend.position='bottom') + 
-        labs(x='\nHIV prevalence', 
-             y='proportion unsuppressed HIV among infected\n', 
-             colour='community type')
-        p_inf
+        theme_default() + 
+        my_labs(color='Community type')
 
-
-    filename <- file.path('220729_hivnotsuppofhiv_vs_hivprev_by_round_gender_fishinland.pdf')
+    filename <- '220729_hivnotsuppofhiv_vs_hivprev_by_round_gender_fishinland.pdf'
     ggsave2(p_inf, file=filename, LALA=glm.out.dir, w=9, h=12)
 
 
-    p_pop <- ggplot(vlc) +
+    p_pop <- ggplot(vlc, aes(x=PHIV_MEAN,y=PVLNS_MEAN)) +
         scale_x_continuous(labels=scales:::percent) +
         scale_y_continuous(labels=scales:::percent) +
-        geom_errorbar(aes(x=PHIV_MEAN, ymin=PVLNS_CL, ymax=PVLNS_CU), alpha=0.2) +
-        geom_errorbarh(aes(y=PVLNS_MEAN, xmin=PHIV_CL, xmax=PHIV_CU), alpha=0.2) +
-        geom_point(aes(x=PHIV_MEAN, y=PVLNS_MEAN, colour=FC)) +
-        geom_text(aes(x=PHIV_MEAN, y=PVLNS_MEAN, label=COMM_NUM), size=2) +
+        geom_errorbar(aes( ymin=PVLNS_CL, ymax=PVLNS_CU), alpha=0.2) +
+        geom_errorbarh(aes( xmin=PHIV_CL, xmax=PHIV_CU), alpha=0.2) +
+        geom_point(aes( y=PVLNS_MEAN, colour=FC2)) +
+        geom_text(aes( y=PVLNS_MEAN, label=COMM_NUM), size=2) +
         facet_grid(ROUND~SEX) +
         scale_colour_manual(values=palettes$comm2) + 
-        theme_bw() +
-        theme(legend.position='bottom') + 
-        labs(x='\nHIV prevalence', 
-             y='proportion unsuppressed HIV among population\n', 
-             colour='community type')
+        theme_default() +
+        my_labs(colour="Community type")
 
-    filename <- file.path('220729_hivnotsuppofpop_vs_hivprev_by_round_gender_fishinland.pdf')
+    filename <- '220729_hivnotsuppofpop_vs_hivprev_by_round_gender_fishinland.pdf'
     ggsave2(p_pop, file=filename,LALA=glm.out.dir, w=9, h=12)
 
     if(write.csv)
     {
-        #	write results to file
+        # write results to file
         filename <- file.path(glm.out.dir,
                               '220729_hivnotsuppofhiv_vs_hivprev_by_round_gender_fishinland.csv')
         fwrite(vlc, file=filename)
@@ -531,7 +572,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT, refit=FALSE, vl.out.dir.=vl.o
     vla <- .preprocess.make.vla(DT, select=tmp)
 
     # Stan file locations
-    file.stan <- file.path(path.stan, 'vl_binomial_gp.stan')
+    file.stan <- file.path(gitdir.stan, 'vl_binomial_gp.stan')
     
     .fit.stan.and.plot.by.round <- function(DT, itr=10e3, wrmp=5e2, chns=1, cntrl=list(max_treedepth= 15, adapt_delta= 0.999))
     {
@@ -802,8 +843,8 @@ vl.prevalence.by.gender.loc.age.icar<- function(DT)
         vla <- .preprocess.make.vla(DT, select=tmp)
 
         # Stan file locations
-        file.stan.1 <- file.path(path.stan, 'vl_prevalence_by_gender_loc_age_icar_1.stan')
-        file.stan.2 <- file.path(path.stan, 'vl_prevalence_by_gender_loc_age_icar_2.stan')
+        file.stan.1 <- file.path(gitdir.stan, 'vl_prevalence_by_gender_loc_age_icar_1.stan')
+        file.stan.2 <- file.path(gitdir.stan, 'vl_prevalence_by_gender_loc_age_icar_2.stan')
 
         .fit.stan.and.plot.by.round <- function(DT, iter=20e3, warmup=5e2, chains=1, control = list(max_treedepth= 15, adapt_delta= 0.999))
         {
@@ -1021,8 +1062,8 @@ vl.meanviralload.by.gender.loc.age.icar<- function(DT)
     ggsave(p, filename=filename, w=6, h=10)
 
     # Stan file locations
-    file.stan.1 <- file.path(path.stan, 'vl_meanviralload_by_gender_loc_age_icar.stan')
-    file.stan.2 <- file.path(path.stan, 'vl_meanviralload_by_gender_loc_age_icar2.stan')
+    file.stan.1 <- file.path(gitdir.stan, 'vl_meanviralload_by_gender_loc_age_icar.stan')
+    file.stan.2 <- file.path(gitdir.stan, 'vl_meanviralload_by_gender_loc_age_icar2.stan')
 
     stan.model <- stan_model(file=file.stan.1, model_name= 'icar_age_interactions')
 
@@ -1120,7 +1161,7 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=v
     vla <- .preprocess.make.vla(DT, select=c('N', 'HIV_N', 'VLNS_N', 'ARV_N'))
     # NOTE: ARV_N == 0
 
-    file.stan.1 <- file.path(path.stan, 'vl_binomial_gp.stan')
+    file.stan.1 <- file.path(gitdir.stan, 'vl_binomial_gp.stan')
 
     .fit.stan.and.plot.by.round <- function(DT, itr=10e3, wrmp=5e2, chns=1, cntrl = list(max_treedepth= 15, adapt_delta= 0.999))
     {
@@ -1504,9 +1545,9 @@ vl.suppofinfected.by.gender.loc.age.icar<- function(DT, refit=FALSE)
     vla <- .preprocess.make.vla(DT, select=c('N', 'HIV_N', 'VLNS_N', 'ARV_N'))
 
     # Stan file locations
-    file.stan.1 <- file.path(path.stan, 'vl_suppofinfected_by_gender_loc_age_icar_1.stan')
+    file.stan.1 <- file.path(gitdir.stan, 'vl_suppofinfected_by_gender_loc_age_icar_1.stan')
 
-    # list.files(path.stan, pattern='suppofinfected')
+    # list.files(gitdir.stan, pattern='suppofinfected')
     stan.model1 <- stan_model(file.stan.1, model_name= 'icar_age_interactions')
 
     .fit.stan.and.plot.by.round <- function(DT , iter=20e3, warmup=5e2, chains=1, control = list(max_treedepth= 15, adapt_delta= 0.999))
@@ -1821,7 +1862,7 @@ vl.suppofpop.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=vl.out
     vla <- .preprocess.make.vla(DT, select=tmp)
 
     # Stan file locations
-    file.stan <- file.path(path.stan, 'vl_binomial_gp.stan')
+    file.stan <- file.path(gitdir.stan, 'vl_binomial_gp.stan')
 
     .fit.stan.and.plot.by.round <- function(DT, itr=10e3, wrmp=5e2, chns=1, cntrl = list(max_treedepth= 15, adapt_delta= 0.999))
     {
@@ -2098,7 +2139,7 @@ vl.suppofpop.by.gender.loc.age.icar<- function(DT)
     tmp <- c('N', 'HIV_N', 'VLNS_N', 'ARV_N')
     vla <- .preprocess.make.vla(DT, select=tmp)
 
-    file.stan.2 <- file.path(path.stan, 'vl_suppofpop_by_gender_loc_age_icar_1.stan')
+    file.stan.2 <- file.path(gitdir.stan, 'vl_suppofpop_by_gender_loc_age_icar_1.stan')
     stan.model2 <- stan_model(file.stan.2, model_name= 'icar_age_interactions')
 
 
