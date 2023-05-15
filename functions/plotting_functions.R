@@ -9,10 +9,10 @@ plot_visitpairs <- function(DT)
                       legend.position = 'bottom')
 }
 
-plot_rounds_vl_collection <- function(DT, rnd=15, atleast=NULL, community=NULL, filename=NULL)
+plot_rounds_vl_collection <- function(DT, rounds=16:19, atleast=NULL, community=NULL, filename=NULL)
 {
         cols <- c('study_id', 'comm', 'round')
-        dcounts <- DT[round >= rnd & !is.na(hiv_vl), .SD, .SDcols=cols ]
+        dcounts <- DT[round %in%  rounds & !is.na(hiv_vl), .SD, .SDcols=cols ]
         
         subtitle_comm <- ''
         if(!is.null(community))
@@ -54,7 +54,7 @@ plot_rounds_vl_collection <- function(DT, rnd=15, atleast=NULL, community=NULL, 
                                      subtitle_comm,
                                      subtitle_atleast,')'))
 
-        if(! is.null(filename))    ggplot2(filename, p1, 7,5)
+        if(! is.null(filename))    ggsave2(filename, p1, 7,5)
         p1
 }
 
@@ -283,4 +283,34 @@ plot.n.census.eligible.smooth <- function(DT){
         theme_default() + 
         geom_label(data = df_label, aes(x = 49, y = ylevel, label=diff, col = SMOOTH_PAR), size = 3, label.size = NA)
     p
+}
+
+plot.proportion.firstparticipants.by.vars <- function(DT, by_cols = c('ROUND','TYPE'))
+{
+    # DT <- copy(dfirstround); by_cols = c('ROUND','TYPE')
+    tmp <- cube( dfirstround, 
+        j = list(
+            N_FIRST = sum(ROUND == QST_1STRND), 
+            N_REPEATED = sum(ROUND != QST_1STRND), 
+            N_TOT = .N
+        ), by = by_cols )
+    tmp[, (by_cols) := lapply(.SD, function(x){
+        x[is.na(x)] <- "Total"; x
+    } ), .SDcols = by_cols ]
+    tmp[, P_FIRST := N_FIRST/N_TOT]
+
+    p_prop_newparts <- tmp |> 
+        subset(ROUND != "Total") |>
+        prettify_labels() |> 
+        ggplot(aes(x=as.integer(ROUND), y=P_FIRST, color=TYPE)) + 
+        geom_line() +
+        scale_y_continuous(
+            labels=scales::label_percent(), 
+            limits=c(0, .4), 
+            expand=expansion(mult=0)
+        ) +  
+        theme_default() +
+        my_labs(x="Interview round", y="Proportion of new participants", color="Community type")
+
+    p_prop_newparts 
 }

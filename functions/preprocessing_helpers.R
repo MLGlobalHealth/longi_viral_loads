@@ -42,17 +42,22 @@ count2suppstatus <- function(x, character=FALSE)
         y
 }
 
-community.keys2type <- function(DT, path=file.community.keys, by.DT='comm_num')
+community.keys2type <- function(DT, by.DT='comm_num')
 {
     # read in community keys
-    dkeys <- fread(path)
+    # DT <- copy(dvl); by.DT <- 'comm_num'
+    if('comm' %in% names(DT)) 
+        stop("Comm already exists")
+
+    dkeys <- fread(path.community.types)
     names(dkeys) <- tolower(colnames(dkeys))
     dkeys[, comm := ifelse(grepl('^f',comm_num_a), 'fishing', 'inland')]
     dkeys[, comm_num_a := NULL]
 
     # merge
     idx <- which(names(DT) == by.DT)
-    tmp <- merge(DT, dkeys, all.x=TRUE, by.x=by.DT , by.y='comm_num_raw', sort=FALSE)
+    tmp <- merge(DT, dkeys, all.x=TRUE, 
+        by.x=by.DT , by.y='comm_num_raw', sort=FALSE)
     if(tmp[, any(is.na(comm))]) warning('At least one comm_num not found')
 
     # reorder as original, with comm preceding comm_num
@@ -62,19 +67,19 @@ community.keys2type <- function(DT, path=file.community.keys, by.DT='comm_num')
     tmp
 }
 
-make_vl_samplesize_table <- function(DT, excludeR20 = FALSE)
+make_vl_samplesize_table <- function(DT, rounds)
 {
-        cols <- c('study_id', 'sex', 'round','hivdate', 'hiv_vl')
-        tmp <- DT[, .SD, .SDcols=cols]
-        tmp <- tmp[!is.na(hiv_vl),]
-        if(excludeR20)  tmp <- tmp[!round %like% '20']
+    cols <- c('study_id', 'sex', 'round','hivdate', 'hiv_vl')
+    tmp <- DT[, .SD, .SDcols=cols]
+    tmp <- tmp[!is.na(hiv_vl),]
+    tmp <- tmp[round %in% rounds]
 
-        tmp1 <- tmp[, .(VL=length(hiv_vl)) ,by=c('study_id', 'sex')]
-        tmp1 <- tmp1[, .N, by=c('VL', 'sex')]
-        tmp1 <- dcast(tmp1, VL~sex)
-        tmp1[, Total:=M+F]
-        tmp1[, Total2:=Total*VL]
-        knitr::kable(tmp1)
+    tmp1 <- tmp[, .(VL=length(hiv_vl)) ,by=c('study_id', 'sex')]
+    tmp1 <- tmp1[, .N, by=c('VL', 'sex')]
+    tmp1 <- dcast(tmp1, VL~sex)
+    tmp1[, Total:=M+F]
+    tmp1[, Total2:=Total*VL]
+    knitr::kable(tmp1, caption='Number of vl measurements per person')
 }
 
 fill_na_vls_with_allpcr_data <- function(file=file.viral.loads2)
@@ -82,7 +87,7 @@ fill_na_vls_with_allpcr_data <- function(file=file.viral.loads2)
     cat('===\n Studying ', file, '...\n===\n\n')
 
     # Warnings about 6 dates prior to 1900, but shouldn t be an issue
-    dvl2 <- suppressWarnings(read_xlsx(file)) 
+    dvl2 <- suppressWarnings(readxl::read_xlsx(file)) 
     dvl2 <- as.data.table(dvl2)
     setkey(dvl2, study_id, round)
     setcolorder(dvl2, c('study_id', 'round'))
@@ -174,8 +179,8 @@ fill_na_vls_with_allpcr_data <- function(file=file.viral.loads2)
     cat('Substituting....\n')
     setnames(tmp, 'hiv_vl', 'hiv_vl2')
     tmp[!is.na(hiv_vl2), round]
-    tbl <- knitr::kable(tmp[!is.na(hiv_vl2), table(round)])
-    
+    capt <- "The new dataset provided viral load measurements in rounds"
+    tbl <- knitr::kable(tmp[!is.na(hiv_vl2), table(round)], caption=capt)
 
     dvl <- merge(dvl,
           tmp[!is.na(hiv_vl2), .(study_id, round, hiv_vl2)],
