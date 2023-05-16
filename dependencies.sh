@@ -25,4 +25,6 @@ fi
 # Install initial dependencies
 echo -e "\nInstalling Dependencies: R packages via conda"
 
-conda install r r-base r-cmdstanr r-data.table r-loo r-tidybayes r-bayestestR r-bayesplot r-dplyr r-lubridate r-haven r-Hmisc r-DiagrammeR r-DiagrammeRsvg r-rsvg r-htmltools r-raster r-rnaturalearth r-osmdata r-sf r-rstan r-rstanarm r-foreach r-patchwork r-knitr r-foreign r-nnet r-stargazer r-tint r-knitr r-scales r-ggthemes r-gganimate r-ggtext r-ggpubr r-patchwork r-readxl r-rgdal r-rgeos r-RColorBrewer r-data.table r-mvtnorm r-lme4
+conda install r r-base r-cmdstanr r-data.table r-loo r-tidybayes r-bayestestR r-bayesplot r-dplyr r-lubridate r-haven r-Hmisc r-DiagrammeR r-DiagrammeRsvg r-rsvg r-htmltools r-raster r-rnaturalearth r-osmdata r-sf r-rstan r-rstanarm r-foreach r-patchwork r-knitr r-foreign r-nnet r-stargazer r-tint r-knitr r-scales r-ggthemes r-gganimate r-ggtext r-ggpubr r-patchwork r-readxl r-rgdal r-rgeos r-RColorBrewer r-data.table r-mvtnorm r-lme4 r-optparse r-bh r-mcmcpack
+
+# also need to install wesanderson in R
