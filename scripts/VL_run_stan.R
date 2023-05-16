@@ -1,6 +1,5 @@
 # AIMS:
 # - adapt older code from Oli to multi-round, longitudinal settings
-# TODO: check why we do not have any ARVMED == 2
 # TODO: discuss: we are removing individuals with missing VLs: they are very little
 
 library(data.table) |> suppressPackageStartupMessages()
@@ -31,12 +30,9 @@ if( interactive() )
 
 # helpers
 source(file.path(gitdir, "R/paths.R"))
-source(file.path(gitdir.R, "base_plots.R"))
-source(file.path(gitdir.R, "base_utilities.R"))
 source(file.path(gitdir.functions, "phsc_vl_helpers.R"))
 
-# options
-source(file.path(gitdir.R, 'options.R'))
+# options (automatically sourced in R/options.R)
 args <- args[names(args) %like% '^run|viral.load|jobname|indir|out.dir|refit|round|^only.firstparticipants']
 if(interactive()){ args$only.firstparticipants <- TRUE } # testing
 print(args)

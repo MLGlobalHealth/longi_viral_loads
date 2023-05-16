@@ -8,9 +8,6 @@ library(here)
 
 gitdir <- here::here()
 source(file.path(gitdir, "R/paths.R"))
-source(file.path(gitdir.R, "base_utilities.R"))
-source(file.path(gitdir.R, 'base_plots.R'))
-source(file.path(gitdir.R, 'dictionaries.R'))
 
 naturemed_reqs()
 

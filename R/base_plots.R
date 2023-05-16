@@ -24,6 +24,8 @@ theme_set( theme_default() )
 # Requirements + saving #
 #########################
 
+require(ggplot2)
+
 p_reqs <- theme(
     plot.title=element_text(size=12, family='sans'),
     text=element_text(size=10, family = 'sans'),

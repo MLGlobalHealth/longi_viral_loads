@@ -25,9 +25,6 @@ file.exists(
 ) |> all() |> stopifnot()
 
 # helpers
-source( file.path(gitdir.R,'base_utilities.R') )
-source( file.path(gitdir.R,'base_plots.R') )
-source( file.path(gitdir.R,'dictionaries.R') )
 source( file.path(gitdir.functions,'plotting_main_figures.R') )
 source( file.path(gitdir.functions,'postprocessing_helpers.R') )
 source( file.path(gitdir.functions,'phsc_vl_helpers.R') )

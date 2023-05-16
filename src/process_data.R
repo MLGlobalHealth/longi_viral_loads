@@ -29,7 +29,6 @@ outdir.tables <- file.path(outdir, 'tables')
 # HELPERS #
 ###########
 
-source(file.path(gitdir.R, 'base_utilities.R'))
 source(file.path(gitdir.functions, 'preprocessing_helpers.R'))
 source(file.path(gitdir.functions, 'plotting_functions.R'))
 
