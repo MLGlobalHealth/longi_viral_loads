@@ -12,13 +12,22 @@ R_scripts <- list.files(
 
 usr <- Sys.info()[['user']]
 
-if(usr=='andrea')
-{
+if(usr=='andrea') {
+    # Local machine
     indir.deepdata <- '/home/andrea/HPC/project/ratmann_pangea_deepsequencedata/live'
+    indir.deepsequence_analyses <- '/home/andrea/HPC/project/ratmann_deepseq_analyses/live/PANGEA2_RCCS1519_UVRI'
+    OUTDIR <- '/home/andrea/HPC/ab1820/home/projects/2022/longvl'
+}else if(usr == 'ab1820') {
+    # HPC 
+    indir.deepdata <- '/rds/andrea/HPC/project/ratmann_pangea_deepsequencedata/live'
     indir.deepsequence_analyses <- '/home/andrea/HPC/project/ratmann_xiaoyue_jrssc2022_analyses/live/PANGEA2_RCCS1519_UVRI'
-
-   OUTDIR <- '/home/andrea/HPC/ab1820/home/projects/2022/longvl'
+}else {
+    stop("Need to specify input and output directory in R/paths.R")
 }
+
+dir.exists(c(indir.deepdata, indir.deepsequence_analyses)) |> 
+    all() |> 
+    stopifnot("Input data directories could not be found in paths.R"=_)
 
 indir.deepdata.r1520 <- file.path(indir.deepdata, 'RCCS_R15_R20')
 indir.deepdata.r1518 <- file.path(indir.deepdata, 'RCCS_R15_R18')
