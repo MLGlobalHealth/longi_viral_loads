@@ -3,12 +3,11 @@ gitdir.functions <- file.path(gitdir, 'functions')
 gitdir.scripts <- file.path(gitdir, 'scripts')
 gitdir.src <- file.path(gitdir, 'src')
 gitdir.data <- file.path(gitdir, 'data')
-
-# simplify sourcing of all R/*.R helpers
 gitdir.R <- file.path(gitdir, 'R')
-R_scripts <- list.files(
-    file.path(gitdir, 'R'),
-    pattern = "\\.R$", full.names = TRUE)
+
+#####################
+# check indir paths #
+#####################
 
 usr <- Sys.info()[['user']]
 
@@ -19,8 +18,8 @@ if(usr=='andrea') {
     OUTDIR <- '/home/andrea/HPC/ab1820/home/projects/2022/longvl'
 }else if(usr == 'ab1820') {
     # HPC 
-    indir.deepdata <- '/rds/andrea/HPC/project/ratmann_pangea_deepsequencedata/live'
-    indir.deepsequence_analyses <- '/home/andrea/HPC/project/ratmann_xiaoyue_jrssc2022_analyses/live/PANGEA2_RCCS1519_UVRI'
+    indir.deepdata <- '/rds/general/project/ratmann_pangea_deepsequencedata/live'
+    indir.deepsequence_analyses <- '/home/general/project/ratmann_xiaoyue_jrssc2022_analyses/live/PANGEA2_RCCS1519_UVRI'
 }else {
     stop("Need to specify input and output directory in R/paths.R")
 }
@@ -28,6 +27,18 @@ if(usr=='andrea') {
 dir.exists(c(indir.deepdata, indir.deepsequence_analyses)) |> 
     all() |> 
     stopifnot("Input data directories could not be found in paths.R"=_)
+
+
+# simplify sourcing of all R/*.R helpers
+R_scripts <- list.files( gitdir.R, pattern = "\\.R$", full.names = TRUE)
+R_scripts <- R_scripts[! R_scripts %like% 'local_cores_parallelisation.R|paths.R']
+for (path in R_scripts)
+    source(file=path)
+
+
+##############################
+# proceed to all definitions #
+##############################
 
 indir.deepdata.r1520 <- file.path(indir.deepdata, 'RCCS_R15_R20')
 indir.deepdata.r1518 <- file.path(indir.deepdata, 'RCCS_R15_R18')
