@@ -8,7 +8,7 @@ JOBNAME="vl_$VL"
 
 if [[ ! -z "$FIRSTPART" ]]; then
     JOBNAME="$JOBNAME"_firstpart
-    FIRSTPART="--firstparticipant"
+    FIRSTPART="--firstparticipant TRUE"
     echo "Running analyses on first-time participants."
 fi
 
