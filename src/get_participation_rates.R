@@ -14,8 +14,10 @@ outdir <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl"
 outdir.figures <- file.path(outdir, 'figures')
 outdir.tables <- file.path(outdir, 'tables')
 
+save.images <- !interactive()
 VL_DETECTABLE <- 150
 VIREMIC_VIRAL_LOAD <- 1000 
+
 
 # load stuff
 cols <- c( "ROUND", "TYPE", "SEX", "AGEYRS", "ELIGIBLE")
@@ -72,43 +74,45 @@ dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS', 'ROUND'))]
 dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS', 'ROUND', 'FC'))]
 
 
-# different age-pyramid plots
-p_pyramid_eligibleparticipants  <- plot.pyramid.bysexround( dprop, 
-    .ylab = 'Number of participants among census eligible individuals',
-    NUM="N_PART",
-    DEN='ELIGIBLE')
-filename <- 'pyramid_Neligible_Nparticipants.pdf'
-cmd <- ggsave2(p_pyramid_eligibleparticipants, file=filename, LALA=outdir.figures, w=10, h=11)
+if(save.images){
+    # different age-pyramid plots
+    p_pyramid_eligibleparticipants  <- plot.pyramid.bysexround( dprop, 
+        .ylab = 'Number of participants among census eligible individuals',
+        NUM="N_PART",
+        DEN='ELIGIBLE')
+    filename <- 'pyramid_Neligible_Nparticipants.pdf'
+    cmd <- ggsave2(p_pyramid_eligibleparticipants, file=filename, LALA=outdir.figures, w=10, h=11)
 
-p_pyramid_firstpart  <- plot.pyramid.bysexround( dprop, 
-    .ylab = "Number of first-time participants among participants",
-    NUM="N_FIRST",
-    DEN='N_PART')
-filename <- 'pyramid_Nparticipants_Nfirst.pdf'
-cmd <- ggsave2(p_pyramid_firstpart , file=filename, LALA=outdir.figures, w=10, h=11)
-
-
-p_pyramid_hivp  <- plot.pyramid.bysexround( dprop, 
-    .ylab = "Number of unsuppressed among HIV positive participants", 
-    NUM="N_HIV",
-    DEN='N_PART')
-filename <- 'pyramid_Nparticipants_Nhivp.pdf'
-cmd <- ggsave2(p_pyramid_hivp , file=filename, LALA=outdir.figures, w=10, h=11)
+    p_pyramid_firstpart  <- plot.pyramid.bysexround( dprop, 
+        .ylab = "Number of first-time participants among participants",
+        NUM="N_FIRST",
+        DEN='N_PART')
+    filename <- 'pyramid_Nparticipants_Nfirst.pdf'
+    cmd <- ggsave2(p_pyramid_firstpart , file=filename, LALA=outdir.figures, w=10, h=11)
 
 
-p_pyramid_unsup  <- plot.pyramid.bysexround( dprop, 
-    .ylab = "Number of unsuppressed among HIV positives", 
-    NUM="N_VLNS",
-    DEN='N_HIV')
-filename <- 'pyramid_Nhivp_Nunsup.pdf'
-cmd <- ggsave2(p_pyramid_unsup , file=filename, LALA=outdir.figures, w=10, h=11)
+    p_pyramid_hivp  <- plot.pyramid.bysexround( dprop, 
+        .ylab = "Number of unsuppressed among HIV positive participants", 
+        NUM="N_HIV",
+        DEN='N_PART')
+    filename <- 'pyramid_Nparticipants_Nhivp.pdf'
+    cmd <- ggsave2(p_pyramid_hivp , file=filename, LALA=outdir.figures, w=10, h=11)
 
-p_pyramid_unsup_part <- plot.pyramid.bysexround( dprop, 
-    .ylab = "Number of unsuppressed among participants", 
-    NUM="N_VLNS",
-    DEN="N_PART")
-filename <- 'pyramid_Nparticipants_Nunsup.pdf'
-cmd <- ggsave2(p_pyramid_unsup_part , file=filename, LALA=outdir.figures, w=10, h=11)
+
+    p_pyramid_unsup  <- plot.pyramid.bysexround( dprop, 
+        .ylab = "Number of unsuppressed among HIV positives", 
+        NUM="N_VLNS",
+        DEN='N_HIV')
+    filename <- 'pyramid_Nhivp_Nunsup.pdf'
+    cmd <- ggsave2(p_pyramid_unsup , file=filename, LALA=outdir.figures, w=10, h=11)
+
+    p_pyramid_unsup_part <- plot.pyramid.bysexround( dprop, 
+        .ylab = "Number of unsuppressed among participants", 
+        NUM="N_VLNS",
+        DEN="N_PART")
+    filename <- 'pyramid_Nparticipants_Nunsup.pdf'
+    cmd <- ggsave2(p_pyramid_unsup_part , file=filename, LALA=outdir.figures, w=10, h=11)
+}
 
 
 # plot.pyramid.bysexround( dprop, 
@@ -137,14 +141,16 @@ loess_ratepart <- dprop[, {
 }, by=c('ROUND', 'FC', 'SEX')]
 
 # .25 is wiggly, but so is raw data...
-p_partrate <- plot.smoothed.participation.rates(loess_ratepart)
-filename <- "smoothed_participationrates_bycommroundgenderage.pdf"
-cmd <- ggsave2(p=p_partrate, file=filename, LALA=outdir.figures, w=10, h=11 )
+if(save.images){
+    p_partrate <- plot.smoothed.participation.rates(loess_ratepart)
+    filename <- "smoothed_participationrates_bycommroundgenderage.pdf"
+    cmd <- ggsave2(p=p_partrate, file=filename, LALA=outdir.figures, w=10, h=11 )
+}
 
 filename <- file.path( gitdir.data, "participation_rates_230517.rds" )
 if(! file.exists(filename)){
-    cat("Saving file", filename, "...")
-    saveRDS(object=loess_ratepart, file=filename,  )
+    cat("Saving file", filename, "...\n")
+    saveRDS(object=loess_ratepart, file=filename)
 }else{
     cat("File", filename, "already exists...")
 }
@@ -168,7 +174,6 @@ p_contrib_viraemia_parts <- plot.agecontribution.fromN.stratby(dprop,
     .ylab="Contribution to viraemia among participants") 
 filename <- 'bars_contrib_viraemia_participants.pdf'
 cmd <- ggsave2(p_contrib_viraemia_parts, file=filename, LALA=outdir.figures, w=10, h=11)
-cmd
 
 
 if (0) # Study ARVMED
