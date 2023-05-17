@@ -823,6 +823,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT, refit=FALSE, vl.out.dir.=vl.o
             cat('Running Round', r, '\n')
             .fit.stan.and.plot.by.round(vla[ ROUND ==r, ])
         } -> tmp
+        return(tmp)
 
     }else{
 
@@ -830,8 +831,6 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT, refit=FALSE, vl.out.dir.=vl.o
         for( r in args$round)
             .fit.stan.and.plot.by.round(vla[ ROUND == r, ]) 
     }
-
-    return(tmp)
 }
 
 vl.prevalence.by.gender.loc.age.icar<- function(DT)
@@ -1141,6 +1140,7 @@ vl.meanviralload.by.gender.loc.age.icar<- function(DT)
             cat('Running Round', r, '\n')
             .fit.stan.and.plot.by.round(vla[ ROUND ==r, ])
         } -> tmp
+        return(tmp)
 
     }else{
 
@@ -1148,8 +1148,6 @@ vl.meanviralload.by.gender.loc.age.icar<- function(DT)
         for( r in args$round)
                .fit.stan.and.plot.by.round(vla[ ROUND == r, ]) 
     }
-
-    return(tmp)
 }
 
 vl.suppofinfected.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=vl.out.dir)
@@ -1488,7 +1486,6 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=v
         if(!arv_bool)
         {
             nainf.by.age <- re2 <- data.table()
-
         }
         save(DT, re, re2, nainf.by.age,
              nsinf.by.age, nsinf.by.sex.loc,
@@ -1526,14 +1523,13 @@ vl.suppofinfected.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=v
             cat('Running Round', r, '\n')
             .fit.stan.and.plot.by.round(vla[ ROUND ==r, ])
         } -> tmp
+        return(tmp)
 
     }else{
         # else do not
         for( r in args$round)
             .fit.stan.and.plot.by.round(vla[ ROUND == r, ]) 
     }
-
-    return(tmp)
 }
 
 vl.suppofinfected.by.gender.loc.age.icar<- function(DT, refit=FALSE)
@@ -2117,6 +2113,7 @@ vl.suppofpop.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=vl.out
             cat('Running Round', r, '\n')
             .fit.stan.and.plot.by.round(vla[ ROUND ==r, ])
         } -> tmp
+        return(tmp)
 
     }else{
 
@@ -2124,8 +2121,6 @@ vl.suppofpop.by.gender.loc.age.gp<- function(DT, refit=FALSE, vl.out.dir.=vl.out
         for( r in args$round)
                .fit.stan.and.plot.by.round(vla[ ROUND == r, ]) 
     }
-
-    return(tmp)
 
 }
 
