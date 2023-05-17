@@ -46,8 +46,6 @@ file.exists(path.hivstatusvl.r1520) |>
     stopifnot()
 
 
-
-
 ################
 #     MAIN     #
 ################
@@ -87,64 +85,8 @@ if (0) { # Info for introduction to results
     #
 }
 
-if (0) # Study ARVMED
-    {
-        darv <- dall[HIV_STATUS == 1]
-
-        cat("Assume NA ARV means no ARV usage...\n")
-        tmp <- darv[HIV_AND_VL == 1]
-        tmp[is.na(ARVMED) | ARVMED != 1, ARVMED := 0]
-        by_cols <- c("ROUND", "FC", "SEX", "ARVMED")
-        cols <- c("M", "CL", "CU")
-        tmp[, Y := as.integer(VL_COPIES <= VIREMIC_VIRAL_LOAD)]
-        tmp <- tmp[, binconf(sum(Y), .N, return.df = T), by = by_cols]
-        names(tmp) <- c(by_cols, cols)
-        setkeyv(tmp, by_cols)
-        supp.prop.by.arv <- copy(tmp)
-
-        ggplot(supp.prop.by.arv, aes(x = FC, colour = SEX)) +
-            geom_point(aes(y = M, pch = as.factor(ARVMED)), position = position_dodge(width = .5)) +
-            geom_linerange(aes(ymin = CL, ymax = CU, linetype = as.factor(ARVMED)), position = position_dodge(width = .5)) +
-            facet_grid(~ROUND) +
-            scale_y_continuous(labels = scales:::percent, limits = c(0, 1), expand = c(0, 0)) +
-            scale_colour_manual(values = c("M" = "royalblue3", "F" = "deeppink2")) +
-            theme(legend.position = "bottom") +
-            labs(
-                x = "Community type", y = "Proportion of suppressed measurements",
-                linetype = "Ever reported ARV", pch = "Ever reported ARV",
-                title = "Suppression by ARV reporting..."
-            )
-
-
-        cat("Suppression among participants reporting ARV \n")
-        darv[ARVMED == 1 & is.na(VL_COPIES), STUDY_ID] -> idx
-        tmp <- darv[STUDY_ID %in% idx, any(VL_COPIES == 0, na.rm = T), by = "STUDY_ID"]
-        tmp[, cat(
-            "Out of", .N, "HIV + participants with NA VL measurements", sum(V1),
-            "were measured suppressed at least once\n"
-        )]
-
-        tmp <- darv[HIV_AND_VL == 1 & ARVMED == 1]
-        by_cols <- c("ROUND", "FC", "SEX")
-        cols <- c("M", "CL", "CU")
-        tmp[, Y := as.integer(VL_COPIES <= VIREMIC_VIRAL_LOAD)]
-        tmp <- tmp[, binconf(sum(Y), .N, return.df = T), by = by_cols]
-        names(tmp) <- c(by_cols, cols)
-        setkeyv(tmp, by_cols)
-        supp.prop.among.report <- copy(tmp)
-
-        # Sex plays a bigger role than community.
-        ggplot(supp.prop.among.report, aes(x = FC, colour = SEX)) +
-            geom_point(aes(y = M), position = position_dodge(width = .5)) +
-            geom_linerange(aes(ymin = CL, ymax = CU), position = position_dodge(width = .5)) +
-            facet_grid(~ROUND) +
-            scale_y_continuous(labels = scales:::percent, limits = c(.5, 1), expand = c(0, 0)) +
-            scale_colour_manual(values = c("M" = "royalblue3", "F" = "deeppink2")) +
-            theme(legend.position = "bottom") +
-            labs(x = "Community type", y = "Proportion of suppressed measurements", title = "Among people reporting ever ARV...")
-    }
-
-if (args$run.comm.analysis) {
+if (args$run.comm.analysis) 
+{
 
     library(patchwork)
     library(rstanarm)
