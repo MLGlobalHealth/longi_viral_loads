@@ -61,11 +61,18 @@ option_list <- list(
         dest = 'detectable.viral.load'
     ),
     make_option(
-        "--outdir",
+        "--outdir-prefix",
         type = "character",
         default = '/home/andrea/HPC/ab1820/home/projects/2022/longvl',
-        help = "Path to output directory where to store results [Defaults to my directory]", 
+        help = "Path to prefix output directory where to store results [Defaults to my directory]", 
         dest = 'out.dir.prefix'
+    ),
+    make_option(
+        "--outdir",
+        type = "character",
+        default = NA_character_,
+        help = "Path to exact output directory where to store results [Defaults to NA]", 
+        dest = 'out.dir.exact'
     ),
     make_option(
         "--indir",
