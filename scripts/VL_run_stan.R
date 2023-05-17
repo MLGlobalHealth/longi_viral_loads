@@ -34,7 +34,11 @@ source(file.path(gitdir.functions, "phsc_vl_helpers.R"))
 
 # options (automatically sourced in R/options.R)
 args <- args[names(args) %like% '^run|viral.load|jobname|indir|out.dir|refit|round|^only.firstparticipants']
-if(interactive()){ args$only.firstparticipants <- TRUE } # testing
+if(interactive()){ # testing
+    args$only.firstparticipants <- TRUE 
+    args$out.dir.prefix <- '/rds/ephemeral/asdllsd.pbs/vl_1000_firstpart/run-gp-supp-pop' 
+    args$run.gp.prevl <- TRUE
+} 
 print(args)
 
 # parallel backend (use multiple cores if local)
@@ -58,11 +62,18 @@ VL_DETECTABLE <- args$vl.detectable
 VIREMIC_VIRAL_LOAD <- args$viremic.viral.load
 
 # specify and create output directories as func(vl, jobname)
-stopifnot(dir.exists(args$out.dir.prefix))
-out.dir <- file.path(args$out.dir.prefix)
-suffix <- make.suffix(args)
-vl.out.dir <- file.path( out.dir, suffix)
+if(! is.na(args$out.dir.exact) ){
+    vl.out.dir <- args$out.dir.exact
+    dir.create(vl.out.dir, recursive = TRUE)
+}else{
+    stopifnot(dir.exists(args$out.dir.prefix))
+    out.dir <- file.path(args$out.dir.prefix)
+    suffix <- make.suffix(args)
+    vl.out.dir <- file.path( out.dir, suffix)
+}
+cat('vl.out.dir specified as:\n ', vl.out.dir, '\n')
 dir.create(vl.out.dir, showWarnings = FALSE)
+stopifnot(dir.exists(vl.out.dir))
 
 # get data
 dall <- get.dall(path = path.hivstatusvl.r1520, only_firstpart = args$only.firstparticipants)
