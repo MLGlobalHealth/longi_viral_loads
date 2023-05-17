@@ -19,7 +19,7 @@ if(usr=='andrea') {
 }else if(usr == 'ab1820') {
     # HPC 
     indir.deepdata <- '/rds/general/project/ratmann_pangea_deepsequencedata/live'
-    indir.deepsequence_analyses <- '/home/general/project/ratmann_xiaoyue_jrssc2022_analyses/live/PANGEA2_RCCS1519_UVRI'
+    indir.deepsequence_analyses <- '/rds/general/project/ratmann_xiaoyue_jrssc2022_analyses/live/PANGEA2_RCCS1519_UVRI'
 }else {
     stop("Need to specify input and output directory in R/paths.R")
 }
