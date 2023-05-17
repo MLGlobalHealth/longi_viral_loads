@@ -5,8 +5,9 @@ library(data.table)
 library(ggplot2)
 
 gitdir <- here::here()
-source(file.path(gitdir.R, 'paths.R'))
+source(file.path(gitdir, 'R/paths.R'))
 source(file.path(gitdir.functions, 'phsc_vl_helpers.R'))
+source(file.path(gitdir.functions, 'plotting_functions.R'))
 
 # set output directory
 outdir <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl"
@@ -18,7 +19,7 @@ VIREMIC_VIRAL_LOAD <- 1000
 
 # load stuff
 cols <- c( "ROUND", "TYPE", "SEX", "AGEYRS", "ELIGIBLE")
-ncen <- fread(path.censusN, select = cols)
+ncen <- fread(path.census.eligible, select = cols)
 cols <- c("STUDY_ID", "ROUND", "SEX", "AGEYRS", "FC", 'HIV_STATUS', 'VL_COPIES', 'FIRST_PARTICIPATION')
 dall <- get.dall(path.hivstatusvl.r1520) |> 
     subset(select=cols) |> unique()
@@ -71,7 +72,6 @@ dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS', 'ROUND'))]
 dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS', 'ROUND', 'FC'))]
 
 
-
 # different age-pyramid plots
 p_pyramid_eligibleparticipants  <- plot.pyramid.bysexround( dprop, 
     .ylab = 'Number of participants among census eligible individuals',
@@ -117,6 +117,39 @@ cmd <- ggsave2(p_pyramid_unsup_part , file=filename, LALA=outdir.figures, w=10, 
 #     DEN="N_HIV")
 
 
+# get loess proportions
+
+loess_ratepart <- dprop[, {
+    ageyrs_topredict <- unique(AGEYRS) |> sort()
+    .f <- function(x)
+        loess(N_PART/ELIGIBLE ~ AGEYRS, span = x) |> predict(ageyrs_topredict)
+
+    list(
+        AGEYRS = ageyrs_topredict,
+        N_PART = N_PART,
+        ELIGIBLE = ELIGIBLE, 
+        PARTRATE_RAW = N_PART / ELIGIBLE, 
+        PARTRATE_SMOOTH.25 = .f(0.25),
+        PARTRATE_SMOOTH.50 = .f(0.50),
+        PARTRATE_SMOOTH.75 = .f(0.75)
+    )
+    
+}, by=c('ROUND', 'FC', 'SEX')]
+
+# .25 is wiggly, but so is raw data...
+p_partrate <- plot.smoothed.participation.rates(loess_ratepart)
+filename <- "smoothed_participationrates_bycommroundgenderage.pdf"
+cmd <- ggsave2(p=p_partrate, file=filename, LALA=outdir.figures, w=10, h=11 )
+
+filename <- file.path( gitdir.data, "participation_rates_230517.rds" )
+if(! file.exists(filename)){
+    cat("Saving file", filename, "...")
+    saveRDS(object=loess_ratepart, file=filename,  )
+}else{
+    cat("File", filename, "already exists...")
+}
+
+
 # what about the age composition/contribution of different pops
 # _____________________________________________________________
 
@@ -126,7 +159,7 @@ plot.agecontribution.fromN.stratby(dprop, 'N_HIV', agegroup=FALSE,
     .ylab="Contribution to PLHIV among participants") 
 
 plot.agecontribution.fromN.stratby(dprop, 'N_HIV', agegroup = TRUE,
-    .ylab="Contribution to PLHIV among participants") 
+    .ylab="Contribution to PLHIV among participants");
 
 # contribution to viraemia.
 p_contrib_viraemia_parts <- plot.agecontribution.fromN.stratby(dprop, 

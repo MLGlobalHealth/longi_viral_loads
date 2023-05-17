@@ -28,16 +28,18 @@ get.dall <- function(path, only_firstpart = FALSE, make_flowchart = FALSE) {
     return(dall)
 }
 
-get.census.eligible <- function(rounds = args$round) {
+get.census.eligible <- function(rounds = args$round, path=path.census.eligible) {
     # Recall that COUNT and TOTAL_COUNT do not agree with HIV_N and N in our vla.
     # why? I removed (very few) HIV+ without VLs (79)
 
-    cols <- c("ROUND", "COMM", "AGEYRS", "SEX", "ELIGIBLE")
+    cols <- c("ROUND", "COMM", "TYPE", "AGEYRS", "SEX", "ELIGIBLE")
 
-    dcens <- fread(path.census.eligible) |>
-        subset(ROUND %in% rounds, select = cols) |>
+    dcens <- fread(path, select=cols, skip_absent=TRUE) |>
+        subset(ROUND %in% rounds) |>
         setnames(c("COMM", "AGEYRS", "SEX"), paste0(c("LOC", "AGE", "SEX"), "_LABEL"))
     stopifnot("empty dcens after round subsetting" = nrow(dcens) > 0)
+
+    setnames(dcens, "TYPE", "COMM")
 
     dcens[, ROUND := as.integer(ROUND)]
 

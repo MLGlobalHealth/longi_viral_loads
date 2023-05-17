@@ -70,4 +70,6 @@ path.processed.hivstatus.r0920 <- file.path(indir.deepdata.r1520,"RCCS_processed
 path.processed.testing.r1519 <- file.path(indir.deepdata.r1520,"RCCS_processed_participants_testing_230328.rds")
 
 # I believe this comes from melodie?
-path.census.eligible <- file.path(gitdir.data, 'RCCS_census_eligible_individuals_221209.csv')
+# path.census.eligible <- file.path(gitdir.data, 'RCCS_census_eligible_individuals_221209.csv')
+path.census.eligible <- file.path(gitdir.data, 'census_eligible_individuals_230514.csv')
+

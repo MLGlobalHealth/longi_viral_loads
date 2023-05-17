@@ -149,18 +149,23 @@ catn("saving")
 ##############
 
 filename <- file.path(gitdir.data, 'census_eligible_individuals_230514.csv')
-fwrite(ncen, filename , row.names = F)
-
-# make a table for paper writing.
-.replace.na <- function(x, sub){
-    if(!is.numeric(x))
-        x[is.na(x)] <- sub 
-    return(x)
+if(! file.exists(filename)  )
+{
+    cat("Saving file:", filename, '\n')
+    fwrite(ncen, filename , row.names = F)
+}else{
+    cat("File:", filename, "already exists...\n")
 }
 
 ##################
 catn("Make table")
 ##################
+
+.replace.na <- function(x, sub){
+    if(!is.numeric(x))
+        x[is.na(x)] <- sub 
+    return(x)
+}
 
 # get numbers
 ncen_table <- subset(ncen, ! ROUND  %like% '15') |> 
@@ -176,6 +181,9 @@ cols <- c('M', 'F', 'Total')
 ncen_table[ ROUND == 'Total', ROUND := "Average" ]
 ncen_table[ ROUND == 'Average', (cols) := lapply(.SD, .f ), .SDcols = cols]
 
+# get male to female proportions
+ncen_table[, pM := round(100*M/Total,2)]
+
 # get average over N of communities
 cols <- c('M', 'F', 'Total')
 new_cols <- paste(cols, 'bycomm', sep='-')
@@ -183,8 +191,17 @@ dcomm_N <- dcomm[, .(N_COMM=uniqueN(COMM_IDX)), by='TYPE']
 ncen_table <- merge( ncen_table, dcomm_N, by='TYPE' )
 ncen_table[, (new_cols) := lapply(.SD,  function(x) as.integer(x/N_COMM)), .SDcols=cols]
 
+
 filename <- file.path(outdir.tables, 'census_eligible_individuals_table_230514.rds')
-fwrite(ncen_table, filename , row.names = F)
+if(! file.exists(filename) )
+{
+    cat("Saving file:", filename, '\n')
+    saveRDS(object = ncen_table, file = filename)
+}else{
+    cat("File:", filename, "already exists...\n")
+}
 
+# for paper writing
+ncen_table[ ROUND == 'Average', `Total-bycomm`]
+ncen_table[ ROUND == 'Average', pM ]
 
-# NOTE: we may also want to study participation rates here

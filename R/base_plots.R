@@ -132,6 +132,7 @@ ggsave_nature <- function(filename, p, LALA=vl.out.dir, w=18,h=24, add_reqs=TRUE
 
 scale_y_expand_lower0 <- scale_y_continuous(expand = expansion(mult = c(0, .1)))
 scale_y_percentage <- scale_y_continuous(labels=scales::label_percent(), expand=expansion(mult=0)) 
+scale_y_percentage2 <- scale_y_continuous(labels=scales::label_percent(), expand=expansion(mult=0.05)) 
 
 ####################
 # specify palettes #
@@ -264,6 +265,23 @@ prettify_hivstatus <- function(DT)
 }
 
 
+prettify_fc <- function(DT)
+{
+    nms <- names(DT)
+    if('FC_LAB' %in% nms )
+        return(DT)
+
+    DT[, FC_LAB := data.table::fcase(
+        FC == 'inland', "Inland",
+        FC == 'fishing', "Fishing",
+        FC == 'trading', "Trading",
+        FC == 'agrarian', "Agrarian",
+        default = NA_character_
+    )]
+
+    DT
+}
+
 prettify_labels <- function(DT)
 {
     # preforms all of the above
@@ -272,7 +290,8 @@ prettify_labels <- function(DT)
     DT |>  
         prettify_sex() |> 
         prettify_round() |> 
-        prettify_hivstatus()
+        prettify_hivstatus() |> 
+        prettify_fc()
 }
 
 labs_from_dictionaries <- function(dict)

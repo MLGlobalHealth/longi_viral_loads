@@ -25,14 +25,17 @@ flowchart LR
 	subgraph src
 		s1(get_census_eligible_count.R)
         s2(process_data.R)
+        s3(get_participation_rates.R) 
 	end
 	
 	subgraph outputs
 		o11[(census_eligible_individuals_230514.csv)]
         o21[(all_participants_hivstatus_vl_230502.csv)]
+        o31[(participation_rates_230517.rds)]
 
 		style o11 fill:#F5F5F5
 		style o21 fill:#F5F5F5
+		style o31 fill:#F5F5F5
 	end
 	
 	d11 -- load --> s1
@@ -44,6 +47,45 @@ flowchart LR
 	d23 -- load --> s2
 	d24 -- load --> s2
 	s2 -- create --> o21
+ 
+	o11 -- load --> s3
+	o21 -- load --> s3
+	s3 -- create --> o31
 
 
+
+```
+
+
+Successively, the outputs of the preprocessing are used in order to run our models.
+(To finish)
+
+```mermaid
+flowchart LR 
+	subgraph data
+		o11[(census_eligible_individuals_230514.csv)]
+        o21[(all_participants_hivstatus_vl_230502.csv)]
+
+    style o11 fill:#F5F5F5
+    style o21 fill:#F5F5F5
+	end 
+ 
+	subgraph scripts
+		sc1(VL_run_stan.R)
+        sc2(VL_postprocessing.R)
+	end
+	
+	subgraph results
+		r11[(TODO)]
+        r21[(TODO)]
+
+		style r11 fill:#FFD700
+		style r21 fill:#FFD700
+	end
+	
+	o11 -- load --> sc1
+	sc1 -- create --> r11
+  
+	o21 -- load --> sc2
+	sc2 -- create --> r21
 ```

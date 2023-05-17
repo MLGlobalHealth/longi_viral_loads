@@ -127,6 +127,8 @@ my_labs_dictionary <- c(
     FC2 = "Community type",
     HIV = "HIV status",
     HIV_LAB = "HIV status",
+    LOESS_SPAN = "Loess span",
+    PART_RATE = "Participation rate",
     PHIV_MEAN='HIV prevalence',
     PVLNS_MEAN='Prevalence of viraemia among population',
     PVLNSofHIV_MEAN='Prevalence of viraemia among HIV infected',
