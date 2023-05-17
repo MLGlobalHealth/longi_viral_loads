@@ -593,7 +593,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir. = 
             paste0("hivprevalence_gp_stanfit_round", round, "_220729.rds")
         )
 
-        msg <- sprintf("Fitting stan model for round %s, with filename:\n %c\n", round, filename)
+        msg <- sprintf("Fitting stan model for round %s, with filename:\n %s\n", round, filename)
         cat(msg)
 
         if (file.exists(filename) & refit == FALSE) {
@@ -1110,7 +1110,7 @@ vl.meanviralload.by.gender.loc.age.icar <- function(DT) {
         stopifnot(length(round) == 1)
         
         filename <- file.path(vl.out.dir., paste0("mvlinpop_icar_stanfit_round", round, "220729b.rds"))
-        msg <- sprintf("Fitting stan model for round %s, with filename:\n %c\n", round, filename)
+        msg <- sprintf("Fitting stan model for round %s, with filename:\n %s\n", round, filename)
         cat(msg)
 
         DT[is.na(VL_MEAN_SD), VL_MEAN_SD := 0]
@@ -1208,7 +1208,7 @@ vl.suppofinfected.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir
         filename <- paste0("220729f_notsuppAmongInfected_gp_stan_round", round, ".rds")
         filename <- file.path(vl.out.dir., filename)
 
-        msg <- sprintf("Fitting stan model for round %s, with filename:\n %c\n", round, filename)
+        msg <- sprintf("Fitting stan model for round %s, with filename:\n %s\n", round, filename)
         cat(msg)
 
         if (file.exists(filename) & refit == FALSE) {
@@ -1601,7 +1601,7 @@ vl.suppofinfected.by.gender.loc.age.icar <- function(DT, refit = FALSE) {
         filename <- paste0("notsuppAmongInfected_icar_stan_round", round, "_220729.rds")
         filename <- file.path(vl.out.dir, filename)
 
-        msg <- sprintf("Fitting stan model for round %s, with filename:\n %c\n", round, filename)
+        msg <- sprintf("Fitting stan model for round %s, with filename:\n %s\n", round, filename)
         cat(msg)
 
         # second order RW prior
@@ -1934,7 +1934,7 @@ vl.suppofpop.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir. = v
         filename <- paste0("220729f_suppAmongPop_gp_stan_round", round, ".rds")
         filename <- file.path(vl.out.dir., filename)
 
-        msg <- sprintf("Fitting stan model for round %s, with filename:\n %c\n", round, filename)
+        msg <- sprintf("Fitting stan model for round %s, with filename:\n %s\n", round, filename)
         cat(msg)
 
         if (file.exists(filename) & refit == FALSE) {
@@ -2215,7 +2215,7 @@ vl.suppofpop.by.gender.loc.age.icar <- function(DT) {
 
         filename <- paste0("notsuppAmongPop_icar_stan_220729_round_", round, ".rds")
 
-        msg <- sprintf("Fitting stan model for round %s, with filename:\n %c\n", round, filename)
+        msg <- sprintf("Fitting stan model for round %s, with filename:\n %s\n", round, filename)
         cat(msg)
 
         # Get Stan Data
