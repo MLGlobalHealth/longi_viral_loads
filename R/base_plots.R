@@ -199,8 +199,25 @@ palettes <- list(
         `HIV negative` = "#3EB595"
     ),
 
+    rakailogo = c(
+        "#0777bf",
+        "#626263",
+        "#D81921",
+        "#000000",
+        "#FFFFFF"
+    ),
+
+    uganda = c(
+        "#000000",
+        "#fcdc04",
+        "#d90000",
+        "#ffffff",
+        "#9ca69c"
+    ),
+
     NULL
 )
+
 
 ###################
 # prettify labels #
@@ -229,12 +246,14 @@ prettify_sex <- function(DT)
     nms <- names(DT)
     if("SEX_LAB" %in% nms)
     return(DT)
-
-    if("SEX" %in% nms)
-        DT[, SEX_LAB :=  sex_dictionary[SEX]]
-
-    if("SEX_LABEL" %in% nms)
+    
+    if("SEX_LABEL" %in% nms){
         DT[, SEX_LAB :=  sex_dictionary[SEX_LABEL]]
+
+    }else if("SEX" %in% nms){
+        DT[, SEX_LAB :=  sex_dictionary[SEX]]
+    }
+
     return(DT)
 }
 
@@ -268,7 +287,7 @@ prettify_hivstatus <- function(DT)
 prettify_fc <- function(DT)
 {
     nms <- names(DT)
-    if('FC_LAB' %in% nms )
+    if('FC_LAB' %in% nms | ! "FC" %in% nms)
         return(DT)
 
     DT[, FC_LAB := data.table::fcase(
@@ -276,6 +295,23 @@ prettify_fc <- function(DT)
         FC == 'fishing', "Fishing",
         FC == 'trading', "Trading",
         FC == 'agrarian', "Agrarian",
+        default = NA_character_
+    )]
+
+    DT
+}
+
+prettify_loc <- function(DT){
+
+    nms <- names(DT)
+    if('LOC_LAB' %in% nms | ! "LOC_LABEL" %in% nms)
+        return(DT)
+
+    DT[, LOC_LAB := data.table::fcase(
+        LOC_LABEL == 'inland', "Inland",
+        LOC_LABEL == 'fishing', "Fishing",
+        LOC_LABEL == 'trading', "Trading",
+        LOC_LABEL == 'agrarian', "Agrarian",
         default = NA_character_
     )]
 
@@ -291,7 +327,8 @@ prettify_labels <- function(DT)
         prettify_sex() |> 
         prettify_round() |> 
         prettify_hivstatus() |> 
-        prettify_fc()
+        prettify_fc() |>
+        prettify_loc()
 }
 
 labs_from_dictionaries <- function(dict)

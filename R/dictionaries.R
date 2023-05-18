@@ -125,6 +125,7 @@ my_labs_dictionary <- c(
     FIRST_VISIT = "First participant",
     FC = "Community type",
     FC2 = "Community type",
+    FTP_LAB = "Participants type",
     HIV = "HIV status",
     HIV_LAB = "HIV status",
     LOESS_SPAN = "Loess span",
