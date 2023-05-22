@@ -34,12 +34,12 @@ get.census.eligible <- function(rounds = args$round, path=path.census.eligible) 
 
     cols <- c("ROUND", "COMM", "TYPE", "AGEYRS", "SEX", "ELIGIBLE")
 
-    dcens <- fread(path, select=cols, skip_absent=TRUE) |>
+    dcens <- fread(path, select=cols) |>
         subset(ROUND %in% rounds) |>
-        setnames(c("COMM", "AGEYRS", "SEX"), paste0(c("LOC", "AGE", "SEX"), "_LABEL"))
+        setnames(c("TYPE", "COMM", "AGEYRS", "SEX"), 
+            paste0(c("LOC","LOC", "AGE", "SEX"), "_LABEL"),
+            skip_absent = TRUE) |> suppressWarnings()
     stopifnot("empty dcens after round subsetting" = nrow(dcens) > 0)
-
-    setnames(dcens, "TYPE", "COMM")
 
     dcens[, ROUND := as.integer(ROUND)]
 
@@ -198,6 +198,27 @@ make.study.flowchart <- function(DT) {
 }
 
 
+extract.stan.hyperparams.rho <- function(re, encoding){
+
+    ps=c(.025, .25,.5, .75,.975)
+    .f <- function(x) transpose(as.data.table(quantile(x, probs = ps)))
+
+    names_pars <- grep("rho_[0-9]+$|alpha_[0-9]+$", names(re), value = TRUE)
+    pars_quantiles <- lapply(re[names_pars], .f)
+    pars_quantiles <- rbindlist(pars_quantiles, idcol = "GP_hyper_par")
+    names(pars_quantiles) <- c("CL", "IL", "M", "IU", "CU")
+
+    .f <- function(reg, x) gsub("^([a-z]+)_([0-9])([0-9])", reg, x)
+    pars_quantiles[, SEX := as.integer(.f("\\2", GP_hyper_par))]
+    pars_quantiles[, LOC := as.integer(.f("\\3", GP_hyper_par))]
+    pars_quantiles[, GP_hyper_par := .f("\\1", GP_hyper_par)]
+    pars_quantiles
+
+    out <- merge(encoding, pars_quantiles, by = c("SEX", "LOC"))
+    out [, col := "Posterior"]
+    out
+
+}
 
 .get.prior.ranges <- function(stan.data, DT, shape, scale) {
     # Extracts alpha and rho from stan.data
@@ -629,33 +650,15 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir. = 
         ps <- c(0.025, 0.25, 0.5, 0.75, 0.975)
 
         # extract hyperparams rho
-        tmp <- grep("rho_[0-9]|alpha_[0-9]", names(re), value = TRUE)
-        .f <- function(x) transpose(as.data.table(quantile(x, probs = ps)))
-
-        tmp <- lapply(re[tmp], .f)
-        tmp <- rbindlist(tmp, idcol = "par")
-        names(tmp) <- c("GP_hyper_par", "CL", "IL", "M", "IU", "CU")
-
-        .f <- function(reg, x) {
-            gsub("^([a-z]+)_([0-9])([0-9])", reg, x)
-        }
-        tmp <- tmp[!GP_hyper_par %like% "bound"]
-        tmp[, SEX := as.integer(.f("\\2", GP_hyper_par))]
-        tmp[, LOC := as.integer(.f("\\3", GP_hyper_par))]
-        tmp[, GP_hyper_par := .f("\\1", GP_hyper_par)]
-
-        tmp1 <- unique(DT[, .(SEX, SEX_LABEL, LOC, LOC_LABEL)])
-        prev.hiv.gp.pars <- merge(tmp1, tmp, by = c("SEX", "LOC"))
-        prev.hiv.gp.pars[, col := "posterior"]
-        prev.hiv.gp.pars[, GP_hyper_par := gsub("_[0-1][0-1]", "", GP_hyper_par)]
-
+        group_codes <- unique(DT[, .(SEX, SEX_LABEL, LOC, LOC_LABEL)])
+        prev.hiv.gp.pars <- extract.stan.hyperparams.rho(re=re, encoding=group_codes)
         tmp <- .get.prior.ranges(stan.data,
-            DT = tmp1,
+            DT = group_codes,
             shape = re$rho_hyper_par_shape2[1],
             scale = re$rho_hyper_par_scale2[1]
         )
 
-        p <- .plot.gp.hyperparameters(prev.hiv.gp.pars, tmp)
+        p <- .plot.gp.hyperparameters(prev.hiv.gp.pars, group_codes)
         filename <- paste0("220729_hivprevalence_gppars_round", round, ".pdf")
         ggsave2(p, file = filename, w = 6, h = 3)
 
@@ -1266,31 +1269,16 @@ vl.suppofinfected.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir
 
         re <- rstan::extract(fit)
         # re2 <- rstan::extract(fit2)
-        ps <- c(0.025, 0.5, 0.975)
         tmp <- summary(fit)$summary
         tmp[grepl("^p_predict_", rownames(tmp)), ]
 
         # extract hyperparams rho
         # _______________________
 
-        ps <- c(0.025, 0.25, 0.5, 0.75, 0.975)
-        .f <- function(x) transpose(as.data.table(quantile(x, probs = ps)))
-
-        tmp <- c("rho_00", "rho_10", "rho_01", "rho_11", "alpha_00", "alpha_10", "alpha_01", "alpha_11")
-        tmp <- lapply(re[tmp], .f)
-        tmp <- rbindlist(tmp, idcol = "GP_hyper_par")
-        setnames(tmp, paste0("V", 1:5), c("CL", "IL", "M", "IU", "CU"))
-
-        .f <- function(reg, x) gsub("^([a-z]+)_([0-9])([0-9])", reg, x)
-        tmp[, SEX := as.integer(.f("\\2", GP_hyper_par))]
-        tmp[, LOC := as.integer(.f("\\3", GP_hyper_par))]
-        tmp[, GP_hyper_par := .f("\\1", GP_hyper_par)]
-
-        tmp1 <- unique(DT[, .(SEX, SEX_LABEL, LOC, LOC_LABEL)])
-        nsinf.gp.pars <- merge(tmp1, tmp, by = c("SEX", "LOC"))
-        nsinf.gp.pars[, col := "posterior"]
+        group_codes <- unique(DT[, .(SEX, SEX_LABEL, LOC, LOC_LABEL)])
+        prev.hiv.gp.pars <- extract.stan.hyperparams.rho(re=re, encoding=group_codes)
         tmp <- .get.prior.ranges(stan.data,
-            DT = tmp1,
+            DT = group_codes,
             shape = re$rho_hyper_par_shape2[1],
             scale = re$rho_hyper_par_scale2[1]
         )
@@ -1963,30 +1951,12 @@ vl.suppofpop.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir. = v
         # extract hyperparams rho
         # _______________________
 
-        ps <- c(0.025, 0.25, 0.5, 0.75, 0.975)
-        tmp <- grep("rho_[0-9]|alpha_[0-9]", names(re), value = TRUE)
-        .f <- function(x) transpose(as.data.table(quantile(x, probs = ps)))
-        tmp <- lapply(re[tmp], .f)
-        tmp <- rbindlist(tmp, idcol = "par")
-        names(tmp) <- c("GP_hyper_par", "CL", "IL", "M", "IU", "CU")
-
-        .f <- function(reg, x) {
-            gsub("^([a-z]+)_([0-9])([0-9])", reg, x)
-        }
-        tmp <- tmp[!GP_hyper_par %like% "bound"]
-        tmp[, SEX := as.integer(.f("\\2", GP_hyper_par))]
-        tmp[, LOC := as.integer(.f("\\3", GP_hyper_par))]
-        tmp[, GP_hyper_par := .f("\\1", GP_hyper_par)]
-
-        tmp1 <- unique(DT[, .(SEX, SEX_LABEL, LOC, LOC_LABEL)])
-        nspop.gp.pars <- merge(tmp1, tmp, by = c("SEX", "LOC"))
-        nspop.gp.pars[, col := "Posterior"]
-        tmp <- .get.prior.ranges(stan.data,
-            DT = tmp1,
+        group_codes <- unique(DT[, .(SEX, SEX_LABEL, LOC, LOC_LABEL)])
+        nspop.gp.pars <- extract.stan.hyperparams.rho(re=re, encoding=group_codes)
+        tmp <- .get.prior.ranges(stan.data, DT = group_codes,
             shape = re$rho_hyper_par_shape2[1],
             scale = re$rho_hyper_par_scale2[1]
         )
-
         p <- .plot.gp.hyperparameters(nspop.gp.pars, tmp)
         filename <- paste0("220729f_notsuppAmongPop_gppars_round", round, ".pdf")
         ggsave2(p, file = filename, w = 6, h = 3)
