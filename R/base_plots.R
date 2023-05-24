@@ -248,10 +248,10 @@ prettify_sex <- function(DT)
     return(DT)
     
     if("SEX_LABEL" %in% nms){
-        DT[, SEX_LAB :=  sex_dictionary[SEX_LABEL]]
+        DT[, SEX_LAB :=  sex_dictionary[as.character(SEX_LABEL)]]
 
     }else if("SEX" %in% nms){
-        DT[, SEX_LAB :=  sex_dictionary[SEX]]
+        DT[, SEX_LAB :=  sex_dictionary[as.character(SEX)]]
     }
 
     return(DT)
@@ -304,16 +304,14 @@ prettify_fc <- function(DT)
 prettify_loc <- function(DT){
 
     nms <- names(DT)
-    if('LOC_LAB' %in% nms | ! "LOC_LABEL" %in% nms)
+    if('LOC_LAB' %in% nms | ! ( "LOC_LABEL" %in% nms | "LOC" %in% nms ))
         return(DT)
 
-    DT[, LOC_LAB := data.table::fcase(
-        LOC_LABEL == 'inland', "Inland",
-        LOC_LABEL == 'fishing', "Fishing",
-        LOC_LABEL == 'trading', "Trading",
-        LOC_LABEL == 'agrarian', "Agrarian",
-        default = NA_character_
-    )]
+    if( "LOC_LABEL" %in% nms){
+        DT[, LOC_LAB := loc_dictionary[as.character(LOC_LABEL)]]
+    }else if('LOC' %in% nms){
+        DT[, LOC_LAB := loc_dictionary[as.character(LOC)]]
+    }
 
     DT
 }

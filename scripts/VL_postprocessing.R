@@ -29,9 +29,8 @@ source( file.path(gitdir.functions,'plotting_main_figures.R') )
 source( file.path(gitdir.functions,'postprocessing_helpers.R') )
 source( file.path(gitdir.functions,'phsc_vl_helpers.R') )
 
-# source command line options, stored in args. Then subset
-source( file.path(gitdir.R,'options.R') )
-opts_vec <- c('viremic.viral.load', 'detectable.viral.load', 'out.dir.prefix', 'indir','round', 'jobname')
+# command line options, stored in args. Then subset
+opts_vec <- c('viremic.viral.load', 'detectable.viral.load', 'out.dir.prefix', 'indir','round', 'jobname', 'only.firstparticipants')
 args <- args[ names(args) %in% opts_vec]
 
 # other setup
@@ -58,7 +57,7 @@ dir.create(vl.out.dir.figures) |> suppressWarnings()
 #     MAIN     #
 ################
 
-rda_files <- list.files.from.output.directory('.rda')
+rda_files <- list.files.from.output.directory('.rda', args=args)
 
 # get data
 dall <- get.dall(path.hivstatusvl.r1520, make_flowchart=TRUE)

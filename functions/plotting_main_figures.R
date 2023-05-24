@@ -112,19 +112,19 @@ plot.all.gps <- function( loc='fishing')
     # Load HIV+ prev data
     # ___________________
 
-    tmp <- load.summarised.draws.from.files("prevalence", files=rda_files, include.raw=TRUE)
+    tmp <- load.summarised.draws.from.rdafiles("prevalence", files=rda_files, include.raw=TRUE)
     data_raw <- tmp[[1]] |> subset(LOC_LABEL == loc)
     dfit <- tmp[[2]] |> subset(LOC_LABEL == loc)
     p1 <- .plot.hiv.prevalence(dfit, data_raw)
     p1.noraw <- .plot.hiv.prevalence(dfit, data_raw, include.point=FALSE)
 
-    tmp <- load.summarised.draws.from.files("suppAmongInfected", files=rda_files, include.raw=TRUE)
+    tmp <- load.summarised.draws.from.rdafiles("suppAmongInfected", files=rda_files, include.raw=TRUE)
     data_raw <- tmp[[1]] |> subset(LOC_LABEL == loc)
     dfit <- tmp[[2]] |> subset(LOC_LABEL == loc)
     p2 <- .plot.supp.hiv(dfit, data_raw)
     p2.noraw <- .plot.supp.hiv(dfit, data_raw, include.point=FALSE)
 
-    tmp <- load.summarised.draws.from.files("suppAmongPop", files=rda_files, include.raw=TRUE)
+    tmp <- load.summarised.draws.from.rdafiles("suppAmongPop", files=rda_files, include.raw=TRUE)
     data_raw <- tmp[[1]] |> subset(LOC_LABEL == loc)
     dfit <- tmp[[2]] |> subset(LOC_LABEL == loc)
     p3 <- .plot.unsupp.pop(dfit, data_raw)
@@ -240,8 +240,8 @@ make.table.unaids.goals <- function(age_group_width=5)
     cat('Focus on last round only for this table...\n')
     dfiles <- grep(last.round,rda_files, value=TRUE)
 
-    dprev <- load.summarised.draws.from.files('prevalence', files=dfiles , include.raw=FALSE)
-    dsuppinf <- load.summarised.draws.from.files('suppAmongInfected', files=dfiles , include.raw=FALSE)
+    dprev <- load.summarised.draws.from.rdafiles('prevalence', files=dfiles , include.raw=FALSE)
+    dsuppinf <- load.summarised.draws.from.rdafiles('suppAmongInfected', files=dfiles , include.raw=FALSE)
 
     # Merge with census eligible 
     # __________________________
@@ -418,8 +418,8 @@ make.unaids.plots <- function(DT)
     dunaids <- DT[ROUND==max.round]
     dunaids_allround <- copy(DT)
     
-    dprev <- load.summarised.draws.from.files("prevalence", files=rda_files, include.raw=FALSE)
-    dsupp_pop <- load.summarised.draws.from.files("suppAmongPop", files=rda_files, include.raw=FALSE)
+    dprev <- load.summarised.draws.from.rdafiles("prevalence", files=rda_files, include.raw=FALSE)
+    dsupp_pop <- load.summarised.draws.from.rdafiles("suppAmongPop", files=rda_files, include.raw=FALSE)
 
     # Get the posterior estimate for the number of
     # HIV cases & of viraemic (unsuppressed) individuals among eligible. 

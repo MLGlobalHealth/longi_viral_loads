@@ -46,6 +46,31 @@ answers_dict <- list(
     )
 )
 
+stan_dicts <- list(
+    SEXtoINT=c(
+        `F`=0L,
+        `M`=1L,
+        `Female`=0L,
+        `Male`=1L,
+        `female`=0L,
+        `male`=1L
+    ),
+    INTtoSEX=c(
+        `0`="F",
+        `1`="M"
+    ),
+
+    LOCtoINT=c(
+        `inland` = 0L,
+        `fishing` = 1L
+    ),
+
+    INTtoLOC=c(
+        `0` = 'inland',
+        `1` = 'fishing'
+    )
+)
+
 community_dictionary <- list(
     short = c(
         "F" = "Fishing",
@@ -61,7 +86,17 @@ community_dictionary <- list(
     )
 )
 
-sex_dictionary <- c(M = "Male", F = "Female")
+sex_dictionary <- c(M = "Male", F = "Female", `0`="Female", `1`="Male")
+
+loc_dictionary <- c(
+    inland = "Inland",
+    fishing = "Fishing",
+    trading = "Trading",
+    agrarian = "Agrarian",
+    `0` = "Inland",
+    `1` = "Fishing"
+)
+
 
 round_dictionary <- c(
     "R016" = "Round 16",
@@ -113,6 +148,12 @@ postproc_dictionaries <- list(
     )
 )
 
+model_dict <- c(
+    `run-gp-prevl` = "HIV prevalence",
+    `run-gp-supp-hiv` ="Prevalence of suppression among HIV positive",
+    `run-gp-supp-pop` ="Prevalence of viraemia"
+)
+
 # to work together with my_labs() function
 my_labs_dictionary <- c(
     AGE = "Age",
@@ -134,6 +175,9 @@ my_labs_dictionary <- c(
     PHIV_MEAN='HIV prevalence',
     PVLNS_MEAN='Prevalence of viraemia among population',
     PVLNSofHIV_MEAN='Prevalence of viraemia among HIV infected',
+    ROUND="Interview round",
+    ROUND_LAB="Interview round",
+    ROUND_LABEL="Interview round",
     SEX = "Gender",
     SEX_LAB = "Gender",
     VL_COPIES = "Viral Load Copies",

@@ -43,13 +43,15 @@ savefile <- function(data, filename, overwrite=FALSE)
 }
 
 
-list.files.from.output.directory <- function(pattern, indir=args$indir, vl=args$viremic.viral.load, jobname=args$jobname, rounds=NULL )
+list.files.from.output.directory <- function(pattern, args=args, indir=args$indir, vl=args$viremic.viral.load, jobname=args$jobname, rounds=NULL )
 {
     # extracts files from the output directory specified by args$vl and args$jobname
-    dir <- file.path(indir, paste0('vl_', vl))
+
+    dir <- file.path(indir, make.suffix(args) )
+    # dir <- file.path(indir, paste0('vl_', vl))
     files <- list.files( dir, pattern=pattern, full.names = TRUE, recursive = TRUE)
     
-    # subset to file containing roundRR in their basename 
+    # subset to file containing roundnames in their basename 
     if(! is.null(rounds) )
     {
         labels <- paste0('round', rounds) |> paste(collapse = '|')
@@ -172,6 +174,25 @@ make.suffix <- function(args)
         no=suffix)
     suffix <- fifelse(is.na(args$jobname), 
         yes=suffix, 
-        no=paste0( suffix,'-',args$jobname))
+        no=paste0( suffix,'_',args$jobname))
     return(suffix)
+}
+
+fetch.args.from.suffix <- function(suffix, asDT=FALSE)
+{
+    stopifnot("fetch.args.from.suffix can only process one suffix"=length(suffix) == 1)
+    outargs <- list(
+        VL=gsub('vl_([0-9]+).*$', '\\1', suffix) |> as.integer(),
+        FTP=grepl('firstpart',suffix),
+        JOB = NA_character_
+    )
+
+    jobname <- gsub("vl_[0-9]+|_firstpart",'',suffix)
+    if(jobname != "")
+        outargs$JOB <- jobname
+
+    if(asDT)
+        outargs <- as.data.table(outargs)
+
+    return(outargs)
 }
