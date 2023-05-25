@@ -1,3 +1,37 @@
+quantile2 <- function(x, ps=c(CL=.025, IL=.25, M=.5, IU=.75, CU=.975)){
+
+    out <- quantile(x=x, probs=ps, names=TRUE) |> t()
+    if(! is.null(names(ps)) )
+        colnames(out) <- names(ps)
+    as.data.table(out)
+}
+
+stanindices2vars <- function(names){
+    
+    .gs <- function(reg){
+        out <- gsub(reg, '\\1', names)
+        return(out)
+    }
+    index_sex <- .gs('^.*_([0-1])[0-1].*$')
+    index_loc <- .gs('^.*_[0-1]([0-1]).*$')
+    index_age <- .gs('^.*\\[([0-9]+)\\].*$') |> as.integer()
+
+    out <- with(stan_dicts, list(
+        SEX = unname(INTtoSEX[index_sex]),
+        LOC = unname(INTtoLOC[index_loc])
+    ))
+
+    cond <- uniqueN(index_age) %between%  c(71,73) | all(is.na(index_age))
+    stopifnot("stanindices2vars expects 71 or 73 age groups"=cond)
+
+    if(!all(is.na(index_age))){
+        out$AGE= 14 + index_age/2
+    }
+    out
+    
+}
+
+
 load.summarised.draws.from.rdafiles <- function(lab, files, include.raw)
 {
     # lab <- 'prevalence' ; files <- rda_files; include.raw <- FALSE; 
@@ -90,7 +124,7 @@ plot.comparison.ftptype.colftp <- function(DT, ylab)
     p <- ggplot(dplot, aes(x=AGE_LABEL, y=M, ymin=CL, ymax=CU, color=FTP_LAB, fill=FTP_LAB)) +
         geom_ribbon(alpha=.2, color=NA) +
         geom_line() +
-        facet_grid(LOC_LAB ~ SEX_LAB) + 
+        facet_grid(LOC_LAB ~ SEX_LAB, scales='free_y') + 
         scale_y_continuous(labels=scales::label_percent(), limits=c(0, NA),expand=c(0,0)) +
         scale_x_continuous(limits=c(15,50), expand=c(0,0)) +
         scale_color_manual(values=palettes$rakailogo) + 
@@ -110,7 +144,7 @@ plot.comparison.ftptype.colsex <- function(DT, ylab)
     p <- ggplot(dplot, aes(x=AGE_LABEL, y=M, ymin=CL, ymax=CU, color=SEX_LAB, fill=SEX_LAB)) +
         geom_ribbon(alpha=.2, color=NA) +
         geom_line() +
-        facet_grid(LOC_LAB ~ FTP_LAB) + 
+        facet_grid(LOC_LAB ~ FTP_LAB, scales='free_y') + 
         scale_y_continuous(labels=scales::label_percent(), limits=c(0, NA),expand=c(0,0)) +
         scale_x_continuous(limits=c(15,50), expand=c(0,0)) +
         scale_color_manual(values=palettes$sex) + 
@@ -121,13 +155,49 @@ plot.comparison.ftptype.colsex <- function(DT, ylab)
     return(p)
 }
 
-get.weighted.average.p_predict <- function(fit1, fit2, round)
+get.weighted.average.p_predict <- function(fit1, fit2, round) {
+
+    dot.cols <- c('.chain', '.iteration', '.draw')
+    demo.cols <- c('SEX', 'LOC', 'AGEYRS')
+
+    # extract age-specific draws from both ftp and allparts
+    draws_parts <- posterior::as_draws_df(fit1) |> 
+        posterior::subset_draws(variable='^p_predict', regex=TRUE)
+    names(draws_parts) <- gsub('p_predict','parts',names(draws_parts))
+
+    draws_ftp <- posterior::as_draws_df(fit2) |> 
+        posterior::subset_draws(variable='^p_predict', regex=TRUE)
+    names(draws_ftp) <- gsub('p_predict','ftp',names(draws_ftp))
+
+    # merge together
+    draws_all <- posterior::bind_draws(draws_parts, draws_ftp) |> setDT()
+    draws_all <- melt(draws_all, 
+        id.vars = dot.cols, 
+        variable.name='participation', 
+        value.name = 'value' 
+    )
+    draws_all[, (demo.cols) := stanindices2vars(participation)]
+
+    draws_all <- merge( 
+        draws_all[ participation %like% 'parts', list(.chain, .iteration, .draw, SEX, LOC, AGEYRS, parts=value)],
+        draws_all[ participation %like% 'ftp', list(.chain, .iteration, .draw, SEX, LOC, AGEYRS, ftp=value)],
+        by=c(dot.cols, demo.cols), 
+        all.x=TRUE, all.y=TRUE
+    )
+
+    # weight by participation rates to obtain estimates across full pop 
+    draws_all <- merge(draws_all, dpartrates[ROUND == round], by=c('LOC','SEX','AGEYRS') )
+    draws_all[, joint := parts * PARTRATE + ftp * (1-PARTRATE) ]
+    out <- draws_all[, quantile2(joint), by=c('SEX', 'LOC', 'AGEYRS') ]
+}
+
+get.weighted.average.p_predict.deprecated <- function(fit1, fit2, round)
 {
     round <- unique(round)
     stopifnot(length(round) == 1)
     warning("Need to check which is FTP. prefertably fit2")
 
-    params <- fit@model_pars %which.like% "^p_predict_[0-9]{2}"
+    params <- fit1@model_pars %which.like% "^p_predict_[0-9]{2}"
     re1 <- rstan::extract(fit1, pars=params) 
     re2 <- rstan::extract(fit2, pars=params) 
     n_ages <- re1[[1]] |> ncol()
@@ -191,7 +261,7 @@ plot.fit.weighted.by.ftpstatus  <- function(DT, label)
             geom_hline(yintercept=intercept, linetype='dashed', color='grey80')
     }
 
-    ggplot(dplot, aes(x=AGE_LABEL, y=M, ymin=CL, ymax=CU, fill=SEX_LAB, color=SEX_LAB)) +
+    ggplot(dplot, aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=SEX_LAB, color=SEX_LAB)) +
         .f(lab = 'run-gp-supp-hiv', intercept=.95^3) +
         .f(lab = 'run-gp-supp-hiv', intercept=.95^2) +
         geom_ribbon(alpha=.2,color=NA) +

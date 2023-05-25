@@ -46,6 +46,33 @@ get.census.eligible <- function(rounds = args$round, path=path.census.eligible) 
     return(dcens)
 }
 
+get.first.participant.rates <- function(){
+
+    warning("Currently computing RAW first participant rates. Consider smoothing.\n")
+
+    by_cols <- c('ROUND','FC','SEX', 'AGEYRS')
+    tmp <- get.dall(path.hivstatusvl.r1520, make_flowchart=FALSE)
+
+    tmp |> 
+        subset(is.na(FIRST_PARTICIPATION)) |>
+        with( sprintf('First participation status is unknown for %s participants', length(FIRST_PARTICIPATION)) )
+
+    dfirst_prop <- tmp[!is.na(FIRST_PARTICIPATION) & AGEYRS %between% c(15,50), list(
+        N_FTP = sum(FIRST_PARTICIPATION),
+        N_ALLP = .N, 
+        P_FTP_RAW = mean(FIRST_PARTICIPATION)
+    ), by=by_cols]
+    idx <- lapply(dfirst_prop[, ..by_cols], unique) |> 
+        expand.grid() |> 
+        as.data.table() 
+    dfirst_prop <- merge(dfirst_prop, idx, by=by_cols, all.y=TRUE) |> 
+        setkeyv(by_cols)
+
+    # select proportion P of interest
+    setnames(dfirst_prop, 'P_FTP_RAW', 'P')
+    return(dfirst_prop)
+}
+
 get.participants.positives.unsuppressed <- function(DALL) {
     # DALL <- copy(dall)
     dnppu <- DALL |>
