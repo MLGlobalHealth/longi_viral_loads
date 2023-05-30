@@ -1,21 +1,25 @@
 ################
 # DEPENDENCIES #
 ################
-
-library(data.table)
-library(ggplot2)
-library(ggtext)
-library(ggpubr)
-library(knitr)
-library(Hmisc)
-library(xtable)
-library(here)
-library(optparse)
-library(posterior)
+{
+    library(data.table)
+    library(ggplot2)
+    library(ggtext)
+    library(ggpubr)
+    library(knitr)
+    library(Hmisc)
+    library(xtable)
+    library(here)
+    library(optparse)
+    library(posterior)
+}
 
 ################
 #    PATHS     #
 ################
+
+# NOTE: contributions by age/group do not make sense in the "among hiv", if we merge by dcens.
+# instead, we should be merging by the N of hiv+
 
 gitdir <- here()
 source(file.path(gitdir, "R/paths.R"))
@@ -35,6 +39,9 @@ source(file.path(gitdir.functions, "plotting_main_figures.R"))
 source(file.path(gitdir.functions, "postprocessing_helpers.R"))
 source(file.path(gitdir.functions, "phsc_vl_helpers.R"))
 naturemed_reqs()
+
+overwrite <- FALSE
+make_plots <- TRUE
 
 make_paper_numbers <- TRUE
 if (make_paper_numbers) {
@@ -61,6 +68,11 @@ dir.create(out.dir.figures) |> suppressWarnings()
 # load first participation rates
 dfirst_prop <- get.first.participant.rates()
 
+# get census eligible
+dcens <- get.census.eligible() |>
+    setnames(c("AGE_LABEL", "SEX_LABEL", "LOC_LABEL"), c("AGEYRS", "SEX", "LOC"))
+dcens[, AGEGROUP :=  split.agegroup(AGEYRS)]
+
 # load number of census eligible individuals (.25 too rough)
 dpartrates <- readRDS(path.participation.rates) |>
     subset(select = c("ROUND", "FC", "SEX", "AGEYRS", "PARTRATE_SMOOTH.25")) |>
@@ -68,7 +80,10 @@ dpartrates <- readRDS(path.participation.rates) |>
 
 # get model fits for both scenarios: all participants and first participants
 
-# let us first work with rda files
+#######################################################
+catn("=== Compare model results among FTP and ALL ===")
+#######################################################
+
 args2 <- copy(args)
 args2$only.firstparticipants <- !args$only.firstparticipants
 files1 <- list.files.from.output.directory(".rda", args = args, rounds = 16:19)
@@ -91,48 +106,37 @@ stopifnot(dfiles_rda[, .N, by = "F"][, all(N == 2)])
 # by round and participant type
 env_list <- store.rda.environments.in.list.by.round.ftpstatus(dfiles_rda)
 
-rbind.ftpstatus.datatables.by.round <- function(DTname, round, envir_list = env_list) {
-    if (is.numeric(round)) {
-        round <- as.character(round)
+if (make_plots) {
+    for (round in 16:19) {
+        catn("Round:", round)
+        # plot HIV prevalence; estimates are similar but ofc more wiggly in ftp
+        prev.hiv.by.age <- rbind.ftpstatus.datatables.by.round("prev.hiv.by.age", round, envir_list = env_list)
+        prev.hiv.by.age |> plot.comparison.ftptype.colsex(ylab = "HIV prevalence")
+        p1 <- prev.hiv.by.age |> plot.comparison.ftptype.colftp(ylab = "HIV prevalence")
+        filename <- paste0("fit_hivprev_byftpstatus_round", round, ".pdf")
+        ggsave2(p = p1, file = filename, LALA = out.dir.figures, w = 9, h = 8)
+
+
+        # suppression among infected: again similar, no significant differences except for 'olde'
+        nsinf.by.age <- rbind.ftpstatus.datatables.by.round("nsinf.by.age", round, envir_list = env_list)
+        nsinf.by.age |> plot.comparison.ftptype.colsex(ylab = "Viral suppression among HIV positives")
+        p2 <- nsinf.by.age |> plot.comparison.ftptype.colftp(ylab = "Viral suppression among HIV positives")
+        filename <- paste0("fit_suppofhiv_byftpstatus_round", round, ".pdf")
+        ggsave2(p = p2, file = filename, LALA = out.dir.figures, w = 9, h = 8)
+
+        # viraemia among all
+        nspop.by.age <- rbind.ftpstatus.datatables.by.round("nspop.by.age", round, envir_list = env_list)
+        nspop.by.age |> plot.comparison.ftptype.colsex(ylab = "Prevalence of viraemia")
+        p3 <- nspop.by.age |> plot.comparison.ftptype.colftp(ylab = "Prevalence of viraemia")
+        filename <- paste0("fit_suppofpop_byftpstatus_round", round, ".pdf")
+        ggsave2(p = p3, file = filename, LALA = out.dir.figures, w = 9, h = 8)
     }
-
-    DT.allp <- get(DTname, envir = envir_list[[round]][["allp"]])
-    DT.ftp <- get(DTname, envir = envir_list[[round]][["ftp"]])
-
-    DT.allp[, FTP_LAB := "All participants"]
-    DT.ftp[, FTP_LAB := "First-time participants"]
-
-    rbind(DT.allp, DT.ftp)
 }
-
-round <- 19
-
-# plot HIV prevalence; estimates are similar but ofc more wiggly in ftp
-prev.hiv.by.age <- rbind.ftpstatus.datatables.by.round("prev.hiv.by.age", round, envir_list = env_list)
-prev.hiv.by.age |> plot.comparison.ftptype.colsex(ylab = "HIV prevalence")
-p1 <- prev.hiv.by.age |> plot.comparison.ftptype.colftp(ylab = "HIV prevalence")
-filename <- paste0("fit_hivprev_byftpstatus_round", round, ".pdf")
-ggsave2(p = p1, file = filename, LALA = out.dir.figures, w = 9, h = 8)
-
-
-# suppression among infected: again similar, no significant differences except for 'olde'
-nsinf.by.age <- rbind.ftpstatus.datatables.by.round("nsinf.by.age", round, envir_list = env_list)
-nsinf.by.age |> plot.comparison.ftptype.colsex(ylab = "Viral suppression among HIV positives")
-p1 <- nsinf.by.age |> plot.comparison.ftptype.colftp(ylab = "Viral suppression among HIV positives")
-filename <- paste0("fit_suppofhiv_byftpstatus_round", round, ".pdf")
-ggsave2(p = p1, file = filename, LALA = out.dir.figures, w = 9, h = 8)
-
-# viraemia among all
-nspop.by.age <- rbind.ftpstatus.datatables.by.round("nspop.by.age", round, envir_list = env_list)
-nspop.by.age |> plot.comparison.ftptype.colsex(ylab = "Prevalence of viraemia")
-p1 <- nspop.by.age |> plot.comparison.ftptype.colftp(ylab = "Prevalence of viraemia")
-filename <- paste0("fit_suppofpop_byftpstatus_round", round, ".pdf")
-ggsave2(p = p1, file = filename, LALA = out.dir.figures, w = 9, h = 8)
-
 rm(round)
 
-# RDS files
-# _________
+##################################################
+catn("=== Get posterior draws from rds files ===")
+##################################################
 
 args2 <- copy(args)
 args2$only.firstparticipants <- !args$only.firstparticipants
@@ -151,86 +155,178 @@ dfiles_rds[, c("VL", "FTP", "JOB") := fetch.args.from.suffix(.BY), by = IDX]
 dfiles_rds[, IDX := NULL]
 stopifnot(dfiles_rds[, .N, by = "F"][, all(N == 2)])
 
-# get posteriors for proportions among entire pop, as weighted averages of FTP and non.
-djoint <- dfiles_rds[,
-    {
-        stopifnot(.N == 2)
-        paths <- file.path(D, F)
-        idx.all <- which(FTP == FALSE)
-        idx.ftp <- which(FTP == TRUE)
-        cat(paths[idx.all], "\n")
-        get.weighted.average.p_predict(
-            readRDS(paths[idx.all]),
-            readRDS(paths[idx.ftp]),
-            round = unique(ROUND)
-        )
-    },
-    by = c("MODEL", "ROUND")
-]
+catn("Load all previous results and plot") 
+#_________________________________________ 
 
-# test
-if(0)
-{
-    dfiles_rds[ROUND==19 & MODEL == 'run-gp-prevl', {
-        stopifnot(.N==2)
-        paths <- file.path(D, F)
-        idx.all <- which(FTP==FALSE)
-        idx.ftp <- which(FTP==TRUE)
-        fit1 <<- readRDS(paths[idx.all])
-        fit2 <<- readRDS(paths[idx.ftp])
-    }]
+# get posteriors for proportions among entire pop, as weighted averages of FTP and non.
+filename_rds <- file.path(out.dir.tables, "fullpop_posteriorquantiles_by_agesexround.rds")
+
+if (file.exists(filename_rds) & !overwrite) {
+    djoint <- readRDS(filename_rds)
+} else {
+    djoint <- dfiles_rds[,
+        {
+            stopifnot(.N == 2)
+            paths <- file.path(D, F)
+            idx.all <- which(FTP == FALSE)
+            idx.ftp <- which(FTP == TRUE)
+            cat(paths[idx.all], "\n")
+            get.weighted.average.p_predict(
+                readRDS(paths[idx.all]),
+                readRDS(paths[idx.ftp]),
+                round = unique(ROUND)
+            )
+        },
+        by = c("MODEL", "ROUND")
+    ]
+
+    saveRDS(object = djoint, file = filename_rds)
+}
+
+if (make_plots) {
+    # set dimensions for all plots below
+    .w <- 10
+    .h <- 12
+
+    p_hiv <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-prevl")
+    p_supp <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-hiv")
+    p_vir <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-pop")
+
+    .fnm <- function(lab) {
+        paste("fit_", lab, "byroundcommgender.pdf", sep = "_")
+    }
+
+    ggsave2(p = p_hiv, file = .fnm("hivprev"), LALA = out.dir.figures, .w, .h)
+    ggsave2(p = p_supp, file = .fnm("suppofhiv"), LALA = out.dir.figures, .w, .h)
+    ggsave2(p = p_vir, file = .fnm("suppofpop"), LALA = out.dir.figures, .w, .h)
+
+    rm(.w, .h)
+}
+
+catn("Get quantiles for contributions by age") 
+#_____________________________________________
+
+filename_rds <- file.path(out.dir.tables, "fullpop_allcontributions.rds")
+
+if (file.exists(filename_rds) & !overwrite) {
+    dcontrib <- readRDS(filename_rds)
+} else {
+    dcontrib <- dfiles_rds[,
+        {
+            stopifnot(.N == 2)
+            paths <- file.path(D, F)
+            idx.all <- which(FTP == FALSE)
+            idx.ftp <- which(FTP == TRUE)
+
+            cat(paths[idx.all], "\n")
+            get.weighted.average.p_predict(
+                readRDS(paths[idx.all]),
+                readRDS(paths[idx.ftp]),
+                round = unique(ROUND),
+                expression_prereturn = {
+                    tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
+                    tmp <- tmp[,
+                        {
+                            z <- joint * ELIGIBLE
+                            list(
+                                AGEYRS = AGEYRS,
+                                SEX = SEX,
+                                CONTRIBUTION = z / sum(z)
+                            )
+                        },
+                        by = c(dot.cols, "LOC")
+                    ]
+                    tmp[, quantile2(CONTRIBUTION), by = c("SEX", "LOC", "AGEYRS")]
+                }
+            )
+        },
+        by = c("MODEL", "ROUND")
+    ]
+    saveRDS(object = dcontrib, file = filename_rds)
+}
+
+check_median_contr_approx1(dcontrib)
+
+if (make_plots) {
+
+    .w <- 10; .h <- 12
+
+    p_contrib_prevl <- dcontrib |> plot.agesex.contributions.by.roundcomm(label = "run-gp-prevl")
+    p_contrib_supph <- dcontrib |> plot.agesex.contributions.by.roundcomm(label = "run-gp-supp-hiv")
+    p_contrib_suppp <- dcontrib |> plot.agesex.contributions.by.roundcomm(label = "run-gp-supp-pop")
+
+    .fnm <- function(lab)
+        paste("contrib_agegender", lab, "byroundcomm.pdf", sep = "_")
+
+    ggsave2(p = p_contrib_prevl, file = .fnm("prevl"), LALA = out.dir.figures, .w, .h)
+    ggsave2(p = p_contrib_supph, file = .fnm("suppofhiv"), LALA = out.dir.figures, .w, .h)
+    ggsave2(p = p_contrib_suppp, file = .fnm("suppofpop"), LALA = out.dir.figures, .w, .h)
+
 }
 
 
-filename <- "fit_hivprev_byroundcommgender.pdf"
-p_hiv <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-prevl")
-ggsave2(p = p_hiv, file = filename, LALA = out.dir.figures, w = 10, h = 12)
+catn("Get quantiles for contributions by agegroup") 
+#__________________________________________________
 
-filename <- "fit_suppofhiv_byroundcommgender.pdf"
-p_supp <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-hiv")
-ggsave2(p = p_supp, file = filename, LALA = out.dir.figures, w = 10, h = 12)
+filename_rds <- file.path(out.dir.tables, "fullpop_allcontributions_byagegroup.rds")
+overwrite <- FALSE
 
-filename <- "fit_suppofpop_byroundcommgender.pdf"
-p_vir <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-pop")
-ggsave2(p = p_vir, file = filename, LALA = out.dir.figures, w = 10, h = 12)
+if (file.exists(filename_rds) & !overwrite) {
+    dcontrib_agegroup <- readRDS(filename_rds)
+} else {
+    dcontrib_agegroup <- dfiles_rds[,
+        {
+            stopifnot(.N == 2)
+            paths <- file.path(D, F)
+            idx.all <- which(FTP == FALSE)
+            idx.ftp <- which(FTP == TRUE)
 
-# Now I want to get the raw numbers: what is the contribution to LALALA
+            cat(paths[idx.all], "\n")
+            get.weighted.average.p_predict(
+                readRDS(paths[idx.all]),
+                readRDS(paths[idx.ftp]),
+                round = unique(ROUND),
+                expression_prereturn = {
+                    tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
+                    tmp <- tmp[,
+                        {
+                            z <- joint * ELIGIBLE
+                            list(
+                                z = sum(z)
+                            )
+                        },
+                        by = c(dot.cols, "LOC", "SEX", "AGEGROUP")
+                    ][, list(
+                        AGEGROUP = AGEGROUP,
+                        SEX = SEX,
+                        CONTRIBUTION = z/sum(z)
+                    ),
+                    by=c(dot.cols, "LOC")]
+                    tmp[, quantile2(CONTRIBUTION), by = c("SEX", "LOC", "AGEGROUP")]
+                }
+            )
+        },
+        by = c("MODEL", "ROUND")
+    ]
+    saveRDS(object = dcontrib_agegroup, file = filename_rds)
+}
 
-cols <- c("ROUND", "LOC_LABEL", "SEX_LABEL", "AGE_LABEL")
-dviraemic <- djoint[MODEL == "run-gp-supp-pop", list(
-    ROUND = ROUND,
-    SEX_LABEL = stan_dicts$INTtoSEX[as.character(SEX)],
-    LOC_LABEL = stan_dicts$INTtoLOC[as.character(LOC)],
-    AGE_LABEL = AGE_LABEL,
-    CL, IL, M, UL, CU
-)] |>
-    unique() |>
-    merge(dcens, by = cols)
+check_median_contr_approx1(dcontrib_agegroup)
 
-dplot <- dviraemic[,
-    lapply(.SD, \(x) x * ELIGIBLE),
-    .SDcols = c("CL", "M", "CU"),
-    by = cols
-]
-dplot |> prettify_labels()
+if (make_plots) {
 
-filename <- "bar_enum_viraemic_censel.pdf"
-p1 <- plot.estimated.number.viraemic.among.census.eligible(dplot)
-ggsave2(p = p1, file = filename, LALA = out.dir.figures, w = 10, h = 12)
+    .w <- 10; .h <- 12
 
-# NOTE: contribution should be calculated starting from the draws...
-# this is slightly annoying but it's doable nonetheless if we really want it
-# also, results here are counterintuitive. Am I plotting the right thing???
-dplot2 <- dplot[, .(AGE_LABEL, SEX_LAB, P = M / sum(M)), by = c("ROUND_LAB", "LOC_LAB")]
-filename <- "line_econtr_viraemic_censel.pdf"
-p2 <- plot.estimated.contribution.viraemic.among.census.eligible(dplot2)
-ggsave2(p = p2, file = filename, LALA = out.dir.figures, w = 10, h = 12)
+    p_contrib_prevl <- dcontrib_agegroup |> plot.agesex.contributions.by.roundcomm2(label = "run-gp-prevl")
+    # p_contrib_supph <- dcontrib_agegroup |> plot.agesex.contributions.by.roundcomm2(label = "run-gp-supp-hiv")
+    p_contrib_suppp <- dcontrib_agegroup |> plot.agesex.contributions.by.roundcomm2(label = "run-gp-supp-pop")
 
-dplot2[, sum(P), by = c("ROUND_LAB", "LOC_LAB", "SEX_LAB")] |>
-    ggplot(aes(x = ROUND_LAB, y = V1, fill = SEX_LAB)) +
-    geom_col() +
-    facet_grid(~LOC_LAB) +
-    scale_fill_manual(values = palettes$sex) +
-    scale_y_percentage +
-    theme_default() +
-    my_labs(y = "Sex contribution to population viraemia")
+    .fnm <- function(lab)
+        paste("contrib_agegroupgender", lab, "byroundcomm.pdf", sep = "_")
+
+    ggsave2(p = p_contrib_prevl, file = .fnm("prevl"), LALA = out.dir.figures, .w, .h)
+    # ggsave2(p = p_contrib_supph, file = .fnm("suppofhiv"), LALA = out.dir.figures, .w, .h)
+    ggsave2(p = p_contrib_suppp, file = .fnm("suppofpop"), LALA = out.dir.figures, .w, .h)
+
+    p_contrib_suppp
+}
