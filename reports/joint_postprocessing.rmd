@@ -1,0 +1,119 @@
+---
+ title: "Results on census eligible"
+ author: "Andrea Brizzi"
+ date: "`r Sys.Date()`"
+ output: 
+    html_document:
+        theme: flatly
+        highlight: espresso
+        toc: true
+        toc_depth: 2
+        toc_float: false
+ 
+---
+
+```{r, echo=FALSE, message=FALSE, results='hide'}
+
+library(data.table)
+library(ggplot2)
+library(knitr)
+
+gitdir <- here::here()
+source(file.path(gitdir, "R/paths.R"))
+
+# helpers
+classify_type_by_name <- function(label){
+
+    out <- fcase(
+        label %like% 'hivprev|prevl', 'hivprevalence',
+        label %like% 'suppofhiv', 'suppressionamonghiv',
+        label %like% 'suppofpop', 'viraemiainpop',
+        default = NA_character_
+    )
+
+}
+
+get_plotname <- function(label){
+    gsub(
+        pattern="round1[0-9]|hivprev|prevl|suppofhiv|suppofpop|\\_|\\.png$|\\.pdf$",
+        replacement = "",
+        label)
+}
+
+insert_image <- function(path, dir=out.dir.figures){
+    full.path <- file.path(dir, path)
+    sprintf("\n![](%s)\n", full.path)
+}
+
+```
+
+Hello everybody
+
+```{r load-data}
+opts_vec <- c(
+    "viremic.viral.load", "detectable.viral.load", "out.dir.prefix", 
+    "indir", "round", "jobname", "only.firstparticipants")
+args <- args[names(args) %in% opts_vec]
+
+VL_DETECTABLE <- args$vl.detectable
+VIREMIC_VIRAL_LOAD <- args$viremic.viral.load
+
+# output directories
+out.dir <- args$out.dir.prefix
+out.dir <- file.path(out.dir, paste0("vl_", VIREMIC_VIRAL_LOAD, "_joint"))
+out.dir.figures <- file.path(out.dir, "figures")
+out.dir.tables <- file.path(out.dir, "tables")
+
+paths <- list.files(out.dir.figures, pattern='png$')
+dplots <- data.table(
+    PATH = paths, 
+    PLOT = get_plotname(paths),
+    ROUND = gsub('^.*round(1[0-9]).*$', '\\1', paths) |> as.integer() |> suppressWarnings(), 
+    TYPE = classify_type_by_name(paths)
+)
+```
+
+
+
+```{r, echo=FALSE, hidden=TRUE, message=FALSE, results='asis', fig.height=12, fig.width=16}
+
+dplots[, {
+    
+    # get title of section
+    sprintf("\n## %s {.tabset} \n", unique(PLOT) ) |> cat()
+
+    uniq_type <- unique(TYPE)
+    uniq_round <- unique(ROUND)
+    many_type <- length(uniq_type) > 1
+    many_round <- length(uniq_round) > 1
+
+    if ( many_type & many_round ){
+
+        for (type in uniq_type){
+            sprintf("\n### %s {.tabset} \n", type) |> cat()
+
+            for (round in uniq_round){
+                sprintf("\n#### Round %s \n", round) |> cat()
+
+                idx <- which(PLOT == PLOT & ROUND == round & TYPE == type)
+                insert_image(PATH[idx]) |> cat()
+            }
+        }
+    }else if(many_type){
+        for (type in unique(TYPE)){
+            idx <- which(PLOT == PLOT & TYPE == type)
+            sprintf("\n### %s \n", type) |> cat()
+            insert_image(PATH[idx]) |> cat()
+        }
+    }else if(many_round){
+        for (round in unique(ROUND)){
+            idx <- which(PLOT == PLOT & ROUND == round)
+            sprintf("\n### Round %s \n", round) |> cat()
+            insert_image(PATH[idx]) |> cat()
+        }
+    }else if(.N == 1){
+            insert_image(PATH) |> cat()
+    }
+}, by = 'PLOT'] 
+```
+
