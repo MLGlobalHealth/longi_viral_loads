@@ -61,7 +61,10 @@ list.files.from.output.directory <- function(pattern, args=args, indir=args$indi
     return(files)
 }
 
-catn <- function(x) cat('\n----', x, '----\n')
+catn <- function(..., file="", sep=" ", fill=FALSE, labels = NULL, append = FALSE){
+    # wrapper around cat to highlight the output message
+    cat('\n---', ..., '---\n' , file = file, sep = sep, fill = fill, labels = labels, append = append)
+}
 
 empty2NA <- function(DT)
 {
