@@ -4,11 +4,11 @@
  date: "`r Sys.Date()`"
  output: 
     html_document:
-        theme: flatly
-        highlight: espresso
+        theme: journal
+        highlight: zenburn
         toc: true
         toc_depth: 2
-        toc_float: false
+        toc_float: true
  
 ---
 
@@ -45,9 +45,26 @@ insert_image <- function(path, dir=out.dir.figures){
     sprintf("\n![](%s)\n", full.path)
 }
 
+# dictionary to map plot labels to proper section names 
+type2text <- function(x){
+
+    dict <- c(
+        'barenumviraemiccensel' = "Expected number of viraemic among Census Eligible",
+        'lineecontrviraemiccensel' = "Expected prevalence of viraemia among Census Eligible",
+        'contribagegenderbyroundcomm' = "Gender-age contributions by round and community",
+        'contribagegroupgenderbyroundcomm' = "Gender-agegroup contributions by round and community",
+        'fitbyftpstatus' = 'Posterior fits by firt-time participation status',
+        'fitbyroundcommgender' = 'Aggregated posterior fits by round, community type and gender',
+        'hivprevalence' = 'HIV prevalence',
+        'suppressionamonghiv' = 'Suppression in HIV',
+        'viraemiainpop' = 'Prevalence of viraemia',
+        NULL
+    )
+    dict[x]
+}
 ```
 
-Hello everybody
+First let us load the figures obtained in the analysis: 
 
 ```{r load-data}
 opts_vec <- c(
@@ -73,47 +90,79 @@ dplots <- data.table(
 )
 ```
 
+The below shows the postprocessing plots, for analyses on three different measures of interest:
+
+- prevalence of HIV.
+- viral suppression among HIV infected individuals.
+- prevalence of viraemia.
+
+We have data for participants to the Rakai Community Cohort Study, however we wanted to generalise our findings to the entire population of those who were census-eligible (aged 15-50, no intention to migrate).
+To model non-participants, we assumed that **first-time-participants are an homogeneous subset of non participants**.
+As such we: 
+
+1. Fitted the three models twice: on all RCCS participants, and then exclusively including first-time-participants (FTP)
+2. Aggregated the two model fits using participation rates as weights.
+
+Note that FTP is included in both analyses, as FTP are a subset of the RCCS participants.
 
 
-```{r, echo=FALSE, hidden=TRUE, message=FALSE, results='asis', fig.height=12, fig.width=16}
+```{r plot-order, echo=FALSE, hidden=TRUE, include=FALSE}
+ordered_labels <- c( 
+    'fitbyftpstatus',
+    'fitbyroundcommgender',
+    'contribagegenderbyroundcomm' ,
+    'contribagegroupgenderbyroundcomm',
+    'barenumviraemiccensel',
+    'lineecontrviraemiccensel'
+)
+dplots[, PLOT := ordered(PLOT, levels=ordered_labels)]
+setkey(dplots, PLOT, ROUND)
+```
 
-dplots[, {
-    
-    # get title of section
-    sprintf("\n## %s {.tabset} \n", unique(PLOT) ) |> cat()
+```{r show-plots, echo=FALSE, hidden=TRUE, message=FALSE, results='asis', fig.height=12, fig.width=16}
+{
+    dplots[, {
+        
+        # get title of section
+        ascPLOT = unique(as.character(PLOT))
+        sprintf("\n## %s {.tabset } \n", unique(type2text(ascPLOT)) ) |> cat()
 
-    uniq_type <- unique(TYPE)
-    uniq_round <- unique(ROUND)
-    many_type <- length(uniq_type) > 1
-    many_round <- length(uniq_round) > 1
+        uniq_type <- unique(TYPE)
+        uniq_round <- unique(ROUND)
+        many_type <- length(uniq_type) > 1
+        many_round <- length(uniq_round) > 1
 
-    if ( many_type & many_round ){
+        if ( many_type & many_round ){
 
-        for (type in uniq_type){
-            sprintf("\n### %s {.tabset} \n", type) |> cat()
+            for (type in uniq_type){
+                sprintf("\n### %s {.tabset} \n", type2text(type)) |> cat()
 
-            for (round in uniq_round){
-                sprintf("\n#### Round %s \n", round) |> cat()
+                for (round in uniq_round){
+                    sprintf("\n#### Round %s \n", round) |> cat()
 
-                idx <- which(PLOT == PLOT & ROUND == round & TYPE == type)
+                    idx <- which(ascPLOT == ascPLOT & ROUND == round & TYPE == type)
+                    insert_image(PATH[idx]) |> cat()
+                }
+            }
+        }else if(many_type){
+            for (type in unique(TYPE)){
+                idx <- which(ascPLOT == ascPLOT & TYPE == type)
+                sprintf("\n### %s \n", type2text(type)) |> cat()
                 insert_image(PATH[idx]) |> cat()
             }
+        }else if(many_round){
+            for (round in unique(ROUND)){
+                idx <- which(ascPLOT == ascPLOT & ROUND == round)
+                sprintf("\n### Round %s \n", round) |> cat()
+                insert_image(PATH[idx]) |> cat()
+            }
+        }else if(.N == 1){
+                insert_image(PATH) |> cat()
         }
-    }else if(many_type){
-        for (type in unique(TYPE)){
-            idx <- which(PLOT == PLOT & TYPE == type)
-            sprintf("\n### %s \n", type) |> cat()
-            insert_image(PATH[idx]) |> cat()
-        }
-    }else if(many_round){
-        for (round in unique(ROUND)){
-            idx <- which(PLOT == PLOT & ROUND == round)
-            sprintf("\n### Round %s \n", round) |> cat()
-            insert_image(PATH[idx]) |> cat()
-        }
-    }else if(.N == 1){
-            insert_image(PATH) |> cat()
-    }
-}, by = 'PLOT'] 
+    }, by = PLOT] 
+    
+    # avoids unwanted "Empty data.table() message"
+    cat()
+}
 ```
 
