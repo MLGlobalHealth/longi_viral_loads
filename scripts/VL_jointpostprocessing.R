@@ -51,8 +51,6 @@ if (make_paper_numbers) {
 VL_DETECTABLE <- args$vl.detectable
 VIREMIC_VIRAL_LOAD <- args$viremic.viral.load
 
-debug <- 0
-
 # output directories
 out.dir <- args$out.dir.prefix
 out.dir <- file.path(out.dir, paste0("vl_", VIREMIC_VIRAL_LOAD, "_joint"))
@@ -193,13 +191,13 @@ if (make_plots) {
     p_vir <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-pop")
 
     .fnm <- function(lab) {
-        paste("fit_", lab, "byroundcommgender.pdf", sep = "_")
+        paste("fit", lab, "byroundcommgender.pdf", sep = "_")
     }
 
     ggsave2(p = p_hiv, file = .fnm("hivprev"), LALA = out.dir.figures, .w, .h)
     ggsave2(p = p_supp, file = .fnm("suppofhiv"), LALA = out.dir.figures, .w, .h)
     ggsave2(p = p_vir, file = .fnm("suppofpop"), LALA = out.dir.figures, .w, .h)
-
+    
     rm(.w, .h)
 }
 
