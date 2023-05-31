@@ -164,7 +164,8 @@ plot.comparison.ftptype.colsex <- function(DT, ylab) {
 
 get.weighted.average.p_predict <- function(fit1, fit2, round, expression_prereturn={}) {
     # round <- 19
-    dot.cols <- c(".chain", ".iteration", ".draw") demo.cols <- c("SEX", "LOC", "AGEYRS")
+    dot.cols <- c(".chain", ".iteration", ".draw") 
+    demo.cols <- c("SEX", "LOC", "AGEYRS")
 
     # extract age-specific draws from both ftp and allparts
     draws_parts <- posterior::as_draws_df(fit1) |>
