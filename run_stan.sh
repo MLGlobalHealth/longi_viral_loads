@@ -8,7 +8,7 @@ JOBNAME="vl_$VL"
 
 if [[ ! -z "$FIRSTPART" ]]; then
     JOBNAME="$JOBNAME"_firstpart
-    FIRSTPART="--firstparticipant"
+    FIRSTPART="--firstparticipant TRUE"
     echo "Running analyses on first-time participants."
 fi
 
@@ -36,7 +36,7 @@ cd \$JOB_TEMP
 PWD=\$(pwd)
 
 INDIR=$INDIR
-OUTDIR=$OUTDIR/$JOBNAME
+OUTDIR=$OUTDIR
 JOBNAME=$JOBNAME
 ROUND=\$PBS_ARRAY_INDEX
 
@@ -47,7 +47,7 @@ mkdir -p \$CWD
 
 Rscript \$INDIR/scripts/VL_run_stan.R --viremic-viral-load $VL --outdir \$CWD --$MODEL TRUE --round \$ROUND $FIRSTPART
 
-cp -R --no-preserve=mode,ownership \$PWD/\$JOBNAME/. \$OUTDIR
+cp -R --no-preserve=mode,ownership \$PWD/\$JOBNAME/. \$OUTDIR/\$JOBNAME
 
 # cd \$OUTDIR
 # qsub bash-$JOBNAME-$MODEL-postprocessing.pbs
@@ -57,6 +57,8 @@ EOF
 done
 
 cd $OUTDIR
+qsub bash-$JOBNAME-run-gp-prevl.pbs
 qsub bash-$JOBNAME-run-gp-supp-hiv.pbs
 qsub bash-$JOBNAME-run-gp-supp-pop.pbs
-qsub bash-$JOBNAME-run-icar-mean-vl.pbs
+# qsub bash-$JOBNAME-run-icar-mean-vl.pbs
+
