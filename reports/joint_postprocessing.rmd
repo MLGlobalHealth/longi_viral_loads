@@ -88,6 +88,14 @@ dplots <- data.table(
     ROUND = gsub('^.*round(1[0-9]).*$', '\\1', paths) |> as.integer() |> suppressWarnings(), 
     TYPE = classify_type_by_name(paths)
 )
+
+paths <- list.files( file.path(args$out.dir.prefix, 'figures'), pattern='png$')
+dplots_data <- data.table(
+    PATH = paths,
+    PLOT = get_plotname(paths),
+    ROUND = NA_character_,
+    TYPE = classify_type_by_name(paths)
+)
 ```
 
 The below shows the postprocessing plots, for analyses on three different measures of interest:
@@ -119,7 +127,30 @@ dplots[, PLOT := ordered(PLOT, levels=ordered_labels)]
 setkey(dplots, PLOT, ROUND)
 ```
 
-```{r show-plots, echo=FALSE, hidden=TRUE, message=FALSE, results='asis', fig.height=12, fig.width=16}
+
+```{r pyramid-plots, echo=FALSE, hidden=TRUE, message=FALSE, results='asis', fig.height=12, fig.width=14}
+
+sprintf("\n## %s {.tabset} \n", "Raw data: population pyramids") |> cat()
+sprintf("\nLet us start by plotting the raw data in form of population pyramids.\n") |> cat()
+
+# set order 
+dplots_data[PLOT %like% 'pyramid', 
+    ORDER := fcase(
+        PLOT %like% 'NeligibleN', 1,
+        PLOT %like% 'NparticipantsN', 2,
+        PLOT %like% 'NhivpN', 3
+) ]
+setkey(dplots_data, ORDER)
+
+dplots_data[PLOT %like% 'pyramid', {
+    toprint <- gsub("pyramidN(.*)N(.*)$","\\1 : \\2",PLOT)
+    sprintf("\n### %s \n", toprint) |> cat()
+    insert_image(PATH[1], dir=file.path(args$out.dir.prefix, 'figures')) |> cat()
+}, by='PLOT']
+
+```
+
+```{r show-plots, echo=FALSE, hidden=TRUE, message=FALSE, results='asis', fig.height=12, fig.width=14}
 {
     dplots[, {
         
