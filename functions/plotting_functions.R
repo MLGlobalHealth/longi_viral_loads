@@ -473,3 +473,24 @@ plot.smoothed.participation.rates <- function(DT)
         theme_default() +
         my_labs()
 }
+
+plot.contribution.to.census.eligible.population <- function(DT=ncen, var=ELIGIBLE)
+{
+    dplot <- eval(substitute(
+        DT[ ! ROUND %in%  c('15S','15') , list(
+            SEX = SEX, 
+            AGEYRS = AGEYRS, 
+            Y = var/sum(var)
+        ) , by=c('ROUND', 'TYPE')]
+    ))
+    prettify_labels(dplot)
+
+    ggplot(dplot, aes(x=AGEYRS, y=Y, color=SEX_LAB, fill=SEX_LAB)) + 
+        geom_line() +
+        facet_grid( LOC_LAB ~ ROUND_LAB) + 
+        scale_y_percentage + 
+        scale_color_manual(values = palettes$sex) +  
+        theme_default() + 
+        my_labs(y = "Contribution to population") +
+        NULL
+}

@@ -134,6 +134,10 @@ ncen <- re[, {
 }, by=c('ROUND', 'TYPE', 'SEX')]
 ncen <- merge(ncen, re, by=c('ROUND', 'TYPE', 'SEX', 'AGEYRS', 'ELIGIBLE'))
 
+#########################
+catn("Make Data figures")
+#########################
+
 p_ncen <- plot.n.census.eligible.smooth(ncen)
 filename <- "Smooth_census_eligible_count_all_round.pdf"
 ggsave2(p_ncen, file=filename, LALA=outdir.figures, w=10, h=10)
@@ -142,6 +146,13 @@ ggsave2(p_ncen, file=filename, LALA=outdir.figures, w=10, h=10)
 ncen[, ELIGIBLE_SMOOTH := ELIGIBLE_SMOOTH.50]
 ncen <- select(ncen, -c('ELIGIBLE_SMOOTH.25', 'ELIGIBLE_SMOOTH.50', 'ELIGIBLE_SMOOTH.75'))
 
+
+# plot contributions to census eligibles.
+filenames <- paste0("line_roundcontribution_ncensuseligible", c("", "smooth"),"_bysexage.pdf")
+p1 <- plot.contribution.to.census.eligible.population(DT=ncen, var=ELIGIBLE)
+p2 <- plot.contribution.to.census.eligible.population(DT=ncen, var=ELIGIBLE_SMOOTH)
+ggsave2(p1, file=filenames[1], LALA=outdir.figures, w=11, h=7)
+ggsave2(p2, file=filenames[2], LALA=outdir.figures, w=11, h=7)
 
 
 ##############
@@ -152,7 +163,7 @@ filename <- file.path(gitdir.data, 'census_eligible_individuals_230514.csv')
 if(! file.exists(filename)  )
 {
     cat("Saving file:", filename, '\n')
-    fwrite(ncen, filename , row.names = F)
+    fwrite(ncen, filename , row.names = FALSE)
 }else{
     cat("File:", filename, "already exists...\n")
 }

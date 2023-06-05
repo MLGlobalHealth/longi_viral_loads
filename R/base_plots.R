@@ -304,14 +304,16 @@ prettify_fc <- function(DT)
 prettify_loc <- function(DT){
 
     nms <- names(DT)
-    if('LOC_LAB' %in% nms | ! ( "LOC_LABEL" %in% nms | "LOC" %in% nms ))
+    if('LOC_LAB' %in% nms | ! ( "LOC_LABEL" %in% nms | "LOC" %in% nms | "TYPE" %in% nms ))
         return(DT)
 
     if( "LOC_LABEL" %in% nms){
         DT[, LOC_LAB := loc_dictionary[as.character(LOC_LABEL)]]
     }else if('LOC' %in% nms){
         DT[, LOC_LAB := loc_dictionary[as.character(LOC)]]
-    }
+    }else if('TYPE' %in% nms){
+        DT[, LOC_LAB := loc_dictionary[as.character(TYPE)]]
+    } 
 
     DT
 }
