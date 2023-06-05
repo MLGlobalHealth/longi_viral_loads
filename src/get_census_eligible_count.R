@@ -154,6 +154,12 @@ p2 <- plot.contribution.to.census.eligible.population(DT=ncen, var=ELIGIBLE_SMOO
 ggsave2(p1, file=filenames[1], LALA=outdir.figures, w=11, h=7)
 ggsave2(p2, file=filenames[2], LALA=outdir.figures, w=11, h=7)
 
+# two in one:
+filenames <- paste0("line_roundcontribution_ncensuseligible", c("", "smooth"),"2_bysexage.pdf")
+p1 <- plot.contribution.to.census.eligible.population(DT=ncen, var=ELIGIBLE, merged=TRUE)
+p2 <- plot.contribution.to.census.eligible.population(DT=ncen, var=ELIGIBLE_SMOOTH, merged=TRUE)
+ggsave2(p1, file=filenames[1], LALA=outdir.figures, w=9, h=5)
+ggsave2(p2, file=filenames[2], LALA=outdir.figures, w=9, h=5)
 
 ##############
 catn("saving")

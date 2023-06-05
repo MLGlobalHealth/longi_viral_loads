@@ -169,6 +169,8 @@ my_labs_dictionary <- c(
     FTP_LAB = "Participants type",
     HIV = "HIV status",
     HIV_LAB = "HIV status",
+    LOC = "Community type",
+    LOC_LAB = "Community type",
     LOESS_SPAN = "Loess span",
     PARTRATE = "Participation rate",
     PART_RATE = "Participation rate",
