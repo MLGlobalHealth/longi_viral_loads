@@ -331,6 +331,34 @@ prettify_labels <- function(DT)
         prettify_loc()
 }
 
+prettify_cell <- function(..., parenthesis="(", precision=2, newline=FALSE, percent=FALSE){
+
+    # writes M and CI expression in nice format ready to be put in a table.
+
+    n_vars <- enquos(...) |> length()
+
+    percent_sub <- fifelse(percent, yes='%', no='') 
+    line_sub <- fifelse(newline, yes='\n', no=' ')
+    parenthesis_closed <- fcase(
+        parenthesis == "(", ")",
+        parenthesis == "[", "]",
+        parenthesis == "{", "}"
+    )
+
+    fmt_skeleton <- fcase(
+        n_vars == 1, "%._prec_fPERCENT",
+        n_vars == 2, "(%._prec_f - %._prec_f)",
+        n_vars == 3, "%._prec_fPERCENT_line_(%._prec_f - %._prec_f)"
+    )
+    fmt_skeleton <- gsub('_prec_',precision,fmt_skeleton)
+    fmt_skeleton <- gsub('PERCENT', percent_sub, fmt_skeleton)
+    fmt_skeleton <- gsub("\\(", parenthesis, fmt_skeleton)
+    fmt_skeleton <- gsub("\\)", parenthesis_closed, fmt_skeleton)
+    fmt_skeleton <- gsub("_line_", line_sub, fmt_skeleton)
+
+    sprintf(fmt_skeleton,...)
+}
+
 labs_from_dictionaries <- function(dict)
 {
     f <- function(keys)
