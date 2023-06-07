@@ -1,3 +1,5 @@
+#!/bin/Rscript
+
 # AIMS:
 # - adapt older code from Oli to multi-round, longitudinal settings
 # TODO: discuss: we are removing individuals with missing VLs: they are very little
@@ -97,11 +99,16 @@ if (0) { # Info for introduction to results
     #
 }
 
-if (args$run.comm.analysis) 
-{
+# Make some plots? 
+# ________________
 
+
+
+# community analysis
+# __________________
+
+if (args$run.comm.analysis) {
     source(file.path(gitdir.scripts, 'community_analysis.R'))
-
 }
 
 # Estimate HIV prevalence

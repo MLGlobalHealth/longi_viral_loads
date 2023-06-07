@@ -1,3 +1,5 @@
+#!/bin/Rscript
+
 ################
 # DEPENDENCIES #
 ################
@@ -45,7 +47,7 @@ source(file.path(gitdir.functions, "postprocessing_helpers.R"))
 source(file.path(gitdir.functions, "phsc_vl_helpers.R"))
 naturemed_reqs()
 
-overwrite <- FALSE
+overwrite <- !interactive()
 make_plots <- TRUE
 make_tables <- TRUE
 

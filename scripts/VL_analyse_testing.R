@@ -1,4 +1,4 @@
-
+#!/bin/Rscript
 
 ################
 # DEPENDENCIES #
