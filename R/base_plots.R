@@ -337,7 +337,7 @@ prettify_cell <- function(..., parenthesis="(", precision=2, newline=FALSE, perc
 
     n_vars <- enquos(...) |> length()
 
-    percent_sub <- fifelse(percent, yes='%', no='') 
+    percent_sub <- fifelse(percent, yes='%%', no='') 
     line_sub <- fifelse(newline, yes='\n', no=' ')
     parenthesis_closed <- fcase(
         parenthesis == "(", ")",
@@ -409,4 +409,3 @@ dfacets <- list(
     sex = setNames(c('Male', 'Female'), c('M', 'F')),
     comm = setNames(c('Fishing', 'Inland'), c('fishing', 'inland') )
 )
-

@@ -21,6 +21,11 @@
 # NOTE: contributions by age/group do not make sense in the "among hiv", if we merge by dcens.
 # instead, we should be merging by the N of hiv+
 
+# TODO: 
+# - 1. swap ELIGIBLE with ELIGIBLE_SMOOTH
+# - 2. make table with improvements over time in tot # usuppressed by loc and gender
+# - 3. I am not saving the sex comparison in the  plot.comparison.ftptype.colsex section: do it
+
 gitdir <- here()
 source(file.path(gitdir, "R/paths.R"))
 
@@ -42,6 +47,7 @@ naturemed_reqs()
 
 overwrite <- FALSE
 make_plots <- TRUE
+make_tables <- TRUE
 
 make_paper_numbers <- TRUE
 if (make_paper_numbers) {
@@ -78,9 +84,9 @@ dpartrates <- readRDS(path.participation.rates) |>
 
 # get model fits for both scenarios: all participants and first participants
 
-#######################################################
-catn("=== Compare model results among FTP and ALL ===")
-#######################################################
+####################################################
+catn("=== Compare model fits among FTP and ALL ===")
+####################################################
 
 args2 <- copy(args)
 args2$only.firstparticipants <- !args$only.firstparticipants
@@ -183,8 +189,7 @@ if (file.exists(filename_rds) & !overwrite) {
 
 if (make_plots) {
     # set dimensions for all plots below
-    .w <- 10
-    .h <- 12
+    .w <- 10; .h <- 12
 
     p_hiv <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-prevl")
     p_supp <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-hiv")
@@ -200,6 +205,111 @@ if (make_plots) {
     
     rm(.w, .h)
 }
+
+
+catn("Get quantiles for population prevalences by agegroup") 
+#___________________________________________________________
+
+filename_rds <- file.path(out.dir.figures, "posterior_quantiles_agegroups.rds")
+
+if( file.exists(filename_rds) & !overwrite ){
+    djoint_agegroup <- readRDS(filename_rds)
+} else {
+    djoint_agegroup <- dfiles_rds[ MODEL != 'run-gp-supp-hiv' ,
+        {
+            stopifnot(.N == 2)
+            paths <- file.path(D, F)
+            idx.all <- which(FTP == FALSE)
+            idx.ftp <- which(FTP == TRUE)
+            cat(paths[idx.all], "\n")
+            get.weighted.average.p_predict(
+                readRDS(paths[idx.all]),
+                readRDS(paths[idx.ftp]),
+                round = unique(ROUND),
+                expression_prereturn = {
+                    tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
+                    tmp <- tmp[, 
+                            list( joint =  sum(joint * ELIGIBLE_SMOOTH) ), 
+                        by = c(dot.cols, "LOC", "SEX", "AGEGROUP")
+                    ] 
+                    tmp[, quantile2(joint), by = c("SEX", "LOC", "AGEGROUP")]
+                }
+            )
+        },
+        by = c("MODEL", "ROUND")
+    ]
+    saveRDS(object= djoint_agegroup, filename_rds)
+}
+
+catn("Get quantiles for population prevalences aggregated over age") 
+#___________________________________________________________
+
+filename_rds <- file.path(out.dir.figures, "posterior_quantiles_ageaggregate.rds")
+
+if( file.exists(filename_rds) & !overwrite ){
+    joint_ageagrr_list <- readRDS(filename_rds)
+} else {
+    djoint_ageaggr <- dfiles_rds[ MODEL != 'run-gp-supp-hiv' ,
+        {
+            stopifnot(.N == 2)
+            paths <- file.path(D, F)
+            idx.all <- which(FTP == FALSE)
+            idx.ftp <- which(FTP == TRUE)
+            cat(paths[idx.all], "\n")
+            get.weighted.average.p_predict(
+                readRDS(paths[idx.all]),
+                readRDS(paths[idx.ftp]),
+                round = unique(ROUND),
+                expression_prereturn = {
+                    tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
+                    tmp <- tmp[, 
+                            list( joint =  sum(joint * ELIGIBLE_SMOOTH) ), 
+                        by = c(dot.cols, "LOC", "SEX")
+                    ] 
+                }
+            )
+        },
+        by = c("MODEL", "ROUND")
+    ]
+    .f <- function(old, new)
+        (old - new)/old
+
+    tmp <- dcast(djoint_ageaggr, 
+        MODEL + .chain + .iteration + .draw + LOC + SEX ~ paste0("R",ROUND), 
+        value.var='joint' )[, 
+        list(
+        MODEL=MODEL, LOC=LOC, SEX=SEX,
+        redR17=.f(R16,R17),
+        redR18=.f(R16,R18),
+        redR19=.f(R16,R19),
+        redR1718=.f(R17,R18),
+        redR1819=.f(R18,R19)
+    )] |> 
+        melt( 
+            id.vars = c('MODEL','LOC', 'SEX'),
+            measure.vars = c("redR17" , "redR18" ,"redR19", "redR1718", "redR1819")
+        )
+
+    joint_ageagrr_list <- list(
+        percent_reduction = tmp[, quantile2(value), by=c("MODEL","SEX", 'LOC', 'variable')],
+        round_totals = djoint_ageaggr[, quantile2(joint), by=c("MODEL","SEX", "LOC", "ROUND") ]
+    )
+    saveRDS(object= joint_ageagrr_list, filename_rds)
+    rm(djoint_ageaggr)
+}
+
+if(make_tables){
+
+    tab2 <- tablify.posterior.Nunsuppressed(joint_ageagrr_list)
+
+    filename_tex <- file.path(out.dir.tables, 'table_aggregatedNunsuppressed.tex')
+    write.to.tex(tab2, file=filename_tex)
+    filename <- 'table_aggregatedNunsuppressed.pdf'
+    p <- gridExtra::tableGrob(tab2) |> gridExtra::grid.arrange()
+    ggsave2(p=p, file=filename, LALA=out.dir.tables, w=8, h=5.5)
+    
+}
+
 
 catn("Get quantiles for contributions by age") 
 #_____________________________________________
@@ -225,7 +335,7 @@ if (file.exists(filename_rds) & !overwrite) {
                     tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
                     tmp <- tmp[,
                         {
-                            z <- joint * ELIGIBLE
+                            z <- joint * ELIGIBLE_SMOOTH 
                             list(
                                 AGEYRS = AGEYRS,
                                 SEX = SEX,
@@ -288,10 +398,8 @@ if (file.exists(filename_rds) & !overwrite) {
                     tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
                     tmp <- tmp[,
                         {
-                            z <- joint * ELIGIBLE
-                            list(
-                                z = sum(z)
-                            )
+                            z <- joint * ELIGIBLE_SMOOTH
+                            list( z = sum(z))
                         },
                         by = c(dot.cols, "LOC", "SEX", "AGEGROUP")
                     ][, list(

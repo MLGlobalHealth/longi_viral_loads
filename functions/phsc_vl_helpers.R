@@ -32,7 +32,7 @@ get.census.eligible <- function(rounds = args$round, path=path.census.eligible) 
     # Recall that COUNT and TOTAL_COUNT do not agree with HIV_N and N in our vla.
     # why? I removed (very few) HIV+ without VLs (79)
 
-    cols <- c("ROUND", "COMM", "TYPE", "AGEYRS", "SEX", "ELIGIBLE")
+    cols <- c("ROUND", "COMM", "TYPE", "AGEYRS", "SEX", "ELIGIBLE", "ELIGIBLE_SMOOTH")
 
     dcens <- fread(path, select=cols) |>
         subset(ROUND %in% rounds) |>
