@@ -474,7 +474,7 @@ plot.smoothed.participation.rates <- function(DT)
         my_labs()
 }
 
-plot.contribution.to.census.eligible.population <- function(DT=ncen, var=ELIGIBLE)
+plot.contribution.to.census.eligible.population <- function(DT=ncen, var=ELIGIBLE, merged=FALSE)
 {
     dplot <- eval(substitute(
         DT[ ! ROUND %in%  c('15S','15') , list(
@@ -485,12 +485,19 @@ plot.contribution.to.census.eligible.population <- function(DT=ncen, var=ELIGIBL
     ))
     prettify_labels(dplot)
 
-    ggplot(dplot, aes(x=AGEYRS, y=Y, color=SEX_LAB, fill=SEX_LAB)) + 
+    facet_formula <- fifelse(merged==TRUE, 
+        yes = ". ~ ROUND_LAB", 
+        no = "LOC_LAB ~ ROUND_LAB", 
+    )
+
+    ggplot(dplot, aes(x=AGEYRS, y=Y, color=SEX_LAB, fill=SEX_LAB, linetype = LOC_LAB)) + 
         geom_line() +
-        facet_grid( LOC_LAB ~ ROUND_LAB) + 
+        facet_grid( facet_formula , labeller=labeller(ROUND_LAB = round_labs)) + 
         scale_y_percentage + 
         scale_color_manual(values = palettes$sex) +  
         theme_default() + 
-        my_labs(y = "Contribution to population") +
+        my_labs(
+            y = "Contribution to census eligible population"
+        ) +
         NULL
 }

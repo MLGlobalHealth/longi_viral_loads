@@ -120,8 +120,8 @@ drounds <- data.table(
 )
 drounds[, LABS := paste0(LABS, START, " to ", END)]
 
-round_labs <- drounds$LABS
-names(round_labs) <- drounds$ROUND
+round_labs <- rep(drounds$LABS, 2)
+names(round_labs) <- with(drounds, c(ROUND, paste('Round', ROUND)) )
 
 
 dall_dictionaries <- list(

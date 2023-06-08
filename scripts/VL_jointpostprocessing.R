@@ -1,5 +1,10 @@
 #!/bin/Rscript
 
+########################
+cat("\nStart of: VL_jointpostprocessing.R\n")
+########################
+
+
 ################
 # DEPENDENCIES #
 ################
@@ -24,11 +29,11 @@
 # instead, we should be merging by the N of hiv+
 
 # TODO: 
-# - 1. swap ELIGIBLE with ELIGIBLE_SMOOTH
-# - 2. make table with improvements over time in tot # usuppressed by loc and gender
-# - 3. I am not saving the sex comparison in the  plot.comparison.ftptype.colsex section: do it
+# - 1. [X] swap ELIGIBLE with ELIGIBLE_SMOOTH
+# - 2. [X] make table with improvements over time in tot # usuppressed by loc and gender
+# - 3. [] I am not saving the sex comparison in the  plot.comparison.ftptype.colsex section: do it
 
-gitdir <- here()
+gitdir <- here::here()
 source(file.path(gitdir, "R/paths.R"))
 
 file.exists(
@@ -44,6 +49,7 @@ args <- args[names(args) %in% opts_vec]
 
 source(file.path(gitdir.functions, "plotting_main_figures.R"))
 source(file.path(gitdir.functions, "postprocessing_helpers.R"))
+source(file.path(gitdir.functions, "postprocessing_tables.R"))
 source(file.path(gitdir.functions, "phsc_vl_helpers.R"))
 naturemed_reqs()
 
@@ -79,7 +85,7 @@ dcens <- get.census.eligible() |>
     setnames(c("AGE_LABEL", "SEX_LABEL", "LOC_LABEL"), c("AGEYRS", "SEX", "LOC"))
 dcens[, AGEGROUP :=  split.agegroup(AGEYRS)]
 
-# load number of census eligible individuals (.25 too rough)
+# load number of census eligible individuals (.50 too rough)
 dpartrates <- readRDS(path.participation.rates) |>
     subset(select = c("ROUND", "FC", "SEX", "AGEYRS", "PARTRATE_SMOOTH.25")) |>
     setnames(c("FC", "PARTRATE_SMOOTH.25"), c("LOC", "PARTRATE"))
@@ -137,8 +143,8 @@ if (make_plots) {
         filename <- paste0("fit_suppofpop_byftpstatus_round", round, ".pdf")
         ggsave2(p = p3, file = filename, LALA = out.dir.figures, w = 9, h = 8)
     }
+    rm(round)
 }
-rm(round)
 
 ##################################################
 catn("=== Get posterior draws from rds files ===")
@@ -185,7 +191,7 @@ if (file.exists(filename_rds) & !overwrite) {
         },
         by = c("MODEL", "ROUND")
     ]
-
+    cat("\nSaving ",filename_rds,"\n")
     saveRDS(object = djoint, file = filename_rds)
 }
 
@@ -361,9 +367,9 @@ if (make_plots) {
 
     .w <- 10; .h <- 12
 
-    p_contrib_prevl <- dcontrib |> plot.agesex.contributions.by.roundcomm(label = "run-gp-prevl")
-    p_contrib_supph <- dcontrib |> plot.agesex.contributions.by.roundcomm(label = "run-gp-supp-hiv")
-    p_contrib_suppp <- dcontrib |> plot.agesex.contributions.by.roundcomm(label = "run-gp-supp-pop")
+    p_contrib_prevl <- plot.agesex.contributions.by.roundcomm(dcontrib, label = "run-gp-prevl", include_baseline =TRUE)
+    p_contrib_supph <- plot.agesex.contributions.by.roundcomm(dcontrib, label = "run-gp-supp-hiv", include_baseline = TRUE)
+    p_contrib_suppp <- plot.agesex.contributions.by.roundcomm(dcontrib, label = "run-gp-supp-pop", include_baseline = TRUE)
 
     .fnm <- function(lab)
         paste("contrib_agegender", lab, "byroundcomm.pdf", sep = "_")
@@ -435,6 +441,8 @@ if (make_plots) {
     ggsave2(p = p_contrib_prevl, file = .fnm("prevl"), LALA = out.dir.figures, .w, .h)
     # ggsave2(p = p_contrib_supph, file = .fnm("suppofhiv"), LALA = out.dir.figures, .w, .h)
     ggsave2(p = p_contrib_suppp, file = .fnm("suppofpop"), LALA = out.dir.figures, .w, .h)
-
-    p_contrib_suppp
 }
+
+#####################
+catn("End of script")
+#####################

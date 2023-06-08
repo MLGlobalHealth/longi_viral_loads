@@ -17,14 +17,14 @@ delete.repeated.table.values <- function(DT, cols){
 
 table.na.to.empty <- function(DT, cols){
 
-    .f <- function(x){
+    .na2empty <- function(x){
         if( !is.character(x))
             return(x)
         x[is.na(x)] <- ""
         return(x)
     }
     table <- copy(DT)
-    table[, (cols) := lapply(.SD, .repeated.to.empty), .SDcols = cols ]
+    table[, (cols) := lapply(.SD, .na2empty), .SDcols = cols ]
     return(table)
 }
 

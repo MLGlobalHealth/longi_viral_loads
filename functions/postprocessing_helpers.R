@@ -197,10 +197,10 @@ get.weighted.average.p_predict <- function(fit1, fit2, round, expression_preretu
     draws_all <- merge(draws_all, dpartrates[ROUND == round], by = c("LOC", "SEX", "AGEYRS"))
     draws_all[, joint := parts * PARTRATE + ftp * (1 - PARTRATE)]
 
-    # evaluate postprocessing expression: 'enriching' is necessary before evaluation
+    # 
     expression_prereturn <- enexpr(expression_prereturn)
 
-    if(is.null(expression_prereturn))
+    if(is.null(eval(expression_prereturn)))
         return(draws_all[, quantile2(joint), by = c("SEX", "LOC", "AGEYRS")])
 
     eval(expression_prereturn)
@@ -282,7 +282,7 @@ plot.fit.weighted.by.ftpstatus <- function(DT, label) {
         .h(lab = "run-gp-supp-hiv", intercept = .95^2) +
         geom_ribbon(alpha = .2, color = NA) +
         geom_line() +
-        facet_grid(ROUND_LAB ~ LOC_LAB) +
+        facet_grid(ROUND_LAB ~ LOC_LAB, labeller=labeller(ROUND_LAB=round_labs)) +
         scale_color_manual(values = palettes$sex) +
         scale_fill_manual(values = palettes$sex) +
         scale_y_percentage +
@@ -309,8 +309,6 @@ check_median_contr_approx1 <- function(DT){
     if(! cond)
         warning("Unexpected value for aggregated contributions")
 }
-
-
 
 plot.estimated.contribution.viraemic.among.census.eligible <- function(DT) 
 {
@@ -394,40 +392,72 @@ find_summary_output <- function(samples, output, vars, transform = NULL, standar
     return(draws)
 }
 
-plot.agesex.contributions.by.roundcomm <- function(DT, label) {
+plot.agesex.contributions.by.roundcomm <- function(DT, label, include_baseline=FALSE) {
 
-    # DT <- copy(dcontrib); label = 'run-gp-supp-pop'
+    # DT <- copy(dcontrib); label = 'run-gp-supp-pop'; include_baseline = TRUE
     dplot <- subset(DT, MODEL == label) |> 
         prettify_labels()
 
+    if(include_baseline){
+        baseline <- subset(dplot, ROUND_LAB == "Round 16")
+        rbindlist( list(
+            copy(baseline)[ , ROUND_LAB := 'Round 17'],
+            copy(baseline)[ , ROUND_LAB := 'Round 18'],
+            copy(baseline)[ , ROUND_LAB := 'Round 19']
+        )) -> baseline
+    }
+
+    .makelab <- function(lab){
+        paste( "Contribution to", gsub( "^P", 'p', model_dict[lab] ))
+    }
+
     ggplot(dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = SEX_LAB, color = SEX_LAB)) +
-        geom_ribbon(alpha = .2, color = NA) +
-        geom_line() +
-        facet_grid(ROUND_LAB ~ LOC_LAB) +
+        geom_ribbon(alpha = .2, color = NA) + {
+            if(include_baseline)
+                geom_line(data=baseline, linetype='dotted')
+        } +
+        geom_line() + 
+        facet_grid(ROUND_LAB ~ LOC_LAB,labeller=labeller(ROUND_LAB=round_labs)) +
         scale_color_manual(values = palettes$sex) +
         scale_fill_manual(values = palettes$sex) +
         scale_y_percentage +
         scale_x_continuous(expand = c(0, 0)) +
         theme_default() +
-        my_labs(y = model_dict[label]) +
+        my_labs(y = .makelab(label)) +
         NULL
 }
 
-plot.agesex.contributions.by.roundcomm2 <- function(DT, label) {
+plot.agesex.contributions.by.roundcomm2 <- function(DT, label, include_baseline = FALSE) {
 
     # DT <- copy(dcontrib); label = 'run-gp-supp-pop'
     dplot <- subset(DT, MODEL == label) |> 
         prettify_labels()
 
-    ggplot(dplot, aes(x = AGEGROUP, y = M, ymin = CL, ymax = CU, fill = SEX_LAB, color = SEX_LAB)) +
-        geom_ribbon(alpha = .2, color = NA) +
-        geom_col(position='dodge') +
-        facet_grid(ROUND_LAB ~ LOC_LAB) +
+    # if(include_baseline){
+    #     baseline <- subset(dplot, ROUND_LAB == "Round 16")
+    #     rbindlist( list(
+    #         copy(baseline)[ , ROUND_LAB := 'Round 17'],
+    #         copy(baseline)[ , ROUND_LAB := 'Round 18'],
+    #         copy(baseline)[ , ROUND_LAB := 'Round 19']
+    #     )) -> baseline
+    # }
+    
+    .makelab <- function(lab){
+        paste( "Contribution to", gsub( "^P", 'p', model_dict[lab] ))
+    }
+
+    ggplot(dplot, aes(x = AGEGROUP, y = M, ymin = CL, ymax = CU, fill = SEX_LAB)) +
+        # geom_ribbon(alpha = .2, color = NA) + {
+        #     if(include_baseline)
+        #         geom_line(data=baseline, linetype='dotted')
+        # } +
+        geom_col(position=position_dodge(width = .9)) + 
+        geom_errorbar(position=position_dodge(width = .9), width=.3) + 
+        facet_grid(ROUND_LAB ~ LOC_LAB,labeller=labeller(ROUND_LAB=round_labs)) +
         scale_color_manual(values = palettes$sex) +
         scale_fill_manual(values = palettes$sex) +
-        scale_y_percentage +
-        # scale_x_continuous(expand = c(0, 0)) +
+        scale_y_continuous(expand = expansion(mult=c(0, 0.1)), labels=scales::percent) +
         theme_default() +
-        my_labs(y = model_dict[label]) +
+        my_labs(y = .makelab(label), x="") +
         NULL
 }
