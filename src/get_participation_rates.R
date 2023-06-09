@@ -3,6 +3,7 @@
 
 library(data.table)
 library(ggplot2)
+kable <- knitr::kable
 
 gitdir <- here::here()
 source(file.path(gitdir, 'R/paths.R'))
@@ -14,7 +15,10 @@ outdir <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl"
 outdir.figures <- file.path(outdir, 'figures')
 outdir.tables <- file.path(outdir, 'tables')
 
-save.images <- !interactive()
+overwrite <- !interactive()
+make_plots <- !interactive()
+make_tables <- !interactive()
+
 VL_DETECTABLE <- 150
 VIREMIC_VIRAL_LOAD <- 1000 
 
@@ -49,8 +53,9 @@ dall <- dall[ ROUND %in% rounds_subsetted ]
 ncen[, ROUND := as.integer(ROUND)]
 dall[, ROUND := as.integer(ROUND)]
 
-# get participant proportion
-# __________________________
+#################################################
+catn("Make table with study pop characteristics")
+#################################################
 
 key_cols <- c('ROUND', 'SEX', 'FC', 'AGEYRS' )
 npar <- dall[, .(
@@ -65,16 +70,66 @@ dprop <- merge(npar, ncen)
 check_more_elig_than_part <- dprop[, all(N_PART < ELIGIBLE) ] 
 stopifnot(check_more_elig_than_part)
 
+# aggregate over age group
+npar_agegroup <- subset(dprop, 
+    AGEYRS %between% c(15, 49),
+    select=c('ROUND', 'FC', 'SEX', 'AGEYRS', 'ELIGIBLE', 'N_PART', 'N_FIRST', 'N_HIV', 'N_HASVL')
+)
+npar_agegroup[, AGEGROUP := split.agegroup(AGEYRS, breaks=c(15, 25, 35, 50))]
+npar_agegroup <- cube(npar_agegroup, 
+    lapply(.SD, sum),
+    .SDcols=names(npar_agegroup) %which.like% '^N|ELIGIBLE',
+    by=c('ROUND', 'FC', 'SEX', 'AGEGROUP') ) |> 
+    subset( ! is.na(ROUND) & !is.na(FC) )
+
+if(make_tables){
+
+    cols_lab <- c('ROUND_LAB', 'FC_LAB', 'SEX_LAB', 'AGEGROUP')
+    tab <- copy(npar_agegroup)
+    prettify_labels(tab)
+    setcolorder(tab, cols_lab)
+    setkeyv(tab, cols_lab)
+    tab[, `:=` (ROUND=NULL, SEX=NULL, FC=NULL, AGEGROUP = as.character(AGEGROUP)) ]
+    tab <- subset(tab, ! (is.na(SEX_LAB) & ! is.na(AGEGROUP))) 
+    tab[, `:=` (SEX_LAB = fcoalesce(SEX_LAB, "Both"), AGEGROUP = fcoalesce(AGEGROUP, 'All')) ]
+    tab <- delete.repeated.table.values(tab, cols = setdiff(cols_lab, 'AGEGROUP'))
+
+    .cell <- function(NUM, DEN){
+        prettify_cell( fmt_skeleton = "%s (%.1f%%)", format(NUM, big.mark=','), 100*NUM/DEN )
+    }
+    tab[, `:=` ( 
+        N_PART = .cell(N_PART, ELIGIBLE),
+        N_FIRST = .cell(N_FIRST, N_PART),
+        N_HIV = .cell(N_HIV, N_PART),
+        N_HASVL = .cell(N_HASVL, N_HIV)
+    )]
+    
+    filename_tex <- file.path(outdir.tables, 'table_characteristics_participants.tex')
+    write.to.tex(tab, file=filename_tex)
+    filename <- 'table_characteristics_participants.pdf'
+    p <- table.to.plot(tab)
+    ggsave2(p=p, file=filename, LALA=outdir.tables, w=11, h=21)
+}
+
+#############
+catn("Plots")
+#############
+
+catn("get participant proportion")
+# ________________________________
+
 # and aggregated participations rates rate 
 .ex <- expr(list(PART_RATE=round(100*sum(N_PART)/sum(ELIGIBLE),2)))
+dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS'))] |> kable()
+dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS', 'ROUND'))] |> kable()
+dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS', 'ROUND', 'FC'))] |> kable()
+
 .ex <- expr(list(FIRST_RATE = round(100 * sum(N_FIRST)/sum(N_PART), 2)))
-dprop[, eval(.ex), by=]
-dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS'))]
-dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS', 'ROUND'))]
-dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS', 'ROUND', 'FC'))]
+dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS'))] |> kable(a)
+dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS', 'ROUND'))] |> kable()
+dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS', 'ROUND', 'FC'))] |> kable()
 
-
-if(save.images){
+if(make_plots){
     # different age-pyramid plots
     p_pyramid_eligibleparticipants  <- plot.pyramid.bysexround( dprop, 
         .ylab = 'Number of participants among census eligible individuals',
@@ -114,13 +169,6 @@ if(save.images){
     cmd <- ggsave2(p_pyramid_unsup_part , file=filename, LALA=outdir.figures, w=10, h=11)
 }
 
-
-# plot.pyramid.bysexround( dprop, 
-#     .ylab = "Number of unsuppressed among participants", 
-#     NUM="N_HASVL",
-#     DEN="N_HIV")
-
-
 # get loess proportions
 
 loess_ratepart <- dprop[, {
@@ -141,7 +189,7 @@ loess_ratepart <- dprop[, {
 }, by=c('ROUND', 'FC', 'SEX')]
 
 # .25 is wiggly, but so is raw data...
-if(save.images){
+if(make_plots){
     p_partrate <- plot.smoothed.participation.rates(loess_ratepart)
     filename <- "smoothed_participationrates_bycommroundgenderage.pdf"
     cmd <- ggsave2(p=p_partrate, file=filename, LALA=outdir.figures, w=10, h=11 )
@@ -156,8 +204,8 @@ if(! file.exists(filename)){
 }
 
 
-# what about the age composition/contribution of different pops
-# _____________________________________________________________
+catn("what about the age composition/contribution of different pops")
+# ___________________________________________________________________
 
 
 # contribution to HIV

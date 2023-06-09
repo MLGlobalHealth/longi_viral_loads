@@ -201,13 +201,28 @@ ncen_table[ ROUND == 'Average', (cols) := lapply(.SD, .f ), .SDcols = cols]
 # get male to female proportions
 ncen_table[, pM := round(100*M/Total,2)]
 
-# get average over N of communities
+# get average over N of communities 
+# use flow instead of dcomm to know which communities were surveyed
+surveyed_coms <- {
+    tmp <- flow[, lapply(16:19, function(r) any(round %like% r) ), by=c('COMM_IDX', 'TYPE') ]
+    setnames(tmp, paste0('V', 1:4), paste0('R0', 16:19) )
+    tmp
+}
+dcomm_N <- surveyed_coms[, {
+    z <- unique(c(sum(R016), sum(R017), sum(R018), sum(R019)))
+    if(length(z) != 1)
+        warning("Number of surveyed communities is not constant over round. Please double check code.")
+    list( N_COMM = z[1])
+}, by='TYPE']
+
 cols <- c('M', 'F', 'Total')
 new_cols <- paste(cols, 'bycomm', sep='-')
-dcomm_N <- dcomm[, .(N_COMM=uniqueN(COMM_IDX)), by='TYPE']
 ncen_table <- merge( ncen_table, dcomm_N, by='TYPE' )
 ncen_table[, (new_cols) := lapply(.SD,  function(x) as.integer(x/N_COMM)), .SDcols=cols]
 
+ncen_table |> prettify_labels()
+setcolorder(ncen_table, c('LOC_LAB', 'ROUND_LAB'))
+ncen_table[,  `:=` list(TYPE = NULL, ROUND = NULL )]
 
 filename <- file.path(outdir.tables, 'census_eligible_individuals_table_230514.rds')
 if(! file.exists(filename) )
@@ -217,6 +232,8 @@ if(! file.exists(filename) )
 }else{
     cat("File:", filename, "already exists...\n")
 }
+
+readRDS(filename)
 
 # for paper writing
 ncen_table[ ROUND == 'Average', `Total-bycomm`]
