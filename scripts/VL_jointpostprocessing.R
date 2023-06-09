@@ -72,9 +72,9 @@ out.dir.tables <- file.path(out.dir, "tables")
 dir.create(out.dir.tables) |> suppressWarnings()
 dir.create(out.dir.figures) |> suppressWarnings()
 
-############
-#   MAIN   #
-############
+####################
+catn("=== MAIN ===")
+####################
 
 # load first participation rates
 dfirst_prop <- get.first.participant.rates()
@@ -312,7 +312,7 @@ if(make_tables){
     filename_tex <- file.path(out.dir.tables, 'table_aggregatedNunsuppressed.tex')
     write.to.tex(tab2, file=filename_tex)
     filename <- 'table_aggregatedNunsuppressed.pdf'
-    p <- gridExtra::tableGrob(tab2) |> gridExtra::grid.arrange()
+    p <- table.to.plot(tab2) 
     ggsave2(p=p, file=filename, LALA=out.dir.tables, w=8, h=5.5)
     
 }
@@ -450,7 +450,16 @@ if(make_tables){
     filename_tex <- file.path(out.dir.tables, 'table_contrib_supppop.tex')
     write.to.tex(t_contrib_supp, file=filename_tex)
     filename <- 'table_contrib_supppop.pdf'
-    p <- gridExtra::tableGrob(t_contrib_supp) |> gridExtra::grid.arrange()
+    p <- table.to.plot(t_contrib_supp) 
+    ggsave2(p=p, file=filename, LALA=out.dir.tables, w=22.5, h=5.5)
+
+    t_contrib_hiv <- tablify.agecontributions(dcontrib_agegroup, model= 'run-gp-prevl')
+    t_contrib_hiv$ROUND_LAB <- labeller(ROUND_LAB = round_labs)(t_contrib_hiv[, .(ROUND_LAB)])
+
+    filename_tex <- file.path(out.dir.tables, 'table_contrib_hivpop.tex')
+    write.to.tex(t_contrib_hiv, file=filename_tex)
+    filename <- 'table_contrib_hivpop.pdf'
+    p <- table.to.plot(t_contrib_hiv)
     ggsave2(p=p, file=filename, LALA=out.dir.tables, w=22.5, h=5.5)
 }
 
