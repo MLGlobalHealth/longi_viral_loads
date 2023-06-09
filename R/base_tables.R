@@ -15,6 +15,10 @@ delete.repeated.table.values <- function(DT, cols){
     return(table)
 }
 
+remove.ILIU <- function(DT){
+    DT[, `:=` (IL = NULL, IU=NULL)]
+} 
+
 table.na.to.empty <- function(DT, cols){
 
     .na2empty <- function(x){

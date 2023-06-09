@@ -29,7 +29,6 @@ cat("\nStart of: VL_jointpostprocessing.R\n")
 # instead, we should be merging by the N of hiv+
 
 # TODO: 
-# - 1. [X] swap ELIGIBLE with ELIGIBLE_SMOOTH
 # - 2. [X] make table with improvements over time in tot # usuppressed by loc and gender
 # - 3. [] I am not saving the sex comparison in the  plot.comparison.ftptype.colsex section: do it
 
@@ -442,6 +441,19 @@ if (make_plots) {
     # ggsave2(p = p_contrib_supph, file = .fnm("suppofhiv"), LALA = out.dir.figures, .w, .h)
     ggsave2(p = p_contrib_suppp, file = .fnm("suppofpop"), LALA = out.dir.figures, .w, .h)
 }
+
+if(make_tables){
+
+    t_contrib_supp <- tablify.agecontributions(dcontrib_agegroup, model= 'run-gp-supp-pop')
+    t_contrib_supp$ROUND_LAB <- labeller(ROUND_LAB = round_labs)(t_contrib_supp[, .(ROUND_LAB)])
+
+    filename_tex <- file.path(out.dir.tables, 'table_contrib_supppop.tex')
+    write.to.tex(t_contrib_supp, file=filename_tex)
+    filename <- 'table_contrib_supppop.pdf'
+    p <- gridExtra::tableGrob(t_contrib_supp) |> gridExtra::grid.arrange()
+    ggsave2(p=p, file=filename, LALA=out.dir.tables, w=22.5, h=5.5)
+}
+
 
 #####################
 catn("End of script")

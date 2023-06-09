@@ -2,7 +2,7 @@ tablify.posterior.Nunsuppressed <- function(list, model = 'run-gp-supp-pop'){
 
     # number unsuppressed: 
     tab_list <- copy(list)
-    tab_list <- lapply(tab_list, function(DT) DT[, `:=` (IL= NULL,IU=NULL)])
+    tab_list <- lapply(tab_list, remove.ILIU)
     tab_list <- lapply(tab_list, function(DT) DT[MODEL==model])
 
     with(tab_list, {
@@ -26,4 +26,24 @@ tablify.posterior.Nunsuppressed <- function(list, model = 'run-gp-supp-pop'){
     tab2 <- delete.repeated.table.values(tab, cols = keys) |> 
         table.na.to.empty(cols=keys)
     return(tab2)
+}
+
+tablify.agecontributions <- function(DT, model= 'run-gp-supp-pop'){
+
+    # DT <- copy(dcontrib_agegroup) ; model= 'run-gp-supp-pop'
+    dtab <- subset(DT, MODEL==model)
+    remove.ILIU(dtab) |> 
+        prettify_labels()
+    dtab[ , CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE, newline=TRUE) ]
+
+    keys <- c('LOC_LAB',  'ROUND_LAB', 'SEX_LAB', 'AGEGROUP')
+    dtab <- subset(dtab, select=c(keys, c('CELL'))) |> 
+        setkeyv(keys)
+
+    dtab <- dcast.data.table(dtab,
+        LOC_LAB + ROUND_LAB ~ SEX_LAB + AGEGROUP,
+        value.var = 'CELL'
+    ) |> 
+        delete.repeated.table.values(cols=c('LOC_LAB','ROUND_LAB'))
+    return(dtab)
 }
