@@ -160,12 +160,10 @@ get.dcomm.idx <- function(comm_num, split.inland=TRUE)
     dcomm2[data.table(comm_num=comm_num)]$comm_id
 }
 
-split.agegroup <- function(x)
+split.agegroup <- function(x, breaks=c(15, 20, 25, 30, 35, 40, 45, 50))
 {
-    breaks <- c(15, 20, 25, 30, 35, 40, 45, 50)
     n_breaks <- length(breaks)
     labels <- paste(breaks[-n_breaks], breaks[-1] - 1, sep='-' )
-
     cut(x, breaks=breaks, labels=labels, include.lowest = TRUE, right=FALSE)
 }
 
