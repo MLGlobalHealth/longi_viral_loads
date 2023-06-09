@@ -36,6 +36,9 @@ flowchart LR
 		style o11 fill:#F5F5F5
 		style o21 fill:#F5F5F5
 		style o31 fill:#F5F5F5
+		style o11 color:#000000
+		style o21 color:#000000
+		style o31 color:#000000
 	end
 	
 	d11 -- load --> s1
@@ -68,6 +71,8 @@ flowchart LR
 
     style o11 fill:#F5F5F5
     style o21 fill:#F5F5F5
+    style o11 color:#000000
+    style o21 color:#000000
 	end 
  
 	subgraph scripts
@@ -79,8 +84,10 @@ flowchart LR
 		r11[(TODO)]
         r21[(TODO)]
 
-		style r11 fill:#FFD700
-		style r21 fill:#FFD700
+		style r11 fill:#ffd700
+		style r21 fill:#ffd700
+		style r11 color:#ffffff
+		style r21 color:#ffffff
 	end
 	
 	o11 -- load --> sc1
