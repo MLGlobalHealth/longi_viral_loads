@@ -1,5 +1,5 @@
 quantile2 <- function(x, ps = c(CL = .025, IL = .25, M = .5, IU = .75, CU = .975)) {
-    # the posterior package has the same function name! 
+    # the posterior package has the same function name!
     out <- quantile(x = x, probs = ps, names = TRUE) |> t()
     if (!is.null(names(ps))) {
         colnames(out) <- names(ps)
@@ -118,7 +118,7 @@ rbind.ftpstatus.datatables.by.round <- function(DTname, round, envir_list = env_
     }
 
     DT.allp <- get(DTname, envir = envir_list[[round]][["allp"]])
-    DT.ftp  <- get(DTname, envir = envir_list[[round]][["ftp"]])
+    DT.ftp <- get(DTname, envir = envir_list[[round]][["ftp"]])
 
     DT.allp[, FTP_LAB := "All participants"]
     DT.ftp[, FTP_LAB := "First-time participants"]
@@ -163,9 +163,9 @@ plot.comparison.ftptype.colsex <- function(DT, ylab) {
     return(p)
 }
 
-get.weighted.average.p_predict <- function(fit1, fit2, round, expression_prereturn={}) {
+get.weighted.average.p_predict <- function(fit1, fit2, round, expression_prereturn = {}) {
     # round <- 19
-    dot.cols <- c(".chain", ".iteration", ".draw") 
+    dot.cols <- c(".chain", ".iteration", ".draw")
     demo.cols <- c("SEX", "LOC", "AGEYRS")
 
     # extract age-specific draws from both ftp and allparts
@@ -197,11 +197,12 @@ get.weighted.average.p_predict <- function(fit1, fit2, round, expression_preretu
     draws_all <- merge(draws_all, dpartrates[ROUND == round], by = c("LOC", "SEX", "AGEYRS"))
     draws_all[, joint := parts * PARTRATE + ftp * (1 - PARTRATE)]
 
-    # 
+    #
     expression_prereturn <- enexpr(expression_prereturn)
 
-    if(is.null(eval(expression_prereturn)))
+    if (is.null(eval(expression_prereturn))) {
         return(draws_all[, quantile2(joint), by = c("SEX", "LOC", "AGEYRS")])
+    }
 
     eval(expression_prereturn)
 }
@@ -282,7 +283,7 @@ plot.fit.weighted.by.ftpstatus <- function(DT, label) {
         .h(lab = "run-gp-supp-hiv", intercept = .95^2) +
         geom_ribbon(alpha = .2, color = NA) +
         geom_line() +
-        facet_grid(ROUND_LAB ~ LOC_LAB, labeller=labeller(ROUND_LAB=round_labs)) +
+        facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
         scale_color_manual(values = palettes$sex) +
         scale_fill_manual(values = palettes$sex) +
         scale_y_percentage +
@@ -304,14 +305,14 @@ plot.estimated.number.viraemic.among.census.eligible <- function(DT) {
         NULL
 }
 
-check_median_contr_approx1 <- function(DT){
-    cond <- DT[, abs(sum(M) - 1) , by=c('MODEL', 'ROUND', 'LOC')][, sum(V1) < .5]
-    if(! cond)
+check_median_contr_approx1 <- function(DT) {
+    cond <- DT[, abs(sum(M) - 1), by = c("MODEL", "ROUND", "LOC")][, sum(V1) < .5]
+    if (!cond) {
         warning("Unexpected value for aggregated contributions")
+    }
 }
 
-plot.estimated.contribution.viraemic.among.census.eligible <- function(DT) 
-{
+plot.estimated.contribution.viraemic.among.census.eligible <- function(DT) {
     ggplot(data = DT, aes(x = AGE_LABEL, y = P, color = SEX_LAB, fill = SEX_LAB)) +
         geom_line() +
         geom_point() +
@@ -325,99 +326,99 @@ plot.estimated.contribution.viraemic.among.census.eligible <- function(DT)
 }
 
 # from Melodie's: I don't think I can use the function as is but it is pretty nice
-find_summary_output <- function(samples, output, vars, transform = NULL, standardised.vars = NULL, names = NULL, operation = NULL, save_output = F)
-{
-    
+find_summary_output <- function(samples, output, vars, transform = NULL, standardised.vars = NULL, names = NULL, operation = NULL, save_output = F) {
     # summarise outputs by period
-    ps <- c('M'=0.5, 'CL'=0.025, 'CU'=0.975)
+    ps <- c("M" = 0.5, "CL" = 0.025, "CU" = 0.975)
 
-    draws = as.data.table( reshape2::melt(samples[[output]]) )
-    if(!is.null(names)){
+    draws <- as.data.table(reshape2::melt(samples[[output]]))
+    if (!is.null(names)) {
         setnames(draws, 2:(length(names) + 1), names)
-    }else if( draws[, max(Var2)] == df_age[, max(INDEX_AGE)] ){
-        setnames(draws, 2:4, c('INDEX_AGE', 'INDEX_DIRECTION', 'INDEX_TIME'))
-    }else{
-        setnames(draws, 2:4, c('INDEX_DIRECTION', 'INDEX_TIME', 'INDEX_AGE'))
+    } else if (draws[, max(Var2)] == df_age[, max(INDEX_AGE)]) {
+        setnames(draws, 2:4, c("INDEX_AGE", "INDEX_DIRECTION", "INDEX_TIME"))
+    } else {
+        setnames(draws, 2:4, c("INDEX_DIRECTION", "INDEX_TIME", "INDEX_AGE"))
     }
 
-    if('INDEX_AGE' %in% names(draws)){
-        draws <- merge(draws, df_age, by = 'INDEX_AGE')
-        draws <- merge(draws, df_age_aggregated, by = c('AGE_INFECTION.RECIPIENT', 'AGE_TRANSMISSION.SOURCE'))
+    if ("INDEX_AGE" %in% names(draws)) {
+        draws <- merge(draws, df_age, by = "INDEX_AGE")
+        draws <- merge(draws, df_age_aggregated, by = c("AGE_INFECTION.RECIPIENT", "AGE_TRANSMISSION.SOURCE"))
     }
 
-    if(!is.null(transform)){
+    if (!is.null(transform)) {
         draws[, value := sapply(value, transform)]
     }
 
     #  sum force of infection
-    if(is.null(operation)){
-        draws <- draws[, list(value = sum(value)), by = c('iterations', vars)]
-    } else{
-        draws <- draws[, list(value = sapply(value, operation)), by = c('iterations', vars)]
+    if (is.null(operation)) {
+        draws <- draws[, list(value = sum(value)), by = c("iterations", vars)]
+    } else {
+        draws <- draws[, list(value = sapply(value, operation)), by = c("iterations", vars)]
     }
 
     # standardised
-    if(!is.null(standardised.vars)){
-        draws[, total_value := sum(value), by = c('iterations', standardised.vars)]
+    if (!is.null(standardised.vars)) {
+        draws[, total_value := sum(value), by = c("iterations", standardised.vars)]
         draws[, value := value / total_value]
     }
 
-    #summarise
-    draws = draws[, list(q= quantile(value, prob=ps, na.rm = T), q_label=names(ps)), by=vars]	
-    draws = dcast(draws, ... ~ q_label, value.var = "q")
+    # summarise
+    draws <- draws[, list(q = quantile(value, prob = ps, na.rm = T), q_label = names(ps)), by = vars]
+    draws <- dcast(draws, ... ~ q_label, value.var = "q")
 
 
-    if('INDEX_DIRECTION' %in% vars)
-    draws <- merge(draws, df_direction, by = 'INDEX_DIRECTION')
-
-    if('INDEX_TIME' %in% vars){
-        draws <- merge(draws, df_period, by = c('INDEX_TIME'))
-        draws <- merge(draws, df_community, by = 'COMM')
+    if ("INDEX_DIRECTION" %in% vars) {
+        draws <- merge(draws, df_direction, by = "INDEX_DIRECTION")
     }
 
-    if('INDEX_AGE' %in% vars)
-    draws <- merge(draws, df_age, by = 'INDEX_AGE')
+    if ("INDEX_TIME" %in% vars) {
+        draws <- merge(draws, df_period, by = c("INDEX_TIME"))
+        draws <- merge(draws, df_community, by = "COMM")
+    }
 
-    if(save_output)
-    {
-        file = paste0(outdir.table, '-output-', output, 'by_', tolower(paste0(gsub('INDEX_', '', vars), collapse = '_')))
-        if(!is.null(standardised.vars)){
-            file = paste0(file, 'standardisedby_', tolower(paste0(gsub('INDEX_', '', standardised.vars), collapse = '_')))
+    if ("INDEX_AGE" %in% vars) {
+        draws <- merge(draws, df_age, by = "INDEX_AGE")
+    }
+
+    if (save_output) {
+        file <- paste0(outdir.table, "-output-", output, "by_", tolower(paste0(gsub("INDEX_", "", vars), collapse = "_")))
+        if (!is.null(standardised.vars)) {
+            file <- paste0(file, "standardisedby_", tolower(paste0(gsub("INDEX_", "", standardised.vars), collapse = "_")))
         }
 
-        file = paste0(file, '.rds')
+        file <- paste0(file, ".rds")
         saveRDS(draws, file)
     }
 
     return(draws)
 }
 
-plot.agesex.contributions.by.roundcomm <- function(DT, label, include_baseline=FALSE) {
-
+plot.agesex.contributions.by.roundcomm <- function(DT, label, include_baseline = FALSE) {
     # DT <- copy(dcontrib); label = 'run-gp-supp-pop'; include_baseline = TRUE
-    dplot <- subset(DT, MODEL == label) |> 
+    dplot <- subset(DT, MODEL == label) |>
         prettify_labels()
 
-    if(include_baseline){
+    if (include_baseline) {
         baseline <- subset(dplot, ROUND_LAB == "Round 16")
-        rbindlist( list(
-            copy(baseline)[ , ROUND_LAB := 'Round 17'],
-            copy(baseline)[ , ROUND_LAB := 'Round 18'],
-            copy(baseline)[ , ROUND_LAB := 'Round 19']
+        rbindlist(list(
+            copy(baseline)[, ROUND_LAB := "Round 17"],
+            copy(baseline)[, ROUND_LAB := "Round 18"],
+            copy(baseline)[, ROUND_LAB := "Round 19"]
         )) -> baseline
     }
 
-    .makelab <- function(lab){
-        paste( "Contribution to", gsub( "^P", 'p', model_dict[lab] ))
+    .makelab <- function(lab) {
+        paste("Contribution to", gsub("^P", "p", model_dict[lab]))
     }
 
     ggplot(dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = SEX_LAB, color = SEX_LAB)) +
-        geom_ribbon(alpha = .2, color = NA) + {
-            if(include_baseline)
-                geom_line(data=baseline, linetype='dotted')
+        geom_ribbon(alpha = .2, color = NA) +
+        {
+            if (include_baseline) {
+                geom_line(data = baseline, linetype = "dotted")
+            }
         } +
-        geom_line() + 
-        facet_grid(ROUND_LAB ~ LOC_LAB,labeller=labeller(ROUND_LAB=round_labs)) +
+        geom_line() +
+        facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
         scale_color_manual(values = palettes$sex) +
         scale_fill_manual(values = palettes$sex) +
         scale_y_percentage +
@@ -428,9 +429,8 @@ plot.agesex.contributions.by.roundcomm <- function(DT, label, include_baseline=F
 }
 
 plot.agesex.contributions.by.roundcomm2 <- function(DT, label, include_baseline = FALSE) {
-
     # DT <- copy(dcontrib); label = 'run-gp-supp-pop'
-    dplot <- subset(DT, MODEL == label) |> 
+    dplot <- subset(DT, MODEL == label) |>
         prettify_labels()
 
     # if(include_baseline){
@@ -441,9 +441,9 @@ plot.agesex.contributions.by.roundcomm2 <- function(DT, label, include_baseline 
     #         copy(baseline)[ , ROUND_LAB := 'Round 19']
     #     )) -> baseline
     # }
-    
-    .makelab <- function(lab){
-        paste( "Contribution to", gsub( "^P", 'p', model_dict[lab] ))
+
+    .makelab <- function(lab) {
+        paste("Contribution to", gsub("^P", "p", model_dict[lab]))
     }
 
     ggplot(dplot, aes(x = AGEGROUP, y = M, ymin = CL, ymax = CU, fill = SEX_LAB)) +
@@ -451,13 +451,70 @@ plot.agesex.contributions.by.roundcomm2 <- function(DT, label, include_baseline 
         #     if(include_baseline)
         #         geom_line(data=baseline, linetype='dotted')
         # } +
-        geom_col(position=position_dodge(width = .9)) + 
-        geom_errorbar(position=position_dodge(width = .9), width=.3) + 
-        facet_grid(ROUND_LAB ~ LOC_LAB,labeller=labeller(ROUND_LAB=round_labs)) +
+        geom_col(position = position_dodge(width = .9)) +
+        geom_errorbar(position = position_dodge(width = .9), width = .3) +
+        facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
         scale_color_manual(values = palettes$sex) +
         scale_fill_manual(values = palettes$sex) +
-        scale_y_continuous(expand = expansion(mult=c(0, 0.1)), labels=scales::percent) +
+        scale_y_continuous(expand = expansion(mult = c(0, 0.1)), labels = scales::percent) +
+        theme_default() +
+        my_labs(y = .makelab(label), x = "") +
+        NULL
+}
+
+plot.logratio.ftpvsnon <- function(DT, label) {
+    dplot <- subset(DT, MODEL == label) |>
+        prettify_labels()
+
+    .makelab <- function(lab) {
+        paste("Log ratio of posterior estimates for",
+            gsub("^P", "p", model_dict[lab]), 
+            "in all participants vs first-time-participants"
+        )
+    }
+
+    ggplot(dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = SEX_LAB, color = SEX_LAB)) +
+        geom_hline(aes(yintercept = 0), linetype = 'dashed') +
+        geom_ribbon(alpha = .2, color = NA) +
+        geom_line() +
+        facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
+        scale_color_manual(values = palettes$sex) +
+        scale_fill_manual(values = palettes$sex) +
+        scale_x_continuous(expand = c(0, 0)) +
         theme_default() +
         my_labs(y = .makelab(label), x="") +
         NULL
+}
+
+get.posterior.logratios.ftp <- function(fit1, fit2, round, expression_prereturn = {}) {
+    # round <- 19
+    dot.cols <- c(".chain", ".iteration", ".draw")
+    demo.cols <- c("SEX", "LOC", "AGEYRS")
+
+    # extract age-specific draws from both ftp and allparts
+    draws_parts <- posterior::as_draws_df(fit1) |>
+        posterior::subset_draws(variable = "^p_predict", regex = TRUE)
+    names(draws_parts) <- gsub("p_predict", "parts", names(draws_parts))
+
+    draws_ftp <- posterior::as_draws_df(fit2) |>
+        posterior::subset_draws(variable = "^p_predict", regex = TRUE)
+    names(draws_ftp) <- gsub("p_predict", "ftp", names(draws_ftp))
+
+    # merge together
+    draws_all <- posterior::bind_draws(draws_parts, draws_ftp) |> setDT()
+    draws_all <- melt(draws_all,
+        id.vars = dot.cols,
+        variable.name = "participation",
+        value.name = "value"
+    )
+    draws_all[, (demo.cols) := stanindices2vars(participation)]
+
+    draws_all <- merge(
+        draws_all[participation %like% "parts", list(.chain, .iteration, .draw, SEX, LOC, AGEYRS, parts = value)],
+        draws_all[participation %like% "ftp", list(.chain, .iteration, .draw, SEX, LOC, AGEYRS, ftp = value)],
+        by = c(dot.cols, demo.cols),
+        all.x = TRUE, all.y = TRUE
+    )
+    draws_all[, `:=`(logratio = log(parts) - log(ftp), ftp = NULL, parts = NULL), ]
+    return(draws_all[!is.na(logratio), quantile2(logratio), by = c("SEX", "LOC", "AGEYRS")])
 }

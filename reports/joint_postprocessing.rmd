@@ -49,6 +49,7 @@ insert_image <- function(path, dir=out.dir.figures){
 type2text <- function(x){
 
     dict <- c(
+        'logratioftpvsnnonbyroundcomm' = "Posterior log ratio of participants vs first time participants", 
         'barenumviraemiccensel' = "Expected number of viraemic among Census Eligible",
         'lineecontrviraemiccensel' = "Expected prevalence of viraemia among Census Eligible",
         'contribagegenderbyroundcomm' = "Gender-age contributions by round and community",
@@ -117,6 +118,7 @@ Note that FTP is included in both analyses, as FTP are a subset of the RCCS part
 ```{r plot-order, echo=FALSE, hidden=TRUE, include=FALSE}
 ordered_labels <- c( 
     'fitbyftpstatus',
+    'logratioftpvsnnonbyroundcomm',
     'fitbyroundcommgender',
     'contribagegenderbyroundcomm' ,
     'contribagegroupgenderbyroundcomm',

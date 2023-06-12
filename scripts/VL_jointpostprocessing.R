@@ -463,6 +463,58 @@ if(make_tables){
     ggsave2(p=p, file=filename, LALA=out.dir.tables, w=22.5, h=5.5)
 }
 
+catn("Get log-ratio for suppression among FTP and non-FTP") 
+#__________________________________________________________
+
+# TODO: take blue-black plots, and take posterior sample ratios. Report the ratio (or log-ratio) by 5 years age group, and whether any significantly > 1 (or > 0).
+
+filename_rds <- file.path(out.dir.figures, "posterior_ftp_logratio_quantiles.rds")
+
+# lo(parts) - log(ftp)
+if( file.exists(filename_rds) & !overwrite ){
+    dlogratio <- readRDS(filename_rds)
+} else {
+    dlogratio <- dfiles_rds[,
+        {
+            stopifnot(.N == 2)
+            paths <- file.path(D, F)
+            idx.all <- which(FTP == FALSE)
+            idx.ftp <- which(FTP == TRUE)
+            cat(paths[idx.all], "\n")
+            get.posterior.logratios.ftp(
+                readRDS(paths[idx.all]),
+                readRDS(paths[idx.ftp]),
+                round = unique(ROUND)
+            )
+        },
+        by = c("MODEL", "ROUND")
+    ]
+    saveRDS(object= dlogratio, filename_rds)
+}
+
+if(make_plots){
+    # only need to change sligtly, nice! 
+    .w <- 10; .h <- 12
+
+    MODELS <- c("run-gp-prevl", "run-gp-supp-hiv", "run-gp-supp-pop")
+    p_logp <- lapply(MODELS, plot.logratio.ftpvsnon, DT=dlogratio)
+
+    .fnm <- function(lab)
+        paste("logratio", lab, "ftpvsnnon_byroundcomm.pdf", sep = "_")
+
+    ggsave2( p = p_logp[[1]], file = .fnm("prevl"), LALA = out.dir.figures, .w, .h )
+    ggsave2( p = p_logp[[2]], file = .fnm("suppofhiv"), LALA = out.dir.figures, .w, .h )
+    ggsave2( p = p_logp[[3]], file = .fnm("suppofpop"), LALA = out.dir.figures, .w, .h )
+}
+
+if(make_tables & 0){ # age groups for which CrI does not include 0 
+    dlogratio[ (CL > 0 | CU < 0) & MODEL == 'run-gp-supp-pop', {
+        if(.N > 0){
+            list(min = min(AGEYRS), max=max(AGEYRS))
+        }
+    }, by = c('MODEL', 'ROUND', 'SEX', 'LOC')]
+}
+
 
 #####################
 catn("End of script")
