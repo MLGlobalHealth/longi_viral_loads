@@ -307,6 +307,30 @@ if( file.exists(filename_rds) & !overwrite ){
 
 if(make_tables){
 
+    # age-aggregated HIV prevalence by sex, round, loc
+    dcens_aggr <- dcens[, lapply(.SD, sum), .SDcols = c('ELIGIBLE_SMOOTH', 'ELIGIBLE'), by=c('ROUND', 'LOC', 'SEX')]
+    tab <- merge(
+        joint_ageagrr_list$round_totals[MODEL == 'run-gp-prevl'],
+        dcens_aggr, 
+        by = c('ROUND', 'LOC', 'SEX')
+    ) |> remove.ILIU()
+    cols <- c('CL', 'M', 'CU')
+    tab[, (cols) := lapply(.SD, function(x) x/ELIGIBLE), .SDcols =cols  ] 
+    tab[, CELL := prettify_cell(M*100, CL*100, CU*100, percent = TRUE)]
+    tab[ROUND == 19, {
+        sprintf(" 
+            In round 19, %s of men and %s of women were estimated to be HIV positive in fishing communities,
+            compared to %s and %s among men and women in inland, respectively.",
+            CELL[ LOC == 'fishing' & SEX == 'M'], CELL[ LOC == 'fishing' & SEX == 'F'],
+            CELL[ LOC == 'inland' & SEX == 'M'], CELL[ LOC == 'inland' & SEX == 'F']
+       ) |> cat()
+    }]
+    tab <- tab[ , .(ROUND, LOC, SEX, CELL)]
+    filename_overleaf <- file.path(out.dir.tables, 'overleaf_ageaggr_hivprev.rds')
+    saveRDS(object=tab,file = filename_overleaf)
+    
+
+    # age-aggregated # of unsuppressed by sex, and location
     tab2 <- tablify.posterior.Nunsuppressed(joint_ageagrr_list)
 
     filename_tex <- file.path(out.dir.tables, 'table_aggregatedNunsuppressed.tex')
