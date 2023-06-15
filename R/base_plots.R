@@ -142,14 +142,17 @@ palettes <- list(
 
     sex=c(
         F="#F4B5BD",
-        M="#85D4E3",
+        M="#9ac0cd",
         Female="#F4B5BD",
-        Male="#85D4E3"
+        Male="#9ac0cd"
         ),
 
     comm = c(
-        fishing="#85D4E3",
-        inland="#9C964A"),
+        fishing="#9ac0cd",
+        inland="#9C964A",
+        Fishing="#9ac0cd",
+        Inland="#9C964A"
+    ),
 
     arvmed = c(
         '#E03531',
@@ -166,7 +169,7 @@ palettes <- list(
 
     comm2 = c(
         "#9C964A",
-        "#85D4E3",
+        "#9ac0cd",
         "#FF9933"),
 
     bool = c(
