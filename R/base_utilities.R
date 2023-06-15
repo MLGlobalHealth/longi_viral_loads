@@ -156,8 +156,12 @@ get.dcomm <- function(split.inland=TRUE)
 
 get.dcomm.idx <- function(comm_num, split.inland=TRUE)
 {
-    dcomm2 <- fread(path.community.idx) |> setkey('comm_num')
-    dcomm2[data.table(comm_num=comm_num)]$comm_id
+    with(fread(path.community.idx), {
+        dict <- as.character(comm_id)
+        names(dict) <- as.character(comm_num)
+        dict <<- dict
+    } )
+    dict[as.character(comm_num)]
 }
 
 split.agegroup <- function(x, breaks=c(15, 20, 25, 30, 35, 40, 45, 50))

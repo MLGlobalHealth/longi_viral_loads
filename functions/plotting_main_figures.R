@@ -794,3 +794,83 @@ plot.empirical.prob.of.suppression.with.age <- function(DT=dcens)
         ks=ks.results
     )
 }
+
+plot.rakai.map <- function(){
+
+    require(ggmap)
+    require(maps)
+    require(ggsn)
+
+    # load comm ids
+    comms <- fread(path.community.idx)
+    names(comms) <- toupper(names(comms))
+    comms[, COMM_NUM := as.character(COMM_NUM)]
+
+    # load gps
+    env_gps <- new.env()
+    load(path.community.gps, envir=env_gps)
+    with(env_gps$comgps, {
+        data.table(
+            COMM_NUM=as.character(COMM_NUM),
+            longitude=as.numeric(longitude),
+            latitude=as.numeric(latitude)
+    )}) -> comms_gps
+
+    # merge
+    comms <- merge(comms, comms_gps, by='COMM_NUM')
+    comms[, TYPE := fifelse(COMM_ID %like% 'i', 'inland', 'fishing') ]
+
+    # if 2 comms have the same COMM_ID, take average of lat/long
+    comms <- comms[, .(
+        TYPE = unique(TYPE),
+        latitude = mean(latitude),
+        longitude = mean(longitude)
+    ), by=COMM_ID]
+    comms
+
+    # get population sizes.
+    tmp <- readRDS(path.comm.censsize)
+    tmp
+    comms <- merge(comms, tmp, by.x=c('COMM_ID', 'TYPE'), by.y=c('COMM_IDX', 'TYPE'))
+
+    with(comms, c(
+            left=min(longitude) - .05,
+            right=max(longitude) + .05,
+            bottom=min(latitude) - .05,
+            top=max(latitude) + .05
+    )) -> box
+
+    # can also use get_map if have access to the GOOGLE API KEY
+    ggmap::get_stamenmap(
+        bbox = box,
+        maptype = 'watercolor',
+        zoom = 11
+    ) -> map
+
+    prettify_labels(comms)
+    p <- ggmap(map) + 
+        geom_point(data=comms, 
+        aes(x=longitude, y=latitude, 
+            shape=LOC_LAB, # size=POP_SIZE,
+            color=LOC_LAB, fill=LOC_LAB
+        ), size=3) +
+        scale_color_manual(values=c('black', 'black')) +
+        scale_fill_manual(values=palettes$comm) +
+        scale_shape_manual(values=c('Inland'=21, 'Fishing'=25)) +
+        # scale_y_continuous(breaks = seq(-.9,.4, by=.1), limits=c(NA, NA)) +
+        # scale_x_continuous(n.breaks = 0) +
+        my_labs(color=NULL, fill=NULL, shape=NULL, x="Longitude (°E)", y="Latitude(°N)") +
+        theme(
+            legend.position = c(1,1),
+            legend.justification = c(1,1),
+            legend.background = element_rect(fill='white', color='black'),
+            legend.direction = 'horizontal'
+        ) + 
+        ggsn::scalebar(
+            x.min=box['left'] + .01, x.max=box['right'] - 0.01, y.min=box['bottom'] + .03, y.max=box['top'] - .01 ,
+            transform = TRUE, dist=10,dist_unit = 'km',
+            location = 'bottomleft', height=0.01,
+            border.size = .1, st.dist=0.02, st.size=3) 
+        # north2(p, x=.93, y=.22, symbol=10)
+    p
+}
