@@ -111,6 +111,18 @@ re <- re[order(ROUND, SEX, TYPE, AGEYRS)]
 re[, SEX_INDEX := ifelse(SEX == 'M', 1, 0)]
 re[, COMM_INDEX := ifelse(TYPE == 'fishing', 1, 0)]
 
+#################################################
+catn("find average population size by community")
+#################################################
+
+# TODO
+tmp <- flow[! round %like% '15', list( 
+    ELIGIBLE = sum(reason_ineligible=='none') + sum(reason_ineligible == 'Out_migrated')/2 
+), by= c('round', 'COMM_IDX', 'TYPE') ]
+tmp <- subset(tmp, round == 'R019')
+filename <- file.path(gitdir.data, "censsize_by_community.rds")
+saveRDS(object=tmp, file=filename )
+
 ###########################################
 catn("find smooth count with loess smooth")
 ###########################################

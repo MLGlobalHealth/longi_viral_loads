@@ -53,6 +53,7 @@ path.quest_r1520_220830 <- file.path(indir.deepdata.r1520, 'Quest_R015_R020_VOIs
 path.quest_r1519_221207 <- file.path(indir.deepdata.r1520, 'quest_R15_R19_VoIs_Dec072022.csv')
 path.community.types <- file.path(indir.deepdata.r1518, 'community_names.csv')
 path.community.idx <- file.path(indir.deepdata.r1518, 'community_id_index.csv')
+path.community.gps <- file.path(indir.deepdata.r1518, 'Rakai_community_geography_R15.rda')
 path.negatives.r1520 <- file.path(indir.deepdata.r1520, 'R016_R020_Data_for_HIVnegatives.csv')
 path.hivres.r0914 <- file.path(indir.deepdata.r0914, "HIV_R09_R14.csv")
 
@@ -66,6 +67,7 @@ path.flow.r19 <- file.path(indir.deepdata.r1520, 'flowR19_VOIs.dta')
 # Pre-processed files
 # ___________________
 
+path.comm.censsize <- file.path(gitdir.data, 'censsize_by_community.rds')
 # obtained from process_data.R (also have a 230502 version)
 path.hivstatusvl.r1520 <- file.path(indir.deepdata.r1520, 'all_participants_hivstatus_vl_230515.csv')
 path.viralloads.processed.r1520 <- file.path(indir.deepdata.r1520, 'viral_loads_r15r20_processed_230502.csv')
