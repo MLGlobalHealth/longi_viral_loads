@@ -26,25 +26,11 @@ VIREMIC_VIRAL_LOAD <- 1000
 # load stuff
 cols <- c( "ROUND", "TYPE", "SEX", "AGEYRS", "ELIGIBLE")
 ncen <- fread(path.census.eligible, select = cols)
+setnames(ncen, c('TYPE'), c('FC'))
+
 cols <- c("STUDY_ID", "ROUND", "SEX", "AGEYRS", "FC", 'HIV_STATUS', 'VL_COPIES', 'FIRST_PARTICIPATION')
 dall <- get.dall(path.hivstatusvl.r1520) |> 
     subset(select=cols) |> unique()
-
-# attribute some NA first parts
-idx <- dall[is.na(FIRST_PARTICIPATION), STUDY_ID]
-if(length(idx) > 0)
-{
-    sprintf('%s participants have no first participation status. Imputing...', 
-        length(idx)) |> warning()
-    # impute non first if other participations, else assign as first
-    idx_notfirst <- dall[STUDY_ID %in% idx, any(FIRST_PARTICIPATION == 1), by='STUDY_ID'][
-        V1==TRUE, STUDY_ID]
-    dall[STUDY_ID %in% idx_notfirst & is.na(FIRST_PARTICIPATION), FIRST_PARTICIPATION := 0]
-    dall[ is.na(FIRST_PARTICIPATION), FIRST_PARTICIPATION := 0]
-}
-
-# make compatible
-setnames(ncen, c('TYPE'), c('FC'))
 
 # subset to rounds of interest
 rounds_subsetted <- 16:19
@@ -57,15 +43,7 @@ dall[, ROUND := as.integer(ROUND)]
 catn("Make table with study pop characteristics")
 #################################################
 
-key_cols <- c('ROUND', 'SEX', 'FC', 'AGEYRS' )
-npar <- dall[, .(
-    N_PART=.N,
-    N_FIRST=sum(FIRST_PARTICIPATION),
-    N_HASVL=sum(!is.na(VL_COPIES) & HIV_STATUS == 1),
-    N_HIV=sum(HIV_STATUS), 
-    N_VLNS=sum( VL_COPIES >= VIREMIC_VIRAL_LOAD ,na.rm=TRUE),
-    N_LOWVL=sum( VL_COPIES >= 200)
-    ), by=key_cols]
+npar <- summarize.aggregates.dall()
 dprop <- merge(npar, ncen)
 check_more_elig_than_part <- dprop[, all(N_PART < ELIGIBLE) ] 
 stopifnot(check_more_elig_than_part)
@@ -119,6 +97,7 @@ catn("get participant proportion")
 # ________________________________
 
 # and aggregated participations rates rate 
+key_cols <- c('ROUND', 'SEX', 'FC', 'AGEYRS' )
 .ex <- expr(list(PART_RATE=round(100*sum(N_PART)/sum(ELIGIBLE),2)))
 dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS'))] |> kable()
 dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS', 'ROUND'))] |> kable()

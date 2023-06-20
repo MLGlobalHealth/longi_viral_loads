@@ -28,6 +28,34 @@ get.dall <- function(path, only_firstpart = FALSE, make_flowchart = FALSE) {
     return(dall)
 }
 
+summarize.aggregates.dall <- function(DT=dall, attributeNAfirstpar=TRUE)
+{
+
+    # attribute some NA first parts
+    idx <- dall[is.na(FIRST_PARTICIPATION), STUDY_ID]
+    if(attributeNAfirstpar & length(idx) > 0) {
+        sprintf('%s participants have no first participation status. Imputing...', 
+            length(idx)) |> warning()
+        # impute non first if other participations, else assign as first
+        idx_notfirst <- dall[STUDY_ID %in% idx, any(FIRST_PARTICIPATION == 1), by='STUDY_ID'][
+            V1==TRUE, STUDY_ID]
+        dall[STUDY_ID %in% idx_notfirst & is.na(FIRST_PARTICIPATION), FIRST_PARTICIPATION := 0]
+        dall[ is.na(FIRST_PARTICIPATION), FIRST_PARTICIPATION := 0]
+    }
+
+    key_cols <- c('ROUND', 'SEX', 'FC', 'AGEYRS' )
+    npar <- DT[, .(
+        N_PART=.N,
+        N_FIRST=sum(FIRST_PARTICIPATION),
+        N_HASVL=sum(!is.na(VL_COPIES) & HIV_STATUS == 1),
+        N_HIV=sum(HIV_STATUS), 
+        N_VLNS=sum( VL_COPIES >= VIREMIC_VIRAL_LOAD ,na.rm=TRUE),
+        N_LOWVL=sum( VL_COPIES >= 200)
+        ), by=key_cols]
+    npar[, ROUND := as.integer(ROUND)]
+    return(npar)
+}
+
 get.census.eligible <- function(rounds = args$round, path=path.census.eligible) {
     # Recall that COUNT and TOTAL_COUNT do not agree with HIV_N and N in our vla.
     # why? I removed (very few) HIV+ without VLs (79)
