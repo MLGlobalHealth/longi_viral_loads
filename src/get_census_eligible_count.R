@@ -177,6 +177,7 @@ ggsave2(p2, file=filenames[2], LALA=outdir.figures, w=9, h=5)
 catn("saving")
 ##############
 
+# filename <- path.census.eligible
 filename <- file.path(gitdir.data, 'census_eligible_individuals_230514.csv')
 if(! file.exists(filename)  )
 {
