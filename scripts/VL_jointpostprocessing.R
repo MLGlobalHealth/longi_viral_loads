@@ -91,6 +91,7 @@ dpartrates <- readRDS(path.participation.rates) |>
 
 # get model fits for both scenarios: all participants and first participants
 
+
 ####################################################
 catn("=== Compare model fits among FTP and ALL ===")
 ####################################################
@@ -490,7 +491,8 @@ if(make_tables){
 catn("Get log-ratio for suppression among FTP and non-FTP") 
 #__________________________________________________________
 
-# TODO: take blue-black plots, and take posterior sample ratios. Report the ratio (or log-ratio) by 5 years age group, and whether any significantly > 1 (or > 0).
+# TODO: take blue-black plots, and take posterior sample ratios. 
+# Report the ratio (or log-ratio) by 5 years age group, and whether any significantly > 1 (or > 0).
 
 filename_rds <- file.path(out.dir.figures, "posterior_ftp_logratio_quantiles.rds")
 
@@ -537,6 +539,77 @@ if(make_tables & 0){ # age groups for which CrI does not include 0
             list(min = min(AGEYRS), max=max(AGEYRS))
         }
     }, by = c('MODEL', 'ROUND', 'SEX', 'LOC')]
+}
+
+
+
+catn("Increases in suppression relative to round 16")
+#____________________________________________________
+
+filename_rds <- file.path(out.dir.figures, "posterior_suppressionincrease_vsround16.rds")
+
+if( file.exists(filename_rds) & !overwrite ){
+    dincreasessupp <- readRDS(filename_rds)
+} else {
+    # doesn't work cause there are 2 
+    draws16 <- dfiles_rds[MODEL == 'run-gp-supp-hiv' & ROUND == 16, {
+        paths <- file.path(D, F)
+        idx.all <- which(FTP == FALSE)
+        idx.ftp <- which(FTP == TRUE)
+        cat(paths[idx.all], "\n")
+        get.weighted.average.p_predict(
+            readRDS(paths[idx.all]),
+            readRDS(paths[idx.ftp]),
+            round = unique(ROUND),
+            expression_prereturn=draws_all
+        )
+    }]
+    draws16[, `:=` (joint16=joint, joint=NULL, parts=NULL, ftp=NULL, ROUND=NULL,PARTRATE=NULL)]
+
+    dincreasessupp <- dfiles_rds[MODEL == 'run-gp-supp-hiv' & ROUND >= 17, {
+        paths <- file.path(D, F)
+        idx.all <- which(FTP == FALSE)
+        idx.ftp <- which(FTP == TRUE)
+        cat(paths[idx.all], "\n")
+        get.weighted.average.p_predict(
+            readRDS(paths[idx.all]),
+            readRDS(paths[idx.ftp]),
+            round = unique(ROUND),
+            expression_prereturn = {
+                draws_all <- merge(draws_all, draws16, by=c(demo.cols, dot.cols))
+                if("joint16.x" %in% names(draws_all)){
+                    draws_all[, `:=` ( joint16 = joint16.x, joint16.x = NULL, joint16.y = NULL )]
+                }
+                draws_all[, `:=` ( joint = joint / joint16)]
+                return(draws_all[, quantile2(joint), by = c("SEX", "LOC", "AGEYRS")])
+            }
+        )},
+        by = c("MODEL", "ROUND")
+    ]
+    saveRDS(object= dincreasessupp, filename_rds)
+    rm(draws16)
+}
+
+
+if(make_plots){
+
+    dplot <- copy(dincreasessupp)
+    prettify_labels(dplot)
+    log_quantiles(dplot)
+
+    p_supphiv_logprob16 <- ggplot(dplot, aes(x=AGEYRS, color=SEX_LAB, fill=SEX_LAB)) + 
+        geom_hline(yintercept=0, linetype=2, color='grey80') +
+        geom_ribbon(aes(ymin=CL, ymax=CU), alpha=0.2, color=NA) +
+        geom_line(aes(y=M)) +
+        facet_grid(LOC_LAB + SEX_LAB ~ ROUND_LAB, scales="free_y", labeller= labeller(ROUND_LAB = round_labs) ) +
+        scale_color_manual(values=palettes$sex) + 
+        scale_fill_manual(values=palettes$sex) + 
+        theme_default() +
+        my_labs(x='', y='Posterior log ratio of viral suppression among PLHIV') +
+        NULL
+
+    filename <- paste0("fit_supphiv_logprob_vs_baseline_by_locgenderage.pdf")
+    ggsave2(p = p_supphiv_logprob16, file = filename, LALA = out.dir.figures, w = 9, h = 8)
 }
 
 

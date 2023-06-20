@@ -7,6 +7,13 @@ quantile2 <- function(x, ps = c(CL = .025, IL = .25, M = .5, IU = .75, CU = .975
     as.data.table(out)
 }
 
+log_quantiles <- function(DT){
+    # take logs of CL, IL, M, IU and CU in place 
+    nms <- c("CL", "IL", "M", "IU", "CU")
+    nms <- intersect(nms, names(DT))
+    DT[, (nms) := lapply(.SD, log), .SDcols = nms]
+}
+
 stanindices2vars <- function(names) {
     .gs <- function(reg) {
         out <- gsub(reg, "\\1", names)
