@@ -50,6 +50,7 @@ source(file.path(gitdir.functions, "plotting_main_figures.R"))
 source(file.path(gitdir.functions, "postprocessing_helpers.R"))
 source(file.path(gitdir.functions, "postprocessing_tables.R"))
 source(file.path(gitdir.functions, "phsc_vl_helpers.R"))
+source(file.path(gitdir.functions, "paper_statements.R"))
 naturemed_reqs()
 
 overwrite <- !interactive()
@@ -405,11 +406,61 @@ if (make_plots) {
 }
 
 
+catn("Other contribution to viraemia quantiles for text")
+#________________________________________________________
+
+filename_overleaf <- file.path(out.dir.tables, "overleaf_viraemiacontribution_custom.rds")
+
+dcens_custom <- copy(dcens)
+dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, 25, 40, 50))]
+
+if (file.exists(filename_overleaf) & !overwrite) {
+    contrib_viraemia_custom <- readRDS(filename_overleaf)
+} else {
+    contrib_viraemia_custom <- dfiles_rds[ MODEL == 'run-gp-supp-pop' & ROUND == 19,
+        {
+            dcens
+            stopifnot(.N == 2)
+            paths <- file.path(D, F)
+            idx.all <- which(FTP == FALSE)
+            idx.ftp <- which(FTP == TRUE)
+
+            cat(paths[idx.all], "\n")
+            get.weighted.average.p_predict(
+                readRDS(paths[idx.all]),
+                readRDS(paths[idx.ftp]),
+                round = unique(ROUND),
+                expression_prereturn = {
+                    tmp <- merge(draws_all, dcens_custom, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
+                    tmp <- tmp[,
+                        {
+                            z <- joint * ELIGIBLE_SMOOTH
+                            list( z = sum(z))
+                        },
+                        by = c(dot.cols, "LOC", "SEX", "AGEGROUP")
+                    ][, list(
+                        AGEGROUP = AGEGROUP,
+                        SEX = SEX,
+                        CONTRIBUTION = z/sum(z)
+                    ),
+                    by=c(dot.cols, "LOC")]
+                    tmp[, quantile2(CONTRIBUTION), by = c("SEX", "LOC", "AGEGROUP")]
+                }
+            )
+        },
+        by = c("MODEL", "ROUND")
+    ]
+    saveRDS(object = contrib_viraemia_custom, file = filename_overleaf)
+    paper_statements_contributions_viraemia_round19()
+    # statements for paper
+
+}
+
+
 catn("Get quantiles for contributions by agegroup") 
 #__________________________________________________
 
 filename_rds <- file.path(out.dir.tables, "fullpop_allcontributions_byagegroup.rds")
-overwrite <- FALSE
 
 if (file.exists(filename_rds) & !overwrite) {
     dcontrib_agegroup <- readRDS(filename_rds)
