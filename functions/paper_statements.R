@@ -7,3 +7,19 @@ paper_statements_contributions_viraemia_round19 <- function(DT= contrib_viraemia
         NULL
     }, by=c('SEX')]
 } 
+
+paper_statements_contributions_PLHIV <- function(DT=djoint_agegroup){
+
+    tmp <- subset(DT, MODEL == 'run-gp-prevl' & AGEGROUP == 'Total')
+    tmp[, CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE)]
+    tmp[, .(ROUND, LOC, SEX, CELL)]
+
+    tmp[ROUND == 16 & SEX == "Total", {
+        sprintf(
+            "At baseline, HIV prevalence was estimated to be:\n - %s in inland\n - %s in fishing\n",
+            CELL[ LOC == 'fishing'], CELL[ LOC == 'inland' ]
+        ) |> cat()
+        NULL
+    }]
+    tmp
+}

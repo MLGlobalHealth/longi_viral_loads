@@ -221,10 +221,12 @@ catn("Get quantiles for population prevalences by agegroup")
 
 filename_rds <- file.path(out.dir.figures, "posterior_quantiles_agegroups.rds")
 
+# dcens custom to prove 
+
 if( file.exists(filename_rds) & !overwrite ){
     djoint_agegroup <- readRDS(filename_rds)
 } else {
-    djoint_agegroup <- dfiles_rds[ MODEL != 'run-gp-supp-hiv' ,
+    djoint_agegroup <- dfiles_rds[ MODEL != 'run-gp-supp-hiv',
         {
             stopifnot(.N == 2)
             paths <- file.path(D, F)
@@ -236,18 +238,36 @@ if( file.exists(filename_rds) & !overwrite ){
                 readRDS(paths[idx.ftp]),
                 round = unique(ROUND),
                 expression_prereturn = {
+                    # use grouping sets instead of standard 'by' to allow for sex-totals 
+                    by_cols <- c(dot.cols, "LOC", "SEX", "AGEGROUP")
                     tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
-                    tmp <- tmp[, 
-                            list( joint =  sum(joint * ELIGIBLE_SMOOTH) ), 
-                        by = c(dot.cols, "LOC", "SEX", "AGEGROUP")
-                    ] 
-                    tmp[, quantile2(joint), by = c("SEX", "LOC", "AGEGROUP")]
+                    tmp <- groupingsets(tmp, 
+                        by = by_cols,
+                        j= list( N = sum(joint*ELIGIBLE_SMOOTH),NE = sum(ELIGIBLE_SMOOTH)),
+                        sets=list(by_cols, setdiff(by_cols, 'AGEGROUP'), setdiff(by_cols, c('AGEGROUP', 'SEX')))
+                    )
+                    tmp[, quantile2(N/NE), by = c("LOC", "SEX", "AGEGROUP")]
+                    # tmp[, N := N/sum(NE)]
+                    # tmp <- tmp[, .(joint=sum(joint * ELIGIBLE_SMOOTH)), by =  by_cols ] 
+                    # groupingsets(tmp, 
+                    #     by = c('LOC', "SEX", "AGEGROUP"),
+                    #     j=quantile2(N/sum(NE)), 
+                    #     sets=list(c("LOC", "SEX", "AGEGROUP"), c("LOC", "SEX"))
+                    # )
                 }
             )
         },
         by = c("MODEL", "ROUND")
     ]
+
+    djoint_agegroup[is.na(AGEGROUP), AGEGROUP := "Total"]
+    djoint_agegroup[is.na(SEX), SEX := "Total"]
     saveRDS(object= djoint_agegroup, filename_rds)
+}
+
+if(make_tables){
+
+    tmp <- paper_statements_contributions_PLHIV(djoint_agegroup)
 }
 
 catn("Get quantiles for population prevalences aggregated over age") 
@@ -451,9 +471,8 @@ if (file.exists(filename_overleaf) & !overwrite) {
         by = c("MODEL", "ROUND")
     ]
     saveRDS(object = contrib_viraemia_custom, file = filename_overleaf)
+    # print statements for paper
     paper_statements_contributions_viraemia_round19()
-    # statements for paper
-
 }
 
 
@@ -597,10 +616,12 @@ if(make_tables & 0){ # age groups for which CrI does not include 0
 catn("Increases in suppression relative to round 16")
 #____________________________________________________
 
-filename_rds <- file.path(out.dir.figures, "posterior_suppressionincrease_vsround16.rds")
+filename_rds  <- file.path(out.dir.figures, "posterior_suppressionincrease_vsround16.rds")
+filename_rds2 <- file.path(out.dir.figures, "posterior_suppressionincrease_diff_vsround16.rds")
 
-if( file.exists(filename_rds) & !overwrite ){
+if( file.exists(filename_rds2) & !overwrite ){
     dincreasessupp <- readRDS(filename_rds)
+    dincreasessupp_diff <- readRDS(filename_rds2)
 } else {
     # doesn't work cause there are 2 
     draws16 <- dfiles_rds[MODEL == 'run-gp-supp-hiv' & ROUND == 16, {
@@ -637,7 +658,31 @@ if( file.exists(filename_rds) & !overwrite ){
         )},
         by = c("MODEL", "ROUND")
     ]
+
     saveRDS(object= dincreasessupp, filename_rds)
+
+    dincreasessupp_diff <- dfiles_rds[MODEL == 'run-gp-supp-hiv' & ROUND >= 17, {
+        paths <- file.path(D, F)
+        idx.all <- which(FTP == FALSE)
+        idx.ftp <- which(FTP == TRUE)
+        cat(paths[idx.all], "\n")
+        get.weighted.average.p_predict(
+            readRDS(paths[idx.all]),
+            readRDS(paths[idx.ftp]),
+            round = unique(ROUND),
+            expression_prereturn = {
+                draws_all <- merge(draws_all, draws16, by=c(demo.cols, dot.cols))
+                if("joint16.x" %in% names(draws_all)){
+                    draws_all[, `:=` ( joint16 = joint16.x, joint16.x = NULL, joint16.y = NULL )]
+                }
+                draws_all[, `:=` ( joint = joint - joint16)]
+                return(draws_all[, quantile2(joint), by = c("SEX", "LOC", "AGEYRS")])
+            }
+        )},
+        by = c("MODEL", "ROUND")
+    ]
+
+    saveRDS(object= dincreasessupp_diff, filename_rds2)
     rm(draws16)
 }
 
