@@ -372,7 +372,7 @@ plot.pyramid.eligible.participants <- function(DT) {
         geom_text(data = dlabs[SEX == "F"], aes(x = XPOS, y = YPOS, hjust = 1.2, vjust = 2, label = P_LAB)) +
         geom_text(data = dlabs[SEX == "M"], aes(x = XPOS, y = YPOS, hjust = -0.2, vjust = 2, label = P_LAB)) +
         coord_flip() +
-        facet_grid(ROUND_LAB ~ FC_LAB, scales = "free_x") +
+        facet_grid(ROUND_LAB ~ FC_LAB, scales = "free_x", labeller = labeller(ROUND_LAB = round_labs)) +
         scale_fill_manual(values = palettes$sex) +
         scale_color_manual(values = palettes$sex) +
         scale_y_continuous(labels = abs, expand = c(0.05, 0)) +
@@ -412,7 +412,7 @@ plot.pyramid.bysexround <- function(DT, NUM, DEN, .ylab) {
         geom_text(data = dlabs[SEX == "F"], aes(x = XPOS, y = YPOS, hjust = 1.2, vjust = 2, label = P_LAB)) +
         geom_text(data = dlabs[SEX == "M"], aes(x = XPOS, y = YPOS, hjust = -0.2, vjust = 2, label = P_LAB)) +
         coord_flip() +
-        facet_grid(ROUND_LAB ~ FC_LAB, scales = "free_x") +
+        facet_grid(ROUND_LAB ~ FC_LAB, scales = "free_x", labeller = labeller(ROUND_LAB = round_labs)) +
         scale_fill_manual(values = palettes$sex) +
         scale_color_manual(values = palettes$sex) +
         scale_y_continuous(labels = abs, expand = c(0.05, 0)) +
@@ -445,7 +445,7 @@ plot.agecontribution.fromN.stratby <- function(DT, var, by_cols = c('ROUND', 'FC
                 geom_line() 
             }
         } +
-        facet_grid(ROUND_LAB~FC_LAB) +
+        facet_grid(ROUND_LAB ~ FC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
         scale_fill_manual(values=palettes$sex)+ 
         scale_color_manual(values=palettes$sex)+ 
         scale_y_continuous(labels=scales::label_percent(), expand=expansion(mult=c(0,.05))) +
@@ -468,7 +468,7 @@ plot.smoothed.participation.rates <- function(DT)
         geom_line() +
         geom_point(data=dplot[LOESS_SPAN==""], aes(linetype=NULL)) + 
         scale_color_manual(values=palettes$sex) + 
-        facet_grid( ROUND_LAB ~ FC_LAB ) +
+        facet_grid(ROUND_LAB ~ FC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
         scale_y_percentage +
         theme_default() +
         my_labs()
