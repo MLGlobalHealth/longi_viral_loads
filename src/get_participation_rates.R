@@ -104,7 +104,7 @@ dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS', 'ROUND'))] |> kable()
 dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS', 'ROUND', 'FC'))] |> kable()
 
 .ex <- expr(list(FIRST_RATE = round(100 * sum(N_FIRST)/sum(N_PART), 2)))
-dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS'))] |> kable(a)
+dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS'))] |> kable()
 dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS', 'ROUND'))] |> kable()
 dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS', 'ROUND', 'FC'))] |> kable()
 

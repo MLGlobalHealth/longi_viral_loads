@@ -7,11 +7,11 @@ quantile2 <- function(x, ps = c(CL = .025, IL = .25, M = .5, IU = .75, CU = .975
     as.data.table(out)
 }
 
-log_quantiles <- function(DT){
+log_quantiles <- function(DT, base=exp(1)){
     # take logs of CL, IL, M, IU and CU in place 
     nms <- c("CL", "IL", "M", "IU", "CU")
     nms <- intersect(nms, names(DT))
-    DT[, (nms) := lapply(.SD, log), .SDcols = nms]
+    DT[, (nms) := lapply(.SD, log, base=base), .SDcols = nms]
 }
 
 stanindices2vars <- function(names) {
@@ -425,7 +425,7 @@ plot.agesex.contributions.by.roundcomm <- function(DT, label, include_baseline =
             }
         } +
         geom_line() +
-        facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
+        facet_grid(ROUND_LAB ~ LOC_LAB, scale='free_y', labeller = labeller(ROUND_LAB = round_labs)) +
         scale_color_manual(values = palettes$sex) +
         scale_fill_manual(values = palettes$sex) +
         scale_y_percentage +
@@ -484,7 +484,7 @@ plot.logratio.ftpvsnon <- function(DT, label) {
         geom_hline(aes(yintercept = 0), linetype = 'dashed') +
         geom_ribbon(alpha = .2, color = NA) +
         geom_line() +
-        facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
+        facet_grid(ROUND_LAB ~ LOC_LAB, scale='free_y', labeller = labeller(ROUND_LAB = round_labs)) +
         scale_color_manual(values = palettes$sex) +
         scale_fill_manual(values = palettes$sex) +
         scale_x_continuous(expand = c(0, 0)) +
