@@ -8,7 +8,7 @@ paper_statements_contributions_viraemia_round19 <- function(DT= contrib_viraemia
     }, by=c('SEX')]
 } 
 
-paper_statements_contributions_PLHIV <- function(DT=djoint_agegroup){
+paper_statements_overall_prevalence <- function(DT=djoint_agegroup){
 
     tmp <- subset(DT, MODEL == 'run-gp-prevl' & AGEGROUP == 'Total')
     tmp[, CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE)]
@@ -21,5 +21,16 @@ paper_statements_contributions_PLHIV <- function(DT=djoint_agegroup){
         ) |> cat()
         NULL
     }]
+    tmp
+}
+
+paper_statements_contributions_PLHIV_custom <- function(DT=contrib_plhiv_custom){
+
+    # DT <- copy(contrib_plhiv_custom)
+    tmp <- subset(DT, SEX=="Total")
+    tmp[, CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE)]
+    tmp[ AGEGROUP == '30-49', {
+        sprintf("In %s communities, the contribution of individuals aged 30-49 increased from:\n%s at baseline to %s in the last round\n", unique(LOC),CELL[ROUND == 16], CELL[ROUND == 19]) |> cat()
+    }, by=c('LOC')]
     tmp
 }

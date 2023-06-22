@@ -267,7 +267,7 @@ if( file.exists(filename_rds) & !overwrite ){
 
 if(make_tables){
 
-    tmp <- paper_statements_contributions_PLHIV(djoint_agegroup)
+    tmp <- paper_statements_overall_prevalence(djoint_agegroup)
 }
 
 catn("Get quantiles for population prevalences aggregated over age") 
@@ -475,6 +475,66 @@ if (file.exists(filename_overleaf) & !overwrite) {
     paper_statements_contributions_viraemia_round19()
 }
 
+catn("Other contribution to PLHIV quantiles for text")
+#________________________________________________________
+
+filename_overleaf <- file.path(out.dir.tables, "overleaf_PLHIVcontribution_custom.rds")
+
+dcens_custom <- copy(dcens)
+dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, k, 50))]
+
+if (file.exists(filename_overleaf) & !overwrite) {
+    contrib_plhiv_custom <- readRDS(filename_overleaf)
+} else {
+    contrib_plhiv_custom <- dfiles_rds[ MODEL == 'run-gp-prevl' & ROUND %in% c(16,19),
+        {
+            dcens
+            stopifnot(.N == 2)
+            paths <- file.path(D, F)
+            idx.all <- which(FTP == FALSE)
+            idx.ftp <- which(FTP == TRUE)
+
+            cat(paths[idx.all], "\n")
+            get.weighted.average.p_predict(
+                readRDS(paths[idx.all]),
+                readRDS(paths[idx.ftp]),
+                round = unique(ROUND),
+                expression_prereturn = {
+
+                    # removed "SEX" here
+                    by_cols1 <- c(dot.cols, "LOC", "AGEGROUP")
+                    by_cols2 <- c(dot.cols, "LOC", "SEX", "AGEGROUP")
+                    
+                    tmp <- merge(draws_all, dcens_custom, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
+
+                    tmp1 <- tmp[, {
+                            z <- joint * ELIGIBLE_SMOOTH
+                            list( z = sum(z))
+                        }, by = by_cols1
+                    ][,
+                        .(AGEGROUP=AGEGROUP, CONTRIBUTION=z/sum(z))
+                    , by=c(dot.cols, "LOC")]
+                    tmp1[, SEX := 'Total']
+
+                    tmp2 <- tmp[, {
+                            z <- joint * ELIGIBLE_SMOOTH
+                            list( z = sum(z))
+                        }, by = by_cols2
+                    ][,
+                        .(AGEGROUP=AGEGROUP, SEX=SEX,  CONTRIBUTION=z/sum(z))
+                    , by=c(dot.cols, "LOC")]
+
+                    rbind(tmp1, tmp2)[, quantile2(CONTRIBUTION), by=c("LOC", "SEX", 'AGEGROUP')]
+                }
+            )
+        },
+        by = c("MODEL", "ROUND")
+    ]
+    saveRDS(object = contrib_plhiv_custom, file = filename_overleaf)
+    # print statements for paper
+}
+
+tmp <- paper_statements_contributions_PLHIV_custom()
 
 catn("Get quantiles for contributions by agegroup") 
 #__________________________________________________
