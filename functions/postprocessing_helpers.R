@@ -287,7 +287,7 @@ plot.fit.weighted.by.ftpstatus <- function(DT, label) {
 
     ggplot(dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = SEX_LAB, color = SEX_LAB)) +
         .h(lab = "run-gp-supp-hiv", intercept = .95^3) +
-        .h(lab = "run-gp-supp-hiv", intercept = .95^2) +
+        # .h(lab = "run-gp-supp-hiv", intercept = .95^2) +
         geom_ribbon(alpha = .2, color = NA) +
         geom_line() +
         facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
@@ -425,7 +425,7 @@ plot.agesex.contributions.by.roundcomm <- function(DT, label, include_baseline =
             }
         } +
         geom_line() +
-        facet_grid(ROUND_LAB ~ LOC_LAB, scale='free_y', labeller = labeller(ROUND_LAB = round_labs)) +
+        facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
         scale_color_manual(values = palettes$sex) +
         scale_fill_manual(values = palettes$sex) +
         scale_y_percentage +
@@ -484,7 +484,7 @@ plot.logratio.ftpvsnon <- function(DT, label) {
         geom_hline(aes(yintercept = 0), linetype = 'dashed') +
         geom_ribbon(alpha = .2, color = NA) +
         geom_line() +
-        facet_grid(ROUND_LAB ~ LOC_LAB, scale='free_y', labeller = labeller(ROUND_LAB = round_labs)) +
+        facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
         scale_color_manual(values = palettes$sex) +
         scale_fill_manual(values = palettes$sex) +
         scale_x_continuous(expand = c(0, 0)) +
@@ -525,3 +525,5 @@ get.posterior.logratios.ftp <- function(fit1, fit2, round, expression_prereturn 
     draws_all[, `:=`(logratio = log(parts) - log(ftp), ftp = NULL, parts = NULL), ]
     return(draws_all[!is.na(logratio), quantile2(logratio), by = c("SEX", "LOC", "AGEYRS")])
 }
+
+

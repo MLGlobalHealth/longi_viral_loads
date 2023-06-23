@@ -382,41 +382,53 @@ plot.pyramid.eligible.participants <- function(DT) {
         NULL
 }
 
-plot.pyramid.bysexround <- function(DT, NUM, DEN, .ylab) {
+plot.pyramid.bysexround <- function(DT, NUM, DEN, .ylab, percent_lab=TRUE) {
     dplot <- copy(DT)
     cols <- c(NUM, DEN)
     new_cols <- paste(c("NUM", "DEN"), "PYR", sep = "_")
 
     dplot[, (new_cols) := lapply(.SD, function(x) (-1 + 2 * (SEX == "F")) * x), .SDcols = cols]
 
-    dlabs <- dplot[,
-        .(P = round(100 * sum(get(NUM)) / sum(get(DEN)), 2)),
-        by = c("ROUND", "FC", "SEX")
-    ] |>
-        prettify_labels()
-    dlabs[, `:=`(
-        P_LAB = paste0(P, "%"),
-        XPOS = Inf,
-        YPOS = Inf * (-1 + 2 * as.integer(SEX == "F"))
-    )]
-    dlabs[, `:=`(
-        HJUST  = 1 / 2 + sign(XPOS) / 2,
-        VJUST  = 1 / 2 + sign(YPOS) / 2
-    )]
+    if(percent_lab){
+        dlabs <- dplot[,
+            .(P = round(100 * sum(get(NUM)) / sum(get(DEN)), 2)),
+            by = c("ROUND", "FC", "SEX")
+        ] |>
+            prettify_labels()
+        dlabs[, `:=`(
+            P_LAB = paste0(P, "%"),
+            XPOS = Inf,
+            YPOS = Inf * (-1 + 2 * as.integer(SEX == "F"))
+        )]
+        dlabs[, `:=`(
+            HJUST  = 1 / 2 + sign(XPOS) / 2,
+            VJUST  = 1 / 2 + sign(YPOS) / 2
+        )]
+    }
 
     dplot |>
         prettify_labels() |>
         ggplot(aes(x = AGEYRS, fill = SEX_LAB)) +
         geom_col(aes(y = DEN_PYR), fill = "white", color = "grey60") +
-        geom_col(aes(y = NUM_PYR), color = "grey60") +
-        geom_text(data = dlabs[SEX == "F"], aes(x = XPOS, y = YPOS, hjust = 1.2, vjust = 2, label = P_LAB)) +
-        geom_text(data = dlabs[SEX == "M"], aes(x = XPOS, y = YPOS, hjust = -0.2, vjust = 2, label = P_LAB)) +
+        geom_col(aes(y = NUM_PYR), color = "grey60") + {
+            if(percent_lab){
+                geom_text(data = dlabs[SEX == "F"], aes(x = XPOS, y = YPOS, hjust = 1.2, vjust = 2, label = P_LAB)) 
+            }else{
+                NULL
+            }
+        } + {
+            if(percent_lab){
+                geom_text(data = dlabs[SEX == "M"], aes(x = XPOS, y = YPOS, hjust = -0.2, vjust = 2, label = P_LAB)) 
+            }else{
+                NULL
+            }
+        } + 
         coord_flip() +
         facet_grid(ROUND_LAB ~ FC_LAB, scales = "free_x", labeller = labeller(ROUND_LAB = round_labs)) +
         scale_fill_manual(values = palettes$sex) +
         scale_color_manual(values = palettes$sex) +
         scale_y_continuous(labels = abs, expand = c(0.05, 0)) +
-        scale_x_continuous(expand = c(0, 0)) +
+        scale_x_continuous(expand = c(0, 0), breaks=seq(15,50, by=5)) +
         theme_default() +
         my_labs(y = .ylab) +
         NULL
