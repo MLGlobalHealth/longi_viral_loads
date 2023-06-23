@@ -7,11 +7,11 @@ quantile2 <- function(x, ps = c(CL = .025, IL = .25, M = .5, IU = .75, CU = .975
     as.data.table(out)
 }
 
-log_quantiles <- function(DT, base=exp(1)){
-    # take logs of CL, IL, M, IU and CU in place 
+log_quantiles <- function(DT, base = exp(1)) {
+    # take logs of CL, IL, M, IU and CU in place
     nms <- c("CL", "IL", "M", "IU", "CU")
     nms <- intersect(nms, names(DT))
-    DT[, (nms) := lapply(.SD, log, base=base), .SDcols = nms]
+    DT[, (nms) := lapply(.SD, log, base = base), .SDcols = nms]
 }
 
 stanindices2vars <- function(names) {
@@ -275,9 +275,18 @@ get.weighted.average.p_predict.deprecated <- function(fit1, fit2, round) {
     lapply(params, get.quantiles.joint) |> rbindlist()
 }
 
-plot.fit.weighted.by.ftpstatus <- function(DT, label) {
+plot.fit.weighted.by.ftpstatus <- function(DT, label, include_baseline = FALSE) {
     dplot <- subset(DT, MODEL == label) |>
         prettify_labels()
+
+    if (include_baseline) {
+        baseline <- subset(dplot, ROUND_LAB == "Round 16")
+        baseline <- rbindlist(list(
+            copy(baseline)[, ROUND_LAB := "Round 17"],
+            copy(baseline)[, ROUND_LAB := "Round 18"],
+            copy(baseline)[, ROUND_LAB := "Round 19"]
+        )) |> subset(ROUND_LAB %in% unique(dplot$ROUND_LAB))
+    }
 
     .h <- function(lab, intercept) {
         if (label == lab) {
@@ -289,12 +298,17 @@ plot.fit.weighted.by.ftpstatus <- function(DT, label) {
         .h(lab = "run-gp-supp-hiv", intercept = .95^3) +
         # .h(lab = "run-gp-supp-hiv", intercept = .95^2) +
         geom_ribbon(alpha = .2, color = NA) +
+        {
+            if (include_baseline) {
+                geom_line(data = baseline, linetype = "dotted")
+            }
+        } +
         geom_line() +
         facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
         scale_color_manual(values = palettes$sex) +
         scale_fill_manual(values = palettes$sex) +
         scale_y_percentage +
-        scale_x_continuous(expand = c(0, 0)) +
+        scale_x_continuous(expand = c(0, 0), breaks = age_breaks) +
         theme_default() +
         my_labs(y = model_dict[label]) +
         NULL
@@ -305,6 +319,7 @@ plot.estimated.number.viraemic.among.census.eligible <- function(DT) {
         geom_col(position = position_dodge()) +
         facet_grid(ROUND_LAB ~ LOC_LAB, scales = "free_y") +
         theme_default() +
+        scale_x_continuous(expand = c(0, 0), breaks = age_breaks) +
         scale_color_manual(values = palettes$sex) +
         scale_fill_manual(values = palettes$sex) +
         scale_y_continuous(expand = expansion(mult = c(0, .1))) +
@@ -324,6 +339,7 @@ plot.estimated.contribution.viraemic.among.census.eligible <- function(DT) {
         geom_line() +
         geom_point() +
         facet_grid(ROUND_LAB ~ LOC_LAB) +
+        scale_x_continuous(expand = c(0, 0), breaks = age_breaks) +
         theme_default() +
         scale_color_manual(values = palettes$sex) +
         scale_fill_manual(values = palettes$sex) +
@@ -406,11 +422,11 @@ plot.agesex.contributions.by.roundcomm <- function(DT, label, include_baseline =
 
     if (include_baseline) {
         baseline <- subset(dplot, ROUND_LAB == "Round 16")
-        rbindlist(list(
+        baseline <- rbindlist(list(
             copy(baseline)[, ROUND_LAB := "Round 17"],
             copy(baseline)[, ROUND_LAB := "Round 18"],
             copy(baseline)[, ROUND_LAB := "Round 19"]
-        )) -> baseline
+        )) |> subset(ROUND_LAB %in% unique(dplot$ROUND_LAB))
     }
 
     .makelab <- function(lab) {
@@ -429,7 +445,7 @@ plot.agesex.contributions.by.roundcomm <- function(DT, label, include_baseline =
         scale_color_manual(values = palettes$sex) +
         scale_fill_manual(values = palettes$sex) +
         scale_y_percentage +
-        scale_x_continuous(expand = c(0, 0)) +
+        scale_x_continuous(expand = c(0, 0), breaks = age_breaks) +
         theme_default() +
         my_labs(y = .makelab(label)) +
         NULL
@@ -474,14 +490,15 @@ plot.logratio.ftpvsnon <- function(DT, label) {
         prettify_labels()
 
     .makelab <- function(lab) {
-        paste("Log ratio of posterior estimates for",
-            gsub("^P", "p", model_dict[lab]), 
+        paste(
+            "Log ratio of posterior estimates for",
+            gsub("^P", "p", model_dict[lab]),
             "in all participants vs first-time-participants"
         )
     }
 
     ggplot(dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = SEX_LAB, color = SEX_LAB)) +
-        geom_hline(aes(yintercept = 0), linetype = 'dashed') +
+        geom_hline(aes(yintercept = 0), linetype = "dashed") +
         geom_ribbon(alpha = .2, color = NA) +
         geom_line() +
         facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
@@ -489,7 +506,7 @@ plot.logratio.ftpvsnon <- function(DT, label) {
         scale_fill_manual(values = palettes$sex) +
         scale_x_continuous(expand = c(0, 0)) +
         theme_default() +
-        my_labs(y = .makelab(label), x="") +
+        my_labs(y = .makelab(label), x = "") +
         NULL
 }
 
@@ -525,5 +542,3 @@ get.posterior.logratios.ftp <- function(fit1, fit2, round, expression_prereturn 
     draws_all[, `:=`(logratio = log(parts) - log(ftp), ftp = NULL, parts = NULL), ]
     return(draws_all[!is.na(logratio), quantile2(logratio), by = c("SEX", "LOC", "AGEYRS")])
 }
-
-

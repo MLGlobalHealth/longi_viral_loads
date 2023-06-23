@@ -266,7 +266,6 @@ if( file.exists(filename_rds) & !overwrite ){
 }
 
 if(make_tables){
-
     tmp <- paper_statements_overall_prevalence(djoint_agegroup)
 }
 
@@ -749,44 +748,18 @@ if( file.exists(filename_rds2) & !overwrite ){
 
 if(make_plots){
 
-    dplot <- copy(dincreasessupp)
-    prettify_labels(dplot)
-    # log_quantiles(dplot, base=10)
 
-    p_supphiv_logprob16 <- ggplot(dplot, aes(x=AGEYRS, color=SEX_LAB, fill=SEX_LAB)) + 
-        geom_hline(yintercept=1, linetype=2, color='grey80') +
-        geom_hline(yintercept=4, linetype=2, color='grey80') +
-        geom_ribbon(aes(ymin=CL, ymax=CU), alpha=0.2, color=NA) +
-        geom_line(aes(y=M)) +
-        facet_grid(LOC_LAB  ~ ROUND_LAB, scales="free_y", labeller= labeller(ROUND_LAB = round_labs) ) +
-        scale_x_continuous(expand=c(0,0)) +
-        scale_y_continuous(trans = scales::log2_trans(),
-            breaks = scales::trans_breaks(paste0("log2"), function(x) 2^x),
-            labels = scales::trans_format(paste0("log2"), scales::label_math(expr = 2^.x))
-        ) +
-        scale_color_manual(values=palettes$sex) + 
-        scale_fill_manual(values=palettes$sex) + 
-        theme_default() +
-        my_labs(x='', y='Posterior ratio of viral suppression among PLHIV relative to Round 16') +
-        NULL
+    p_supphiv_logprob16_ratio <- plot.relative.suppression.vs.round16.ratio(dincreasessupp) 
+    p_supphiv_logprob16_diff <- plot.relative.suppression.vs.round16.diff(dincreasessupp_diff) 
+
+    .w <- 9; .h <- 8
 
     filename <- paste0("fit_supphiv_logprob_vs_baseline_by_locgenderage.pdf")
-    ggsave2(p = p_supphiv_logprob16, file = filename, LALA = out.dir.figures, w = 9, h = 8)
+    ggsave2(p = p_supphiv_logprob16_ratio, file = filename, LALA = out.dir.figures, w = .w, h = .h)
+    filename <- paste0("fit_supphiv_logprob_vs_baseline_by_locgenderage_diff.pdf")
+    ggsave2(p = p_supphiv_logprob16_diff, file = filename, LALA = out.dir.figures,  w = .w, h = .h)
 
-    ggplot(dplot, aes(x=AGEYRS, color=SEX_LAB, fill=SEX_LAB, linetype=LOC_LAB)) + 
-        geom_hline(yintercept=1, linetype=2, color='grey80') +
-        # geom_ribbon(aes(ymin=CL, ymax=CU), alpha=0.2, color=NA) +
-        geom_line(aes(y=CL)) +
-        facet_grid(~ ROUND_LAB, scales="free_y", labeller= labeller(ROUND_LAB = round_labs) ) +
-        scale_x_continuous(expand=c(0,0)) +
-        scale_y_log10(
-            breaks = scales::trans_breaks("log10", function(x) 10^x),
-            labels = scales::trans_format("log10", scales::math_format(10^.x))) +
-        scale_color_manual(values=palettes$sex) + 
-        scale_fill_manual(values=palettes$sex) + 
-        theme_default() +
-        my_labs(x='', y='Posterior ratio of viral suppression among PLHIV relative to Round 16') +
-        NULL
+    rm(.w, .h)
 
 }
 

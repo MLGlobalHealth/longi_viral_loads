@@ -123,6 +123,7 @@ drounds[, LABS := paste0(LABS, START, " to ", END)]
 round_labs <- rep(drounds$LABS, 2)
 names(round_labs) <- with(drounds, c(ROUND, paste('Round', ROUND)) )
 
+round_labs2 <- gsub('\n',' ',round_labs)
 
 dall_dictionaries <- list(
     TEST_YEAR_AGO = c(

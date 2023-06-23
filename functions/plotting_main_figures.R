@@ -795,7 +795,7 @@ plot.empirical.prob.of.suppression.with.age <- function(DT=dcens)
     )
 }
 
-plot.rakai.map <- function(){
+plot.rakai.map <- function(.size=3){
 
     require(ggmap)
     require(maps)
@@ -853,7 +853,7 @@ plot.rakai.map <- function(){
         aes(x=longitude, y=latitude, 
             shape=LOC_LAB, # size=POP_SIZE,
             color=LOC_LAB, fill=LOC_LAB
-        ), size=3) +
+        ), size=.size) +
         scale_color_manual(values=c('black', 'black')) +
         scale_fill_manual(values=palettes$comm) +
         scale_shape_manual(values=c('Inland'=21, 'Fishing'=25)) +
@@ -867,10 +867,64 @@ plot.rakai.map <- function(){
             legend.direction = 'horizontal'
         ) + 
         ggsn::scalebar(
-            x.min=box['left'] + .01, x.max=box['right'] - 0.01, y.min=box['bottom'] + .03, y.max=box['top'] - .01 ,
-            transform = TRUE, dist=10,dist_unit = 'km',
-            location = 'bottomleft', height=0.01,
-            border.size = .1, st.dist=0.02, st.size=3) 
+            x.min=box['left'] + .01,
+            x.max=box['right'] - 0.01, 
+            y.min=box['bottom'] + .03,
+            y.max=box['top'] - .01 ,
+            transform = TRUE, 
+            dist=10, dist_unit = 'km',
+            location = 'bottomleft', 
+            border.size = .1,
+            height=0.01,
+            st.bottom = FALSE,
+            st.dist=0.04,
+            st.size=2) 
         # north2(p, x=.93, y=.22, symbol=10)
     p
+}
+
+plot.relative.suppression.vs.round16.ratio <- function(DT= dincreasessupp)
+{
+    
+    dplot <- copy(dincreasessupp)
+    prettify_labels(dplot)
+
+    ggplot(dplot, aes(x=AGEYRS, color=SEX_LAB, fill=SEX_LAB)) + 
+        geom_hline(yintercept=1, linetype=2, color='grey80') +
+        geom_hline(yintercept=4, linetype=2, color='grey80') +
+        geom_ribbon(aes(ymin=CL, ymax=CU), alpha=0.2, color=NA) +
+        geom_line(aes(y=M)) +
+        facet_grid(LOC_LAB  ~ ROUND_LAB, scales="free_y", labeller= labeller(ROUND_LAB = round_labs) ) +
+        scale_x_continuous(expand=c(0,0)) +
+        scale_y_continuous(trans = scales::log2_trans(),
+            breaks = scales::trans_breaks(paste0("log2"), function(x) 2^x),
+            labels = scales::trans_format(paste0("log2"), scales::label_math(expr = 2^.x))
+        ) +
+        scale_color_manual(values=palettes$sex) + 
+        scale_fill_manual(values=palettes$sex) + 
+        theme_default() +
+        my_labs(x='', y='Posterior ratio of viral suppression among PLHIV relative to Round 16') +
+        NULL
+}
+
+plot.relative.suppression.vs.round16.diff <- function(DT = dincreasessupp_diff)
+{
+
+    dplot <- copy(dincreasessupp)
+    prettify_labels(dplot)
+
+    ggplot(dplot, aes(x=AGEYRS, color=SEX_LAB, fill=SEX_LAB, linetype=LOC_LAB)) + 
+        geom_hline(yintercept=1, linetype=2, color='grey80') +
+        # geom_ribbon(aes(ymin=CL, ymax=CU), alpha=0.2, color=NA) +
+        geom_line(aes(y=CL)) +
+        facet_grid(~ ROUND_LAB, scales="free_y", labeller= labeller(ROUND_LAB = round_labs) ) +
+        scale_x_continuous(expand=c(0,0)) +
+        scale_y_log10(
+            breaks = scales::trans_breaks("log10", function(x) 10^x),
+            labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+        scale_color_manual(values=palettes$sex) + 
+        scale_fill_manual(values=palettes$sex) + 
+        theme_default() +
+        my_labs(x='', y='Posterior ratio of viral suppression among PLHIV relative to Round 16') +
+        NULL
 }

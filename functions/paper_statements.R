@@ -34,3 +34,21 @@ paper_statements_contributions_PLHIV_custom <- function(DT=contrib_plhiv_custom)
     }, by=c('LOC')]
     tmp
 }
+
+paper_statements_suppression_above_959595 <- function(DT=djoint){
+
+    tmp <- subset(DT, MODEL == 'run-gp-supp-hiv' & ROUND == 19)
+    prettify_labels(tmp)
+    sprintf("By 2019, medians for prevalnce of suppression exceeded the 95-95-95 goals in:\n") |> cat()
+    tmp[ M > .95^3, {
+        sprintf("- %s %s aged %s or more\n", unique(LOC_LAB), unique(SEX), min(AGEYRS)) |> cat()
+        NULL
+    }, by=.(SEX, LOC) ]
+
+    tmp[ LOC == 'inland' & AGEYRS == 25, {
+        z <- prettify_cell(M * 100, CL*100, CU*100, percent=TRUE) 
+        sprintf("%s for %s aged 25 \n", z,SEX_LAB) |> cat()
+        NULL
+    }, by = 'SEX_LAB']
+    return(tmp)
+}

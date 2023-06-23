@@ -384,3 +384,5 @@ dfacets <- list(
     sex = setNames(c('Male', 'Female'), c('M', 'F')),
     comm = setNames(c('Fishing', 'Inland'), c('fishing', 'inland') )
 )
+
+age_breaks <- seq(15, 50, by=5)
