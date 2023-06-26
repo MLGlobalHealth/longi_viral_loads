@@ -14,12 +14,33 @@ Concerning ARV: JS: "the main interest was to capture the round-specific intervi
 
 - The `RCCS_census_eligible_individuals_221209.csv` I have in gitdir.data was produced with Melodies `misc/get_census_eligible_count.R` but additionaly including round 19. NOTE: should find where this is
 
-# Ideas:
+# Code 
 
-Community level viral suppression is, for the most part, determined by HIV positive individuals aware of their status.
+The code to reproduce the analyses is split into multiple parts:
+1. Data cleaning and preparation
+2. Running statistical models
+3. Analysis of the results and postprocessing.
 
-These are exactly the people who do not benefit from extra testing: they benefit from accessing treatment.
 
-Thus, at the participant level, I would not be shocked to see that suppressed individuals are as likely not to test as suppressed ones.
+## Data cleaning and preparation
 
-Based on this, I would maybe look at the relationship between community level suppression vs « testing rates » among negatives and new positives.
+Data preprocessing is done in scripts within the `src/preprocess` directory. 
+
+## Running statistical models
+
+Statistical models are run through the main script `src/run_stan.R`.
+Reproducing the model analyses consists in multiple steps.
+First, we need to run the models on both the set of all participants, or the set of first-time participants. 
+These jobs can be run in parallel, and can be simultaneously be submitted to the HPC:
+```{bash}
+./run_stan.sh 1000
+./run_stan.sh 1000 firstpart 
+```
+
+
+## Postprocessing
+
+To estimate prevalences at the census-eligible population level, we assume that prevalences are homogeneous out-of-study and within first-time participants.
+As such, we need both sets of results to obtain the results descibed in the paper.
+
+
