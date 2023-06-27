@@ -89,16 +89,6 @@ if(make_tables){
     filename <- 'table_characteristics_participants.pdf'
     p <- table.to.plot(tab)
     ggsave2(p=p, file=filename, LALA=outdir.tables, w=11, h=21)
-
-    # 
-    npar_agegroup[is.na(AGEGROUP), sum(ELIGIBLE)]
-    npar_agegroup[is.na(AGEGROUP) & is.na(SEX), {
-        sum(N_PART)
-    }]
-
-    dall
-
-
 }
 
 #############
