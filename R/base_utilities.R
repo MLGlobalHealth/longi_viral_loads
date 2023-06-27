@@ -112,6 +112,16 @@ na2zero <- function(x){
 `%which.not.like%` <- function(x, rgx)
     x[ ! x %like% rgx]
 
+quantile2 <- function(x, ps = c(CL = .025, IL = .25, M = .5, IU = .75, CU = .975)) {
+    # the posterior package has the same function name!
+    out <- quantile(x = x, probs = ps, names = TRUE) |> t()
+    if (!is.null(names(ps))) {
+        colnames(out) <- names(ps)
+    }
+    as.data.table(out)
+}
+
+
 ############################
 # Project-specific helpers #
 ############################

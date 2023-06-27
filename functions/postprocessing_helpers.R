@@ -1,12 +1,3 @@
-quantile2 <- function(x, ps = c(CL = .025, IL = .25, M = .5, IU = .75, CU = .975)) {
-    # the posterior package has the same function name!
-    out <- quantile(x = x, probs = ps, names = TRUE) |> t()
-    if (!is.null(names(ps))) {
-        colnames(out) <- names(ps)
-    }
-    as.data.table(out)
-}
-
 log_quantiles <- function(DT, base = exp(1)) {
     # take logs of CL, IL, M, IU and CU in place
     nms <- c("CL", "IL", "M", "IU", "CU")
