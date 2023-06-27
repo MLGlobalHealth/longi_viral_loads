@@ -44,7 +44,9 @@ catn("Make table with study pop characteristics")
 #################################################
 
 npar <- summarize.aggregates.dall()
-dprop <- merge(npar, ncen)
+dprop <- merge(npar, ncen, all.x=TRUE, all.y=TRUE)
+stopifnot( any(is.na(dprop)) )
+
 check_more_elig_than_part <- dprop[, all(N_PART < ELIGIBLE) ] 
 stopifnot(check_more_elig_than_part)
 
@@ -87,6 +89,16 @@ if(make_tables){
     filename <- 'table_characteristics_participants.pdf'
     p <- table.to.plot(tab)
     ggsave2(p=p, file=filename, LALA=outdir.tables, w=11, h=21)
+
+    # 
+    npar_agegroup[is.na(AGEGROUP), sum(ELIGIBLE)]
+    npar_agegroup[is.na(AGEGROUP) & is.na(SEX), {
+        sum(N_PART)
+    }]
+
+    dall
+
+
 }
 
 #############

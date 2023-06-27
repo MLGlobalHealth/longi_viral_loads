@@ -18,7 +18,8 @@ OUTDIR="/rds/general/user/ab1820/home/projects/2022/longvl"
 
 mkdir $OUTDIR/$JOBNAME
 
-for MODEL in run-gp-prevl run-gp-supp-hiv run-gp-supp-pop run-icar-mean-vl 
+MODELS="run-gp-prevl run-gp-supp-hiv run-gp-supp-pop"
+for MODEL in $MODELS
 do
     cat > $OUTDIR/bash-$JOBNAME-$MODEL.pbs <<EOF
 
@@ -57,8 +58,12 @@ EOF
 done
 
 cd $OUTDIR
-qsub bash-$JOBNAME-run-gp-prevl.pbs
-qsub bash-$JOBNAME-run-gp-supp-hiv.pbs
-qsub bash-$JOBNAME-run-gp-supp-pop.pbs
-# qsub bash-$JOBNAME-run-icar-mean-vl.pbs
 
+for MODEL in $MODELS
+do
+    qsub bash-${JOBNAME}-${MODEL}.pbs
+done
+
+# qsub bash-$JOBNAME-run-gp-prevl.pbs
+# qsub bash-$JOBNAME-run-gp-supp-hiv.pbs
+# qsub bash-$JOBNAME-run-gp-supp-pop.pbs
