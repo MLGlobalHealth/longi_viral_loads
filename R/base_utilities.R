@@ -109,6 +109,9 @@ na2zero <- function(x){
 `%which.like%` <- function(x, rgx)
     x[x %like% rgx]
 
+`%which.not.like%` <- function(x, rgx)
+    x[ ! x %like% rgx]
+
 ############################
 # Project-specific helpers #
 ############################
