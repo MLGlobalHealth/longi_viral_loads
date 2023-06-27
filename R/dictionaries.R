@@ -183,6 +183,7 @@ my_labs_dictionary <- c(
     ROUND_LABEL = "Interview round",
     SEX = "Gender",
     SEX_LAB = "Gender",
+    SEX_LABEL = "Gender",
     VL_COPIES = "Viral Load Copies",
     NULL
 )
