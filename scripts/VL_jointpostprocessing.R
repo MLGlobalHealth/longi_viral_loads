@@ -43,7 +43,11 @@ file.exists(
     stopifnot()
 
 # command line options, stored in args. Then subset
-opts_vec <- c("viremic.viral.load", "detectable.viral.load", "out.dir.prefix", "indir", "round", "jobname", "only.firstparticipants")
+opts_vec <- c(
+    "viremic.viral.load", "detectable.viral.load",
+    "out.dir.prefix", "indir", 
+    "round", "jobname", 
+    "only.firstparticipants")
 args <- args[names(args) %in% opts_vec]
 
 source(file.path(gitdir.functions, "plotting_main_figures.R"))
@@ -219,7 +223,7 @@ if (make_plots) {
 catn("Get quantiles for population prevalences by agegroup") 
 #___________________________________________________________
 
-filename_rds <- file.path(out.dir.figures, "posterior_quantiles_agegroups.rds")
+filename_rds <- file.path(out.dir.tables, "posterior_quantiles_agegroups.rds")
 
 # dcens custom to prove 
 
@@ -272,7 +276,7 @@ if(make_tables){
 catn("Get quantiles for population prevalences aggregated over age") 
 #___________________________________________________________
 
-filename_rds <- file.path(out.dir.figures, "posterior_quantiles_ageaggregate.rds")
+filename_rds <- file.path(out.dir.tables, "posterior_quantiles_ageaggregate.rds")
 
 if( file.exists(filename_rds) & !overwrite ){
     joint_ageagrr_list <- readRDS(filename_rds)
@@ -623,7 +627,7 @@ catn("Get log-ratio for suppression among FTP and non-FTP")
 # TODO: take blue-black plots, and take posterior sample ratios. 
 # Report the ratio (or log-ratio) by 5 years age group, and whether any significantly > 1 (or > 0).
 
-filename_rds <- file.path(out.dir.figures, "posterior_ftp_logratio_quantiles.rds")
+filename_rds <- file.path(out.dir.tables, "posterior_ftp_logratio_quantiles.rds")
 
 # lo(parts) - log(ftp)
 if( file.exists(filename_rds) & !overwrite ){
@@ -675,8 +679,8 @@ if(make_tables & 0){ # age groups for which CrI does not include 0
 catn("Increases in suppression relative to round 16")
 #____________________________________________________
 
-filename_rds  <- file.path(out.dir.figures, "posterior_suppressionincrease_vsround16.rds")
-filename_rds2 <- file.path(out.dir.figures, "posterior_suppressionincrease_diff_vsround16.rds")
+filename_rds  <- file.path(out.dir.tables, "posterior_suppressionincrease_vsround16.rds")
+filename_rds2 <- file.path(out.dir.tables, "posterior_suppressionincrease_diff_vsround16.rds")
 
 if( file.exists(filename_rds2) & !overwrite ){
     dincreasessupp <- readRDS(filename_rds)
