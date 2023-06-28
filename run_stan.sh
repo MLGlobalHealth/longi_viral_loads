@@ -1,20 +1,65 @@
-#!/bin/sh
+#!/bin/bash
 
-# STAN_MODEL=TODO
-VL="${1:=1000}" 
-FIRSTPART=$2
-echo "VL set to $VL"
-JOBNAME="vl_$VL"
+# use as:
+# ./run_stan.bash
+# Flags:
+#    VL : viremic viral load threshold
+#    FTP: subset to first time participants or not
+#    STANWAY : either (r)stan or cmdstan
+#    INDIR : directory where github directory is located
+#    OUTDIR : directory where output will be saved
 
-if [[ ! -z "$FIRSTPART" ]]; then
-    JOBNAME="$JOBNAME"_firstpart
-    FIRSTPART="--firstparticipant TRUE"
-    echo "Running analyses on first-time participants."
+for ARGUMENT in "$@"
+do
+   KEY=$(echo $ARGUMENT | cut -f1 -d=)
+
+   KEY_LENGTH=${#KEY}
+   VALUE="${ARGUMENT:$KEY_LENGTH+1}"
+
+   echo "export $KEY=$VALUE"
+   export "$KEY"="$VALUE"
+done
+
+# default options
+VL="${VL:-1000}" 
+FTP="${FTP:-FALSE}"
+STANWAY="${STAN_MODEL:-stan}"
+INDIR="${INDIR:-/rds/general/user/ab1820/home/git/longi_viral_loads}"
+OUTDIR="${OUTDIR:-/rds/general/user/ab1820/home/projects/2022/longvl}"
+# ENVNAME="${ENVNAME:-phylowSI-RakaiAgeGender}"
+
+#################
+# OPTION CHECKS #
+#################
+
+# stop if STANWAY is not stan or cmdstan
+if [[ ! "$STANWAY" =~ ^(stan|cmdstan)$ ]]; then
+    echo "STANWAY must be either stan (rstan) or cmdstan (cmdstanr)."
+    exit 1
+fi
+# stop if FTP is not True, TRUE, T, False, FALSE, F
+if [[ ! "$FTP" =~ ^(TRUE|FALSE)$ ]]; then
+    echo "FTP must be either TRUE or FALSE."
+    exit 1
 fi
 
-INDIR="/rds/general/user/ab1820/home/git/longi_viral_loads"
-OUTDIR="/rds/general/user/ab1820/home/projects/2022/longvl"
+echo "Selected options:"
+echo "VL = $VL"
+echo "FTP = $FTP"
+echo "STANWAY = $STANWAY"
+echo "INDIR = $INDIR"
+echo "OUTDIR = $OUTDIR"
 
+# "build" jobname
+JOBNAME="${STANWAY}_vl_$VL"
+if [[ "$FTP" == "TRUE" ]]; then
+    JOBNAME="$JOBNAME"_firstpart
+fi
+echo "JOBNAME = $JOBNAME"
+
+########
+# MAIN #
+########
 
 mkdir $OUTDIR/$JOBNAME
 
@@ -46,7 +91,12 @@ CWD=\$PWD/\$JOBNAME/$MODEL
 
 mkdir -p \$CWD
 
-Rscript \$INDIR/scripts/VL_run_stan.R --viremic-viral-load $VL --outdir \$CWD --$MODEL TRUE --round \$ROUND $FIRSTPART
+Rscript \$INDIR/scripts/VL_run_$STANWAY.R \
+    --viremic-viral-load $VL \
+    --outdir \$CWD \
+    --$MODEL TRUE \
+    --round \$ROUND \
+    --firstpart $FTP
 
 cp -R --no-preserve=mode,ownership \$PWD/\$JOBNAME/. \$OUTDIR/\$JOBNAME
 
@@ -63,7 +113,3 @@ for MODEL in $MODELS
 do
     qsub bash-${JOBNAME}-${MODEL}.pbs
 done
-
-# qsub bash-$JOBNAME-run-gp-prevl.pbs
-# qsub bash-$JOBNAME-run-gp-supp-hiv.pbs
-# qsub bash-$JOBNAME-run-gp-supp-pop.pbs
