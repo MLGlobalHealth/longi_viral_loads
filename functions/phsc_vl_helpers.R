@@ -2,7 +2,7 @@ get.dall <- function(path, only_firstpart = FALSE, make_flowchart = FALSE) {
     # Load data: exclude round 20 as incomplete
     dall <- fread(path) |>
         subset(ROUND >= 16 & ROUND <= 19) |>
-        subset(SEX != "") |>
+        subset(SEX != "" & AGEYRS %between% c(15, 49)) |>
         unique()
     dall[, CURR_ID := NULL]
     dall <- unique(dall)
