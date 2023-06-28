@@ -7,18 +7,18 @@ else
 fi
 
 
-# Create new conda environment called "longi_vl_cmdstan"
-if [ -d $HOME/anaconda3/envs/longi_vl_cmdstan ]; then
+# Create new conda environment called "longivl_cmdstan"
+if [ -d $HOME/anaconda3/envs/longivl_cmdstan ]; then
     echo "###############################################"
-    echo -e "\nlongi_vl_cmdstan conda environment is already present"
+    echo -e "\nlongivl_cmdstan conda environment is already present"
     echo -e "\nIf you wish you re-install please remove the conda environment first with:"
-    echo -e "\tconda remove -n longi_vl_cmdstan --all -y"
+    echo -e "\tconda remove -n longivl_cmdstan --all -y"
     echo -e "\n\n###############################################"
     exit 1
 else
-    echo -e "\nCreating Conda environment for R packages: longi_vl_cmdstan"
-    conda create -n longi_vl_cmdstan -y
-    source activate longi_vl_cmdstan
+    echo -e "\nCreating Conda environment for R packages: longivl_cmdstan"
+    conda create -n longivl_cmdstan -y
+    source activate longivl_cmdstan
     # export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
 fi
 
@@ -49,7 +49,7 @@ c(
 '
 
 echo "=========================================\n\n
-longi_vl_cmdstan: completed installation.\n
+longivl_cmdstan: completed installation.\n
 For next steps see\n
 https://github.com/TODO
 "
