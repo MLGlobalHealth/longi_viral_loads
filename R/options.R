@@ -61,6 +61,24 @@ option_list <- list(
         dest = 'detectable.viral.load'
     ),
     make_option(
+        "--iter_warmup", 
+        type = "integer", 
+        default = 5e2,
+        help = "HMC warmup iterations [default %default]",
+        dest = 'iter.warmup'),
+    make_option(
+        "--iter_sampling",
+        type = "integer",
+        default = 10e3,
+        help = "HMC of sampling iterations iterations [default %default]",
+        dest = 'iter.sampling'),
+    make_option(
+        "--chains",
+        type = "integer",
+        default = 4,
+        help = "Number of MCMC chains",
+        dest = 'chains'),
+    make_option(
         "--outdir-prefix",
         type = "character",
         default = '/home/andrea/HPC/ab1820/home/projects/2022/longvl',
