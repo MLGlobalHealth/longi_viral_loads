@@ -9,6 +9,19 @@ functions {
     deltas[2] = 1 - inv_gamma_cdf(theta[2] | exp(y[1]), exp(y[2])) - 0.01;
     return deltas;
   }
+  
+  vector make_logits_from_gp(int N_predict, array[] real x_predict,
+                             real alpha, real rho, real sexloc,
+                             vector f_tilde) {
+    matrix[N_predict, N_predict] L_cov;
+    vector[N_predict] logit_p_predict;
+    
+    L_cov = cholesky_decompose(gp_exp_quad_cov(x_predict, alpha, rho)
+                               + diag_matrix(rep_vector(1e-10, N_predict)));
+    logit_p_predict = sexloc + L_cov * f_tilde;
+    
+    return logit_p_predict;
+  }
 }
 data {
   int<lower=1> N_predict;
@@ -71,20 +84,15 @@ transformed parameters {
   vector[N_predict] logit_p_predict_10;
   vector[N_predict] logit_p_predict_01;
   vector[N_predict] logit_p_predict_11;
-  // GP for 00 and 01 (women)
-  L_cov = cholesky_decompose(gp_exp_quad_cov(x_predict, alpha_00, rho_00)
-                             + diag_matrix(rep_vector(1e-10, N_predict)));
-  logit_p_predict_00 = sex0_loc0 + L_cov * f_tilde_00;
-  L_cov = cholesky_decompose(gp_exp_quad_cov(x_predict, alpha_01, rho_01)
-                             + diag_matrix(rep_vector(1e-10, N_predict)));
-  logit_p_predict_01 = sex0_loc1 + L_cov * f_tilde_01;
-  // GP for 10 and 10 (men)
-  L_cov = cholesky_decompose(gp_exp_quad_cov(x_predict, alpha_10, rho_10)
-                             + diag_matrix(rep_vector(1e-10, N_predict)));
-  logit_p_predict_10 = sex1_loc0 + L_cov * f_tilde_10;
-  L_cov = cholesky_decompose(gp_exp_quad_cov(x_predict, alpha_11, rho_11)
-                             + diag_matrix(rep_vector(1e-10, N_predict)));
-  logit_p_predict_11 = sex1_loc1 + L_cov * f_tilde_11;
+  
+  logit_p_predict_00 = make_logits_from_gp(N_predict, x_predict, alpha_00,
+                                           rho_00, sex0_loc0, f_tilde_00);
+  logit_p_predict_01 = make_logits_from_gp(N_predict, x_predict, alpha_01,
+                                           rho_01, sex0_loc1, f_tilde_01);
+  logit_p_predict_10 = make_logits_from_gp(N_predict, x_predict, alpha_10,
+                                           rho_10, sex1_loc0, f_tilde_10);
+  logit_p_predict_11 = make_logits_from_gp(N_predict, x_predict, alpha_11,
+                                           rho_11, sex1_loc1, f_tilde_11);
 }
 model {
   rho_00 ~ inv_gamma(rho_hyper_par_shape, rho_hyper_par_scale);
