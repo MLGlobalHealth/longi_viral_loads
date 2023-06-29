@@ -85,7 +85,20 @@ dprop <- merge(npar, ncen)
 check_more_elig_than_part <- dprop[, all(N_PART < ELIGIBLE) ] 
 stopifnot(check_more_elig_than_part)
 
-naturemed_reqs()
+# paths
+filename_rds_contrib <- file.path(out.dir.tables, "fullpop_allcontributions.rds")
+filename_rds_prevalence <- file.path(out.dir.tables, "fullpop_posteriorquantiles_by_agesexround.rds")
+filename_rds_prevalence_agegroup <- file.path(out.dir.tables, "posterior_quantiles_agegroups.rds")
+
+###########
+# HELPERS #
+###########
+
+.load.model.subset <- function(file, expr=NULL){
+    expr <- enexpr(expr)
+    readRDS(file) |> subset( eval(expr) )
+}
+
 
 ########################
 catn("=== FIGURE 1 ===")
@@ -95,7 +108,7 @@ catn("=== FIGURE 1 ===")
 fig1a <- plot.rakai.map(.size=2) 
 
 # pyramid of census eligible, participants, and smooth
-fig1b <- plot.pyramid.bysexround( dprop[ROUND %in% c(16)], 
+fig1b <- plot.pyramid.bysexround( dprop[ROUND %in% c(19)], 
     .ylab = 'Number of participants among census eligible individuals',
     NUM="N_PART",
     DEN='ELIGIBLE',
@@ -106,26 +119,53 @@ fig1b <- plot.pyramid.bysexround( dprop[ROUND %in% c(16)],
     my_labs(color="Gender")
 
 # HIV prevalence over time (maybe round 16, 19 ?)
-contribution <- TRUE
-fig1c <- if(contribution){
-    filename_rds <- file.path(out.dir.tables, "fullpop_allcontributions.rds")
-    fig1c <- readRDS(filename_rds) |> 
-        subset(ROUND %in% c(16, 19)) |>
-        plot.agesex.contributions.by.roundcomm(label = "run-gp-prevl", include_baseline =TRUE) 
-}else{
-    filename_rds <- file.path(out.dir.tables, "fullpop_posteriorquantiles_by_agesexround.rds")
-    fig1c <- readRDS(filename_rds) |>
-        subset(ROUND %in% c(16, 19)) |>
-        plot.fit.weighted.by.ftpstatus("run-gp-prevl",include_baseline = TRUE) 
-} + facet_grid(LOC_LAB ~ ROUND_LAB, labeller = labeller(ROUND_LAB=round_labs2)) 
+if(0){
+    contribution <- TRUE
+    fig1c <- if(contribution){
+        filename_rds <- file.path(out.dir.tables, "fullpop_allcontributions.rds")
+        fig1c <- readRDS(filename_rds) |> 
+            subset(ROUND %in% c(16, 19)) |>
+            plot.agesex.contributions.by.roundcomm(label = "run-gp-prevl", include_baseline =TRUE) 
+    }else{
+        filename_rds <- file.path(out.dir.tables, "fullpop_posteriorquantiles_by_agesexround.rds")
+        fig1c <- readRDS(filename_rds) |>
+            subset(ROUND %in% c(16, 19)) |>
+            plot.fit.weighted.by.ftpstatus("run-gp-prevl",include_baseline = TRUE) 
+    } + facet_grid(LOC_LAB ~ ROUND_LAB, labeller = labeller(ROUND_LAB=round_labs2)) 
 
-fig1 <- (((fig1a + plot_layout(guides='keep') | fig1b) + plot_layout(widths = c(1, 2)))/ fig1c) + 
-    plot_layout(heights=c(1,1.2), guides='collect') + 
-    plot_annotation(tag_levels = 'a') 
-fig1 <- fig1 & nm_reqs + theme(plot.tag = element_text(size=8, face='bold'), legend.key.size = unit(0.4, "cm"))
+    fig1 <- (((fig1a + plot_layout(guides='keep') | fig1b) + plot_layout(widths = c(1, 2)))/ fig1c) + 
+        plot_layout(heights=c(1,1.2), guides='collect') + 
+        plot_annotation(tag_levels = 'a') 
+    fig1 <- fig1 & nm_reqs + theme(plot.tag = element_text(size=8, face='bold'), legend.key.size = unit(0.4, "cm"))
+    fig1
+}
+
+
+dcontrib <- .load.model.subset(filename_rds_contrib, MODEL=="run-gp-prevl" & ROUND == 19) |> prettify_labels()
+dprev <- .load.model.subset(filename_rds_prevalence, MODEL=="run-gp-prevl" & ROUND == 19) |> prettify_labels()
+
+p_i <- plot_2yaxis_hist_lines(dcontrib[LOC == 'inland'],  dprev[LOC == 'inland'], sec_name="")
+p_f <- plot_2yaxis_hist_lines(dcontrib[LOC == 'fishing'], dprev[LOC == 'fishing']) + labs(y="")
+
+# fig1c <- ggarrange_nature(p_i, p_f, ncol=2, common.legend = TRUE, legend = "bottom", labels = c("c", ""))
+# fig1ab <- ggarrange(
+#     fig1a + labs(tag = "a"),
+#     fig1b + labs(tag = "b") +  nm_reqs+ theme(legend.position = "none"),
+#     ncol=2, labels = c("a", "b"))
+# fig1 <- ggarrange(fig1ab, fig1c, nrow=2)
+# fig1
+
+
+# patchwork:
+fig1 <- ( 
+    (fig1a + labs(tag="a") | fig1b + theme(legend.position = "none") + labs(tag='b') ) + plot_layout(widths = c(1, 1.4))
+)/(
+    (p_i + labs(tag='c') + theme(legend.position="none") | p_f) & plot_layout(guides="collect")
+)  & theme(legend.key.size = unit(0.4, "cm")) + nm_reqs  
 
 filename <- paste0('main_figure_populationcomposition.pdf')
 ggsave_nature(p=fig1, filename=filename, LALA=out.dir.figures, w=21, h=16)
+
 
 ########################
 catn("=== FIGURE 2 ===")

@@ -928,3 +928,36 @@ plot.relative.suppression.vs.round16.diff <- function(DT = dincreasessupp_diff)
         my_labs(x='', y='Posterior ratio of viral suppression among PLHIV relative to Round 16') +
         NULL
 }
+
+
+plot_2yaxis_hist_lines <- function(DThist, DTline, sec_name="Contribution to HIV prevalence"){
+
+    ALPHA = .5; DODGE = 1
+    
+    # rescale 2nd data frame for the secondary axis
+    .sec_axis_scale <-  max(DThist$CU) / max(DTline$CU) 
+    by_cols <- DThist[, sapply(.SD, function(x) typeof(x) == "character")] |> which() |> names()
+    DThist_sa <- DThist[, lapply(.SD, function(x) x/.sec_axis_scale), .SDcols = c("M", "CL", "CU"), by=c(by_cols, "AGEYRS")]
+    ggplot(DTline, aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=SEX_LAB, color=SEX_LAB)) +
+        geom_col(data=DThist_sa, alpha=ALPHA, color='grey80', linewidth=.2 , position=position_dodge(width = DODGE))+
+        geom_linerange(data=DThist_sa, position=position_dodge(width = DODGE)) +
+        geom_line() +
+        geom_ribbon(alpha=ALPHA, color=NA) +
+        scale_y_continuous(
+            labels = scales::label_percent(), 
+            expand = expansion(mult = c(0, .1)),
+            sec.axis = sec_axis(
+                trans= ~ .*.sec_axis_scale,
+                labels = scales::label_percent(),
+                name=sec_name) 
+        ) +
+        scale_x_continuous(expand = c(0,0), breaks= c(seq(15, 45, 5), 50)) + 
+        scale_fill_manual(values=palettes$sex) +  
+        scale_color_manual(values=palettes$sex) +  
+        facet_grid( . ~ LOC_LAB )  +
+        my_labs(y = "HIV prevalence by age") +
+        theme_default(
+            strip.placement = "outside",
+        ) +
+        NULL
+}
