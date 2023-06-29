@@ -430,7 +430,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
     # Stan file locations
     file.stan <- file.path(gitdir.stan, "vl_binomial_gp2.stan")
 
-    .fit.stan.and.plot.by.round <- function(DT, cntrl = list(max_treedepth = 15, adapt_delta = 0.999)) {
+    .fit.stan.and.plot.by.round <- function(DT) {
 
         #  DT <- copy(vla[ROUND == 16]); vl.out.dir.=vl.out.dir
         round <- DT[, unique(ROUND)]
@@ -458,11 +458,21 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
             rm(tmp)
 
         } else {
-            # rewrite above using cmdstanr syntax, rather than rstan:
+
             stan.model <- cmdstan_model(stan_file = file.stan)
-            fit <- do.call(
-                stan.model$sample,
-                c( list(data=stan.data), stanargs, cntrl)
+            stan.args <- yaml::read_yaml(path.stan.config)
+
+            fit <- stan.model$sample(
+                stan.model,
+                data = stan.data,
+                seed = stan.args$seed,
+                iter = stan.args$iter,
+                warmup = stan.args$warmup,
+                chains = stan.args$chains,
+                control = list(
+                    max_treedepth = stan.args$control$max_treedepth,
+                    adapt_delta = stan.args$control$adapt_delta,
+                )
             )
             saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
         }
@@ -678,7 +688,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
 
     file.stan <- file.path(gitdir.stan, "vl_binomial_gp2.stan")
 
-    .fit.stan.and.plot.by.round <- function(DT, cntrl = list(max_treedepth = 15, adapt_delta = 0.999)) {
+    .fit.stan.and.plot.by.round <- function(DT) {
 
         # DT <- copy(vla[ROUND == 16] )
         round <- DT[, unique(ROUND)]
@@ -706,12 +716,23 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
             rm(tmp)
 
         } else {
-            # rewrite above using cmdstanr syntax, rather than rstan:
+
             stan.model <- cmdstan_model(stan_file = file.stan)
-            fit <- do.call(
-                stan.model$sample,
-                c( list(data=stan.data), stanargs, cntrl)
+            stan.args <- yaml::read_yaml(path.stan.config)
+
+            fit <- stan.model$sample(
+                stan.model,
+                data = stan.data,
+                seed = stan.args$seed,
+                iter = stan.args$iter,
+                warmup = stan.args$warmup,
+                chains = stan.args$chains,
+                control = list(
+                    max_treedepth = stan.args$control$max_treedepth,
+                    adapt_delta = stan.args$control$adapt_delta,
+                )
             )
+
             saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
         }
 
@@ -741,12 +762,23 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
                 rm(tmp)
 
             } else {
-                # rewrite above using cmdstanr syntax, rather than rstan:
+
                 stan.model <- cmdstan_model(stan_file = file.stan)
-                fit <- do.call(
-                    stan.model$sample,
-                    c( list(data=stan.data), stanargs, cntrl)
+                stan.args <- yaml::read_yaml(path.stan.config)
+
+                fit <- stan.model$sample(
+                    stan.model,
+                    data = stan.data,
+                    seed = stan.args$seed,
+                    iter = stan.args$iter,
+                    warmup = stan.args$warmup,
+                    chains = stan.args$chains,
+                    control = list(
+                        max_treedepth = stan.args$control$max_treedepth,
+                        adapt_delta = stan.args$control$adapt_delta,
+                    )
                 )
+
                 saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
             }
         }
@@ -956,7 +988,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
     # Stan file locations
     file.stan <- file.path(gitdir.stan, "vl_binomial_gp2.stan")
 
-    .fit.stan.and.plot.by.round <- function(DT, cntrl = list(max_treedepth = 15, adapt_delta = 0.999)) {
+    .fit.stan.and.plot.by.round <- function(DT) {
 
         #  DT <- copy(vla[ROUND == 16]); refit=FALSE
         round <- DT[, unique(ROUND)]
@@ -985,9 +1017,19 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
         } else {
             
             stan.model <- cmdstan_model(stan_file = file.stan)
-            fit <- do.call(
-                stan.model$sample,
-                c( list(data=stan.data), stanargs, cntrl)
+            stan.args <- yaml::read_yaml(path.stan.config)
+
+            fit <- stan.model$sample(
+                stan.model,
+                data = stan.data,
+                seed = stan.args$seed,
+                iter = stan.args$iter,
+                warmup = stan.args$warmup,
+                chains = stan.args$chains,
+                control = list(
+                    max_treedepth = stan.args$control$max_treedepth,
+                    adapt_delta = stan.args$control$adapt_delta,
+                )
             )
             saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
         }
@@ -1721,176 +1763,6 @@ make.map.190129 <- function(DT) {
         title = "Geometric Mean \n VL (Copies/ml)",
         cex = 0.8, box.lty = 0
     )
-}
-
-make.map.220810 <- function(DT, plotDT = NA, plotcols = NA) {
-    # DT <- copy(dall); plotDT <- copy(vlc); plotcols=NA
-    # plotcols <- 'PVLNSofHIV_MEAN'
-    library(rnaturalearth)
-    library(osmdata)
-    require(ggpubr)
-    library(sf)
-
-    if (!is.data.table(plotDT)) {
-        bool.plot.loc <- TRUE
-    }
-    if (is.data.table(plotDT) & !is.na(plotcols)) {
-        bool.plot.loc <- FALSE
-        stopifnot(all(plotcols %in% names(plotDT)))
-        cols <- c("COMM_NUM", "ROUND", "SEX", plotcols)
-        plotDT <- plotDT[, ..cols]
-    }
-
-    # theme
-    mytheme <- theme(
-        panel.background = element_rect(fill = "lightblue", color = "blue"),
-        panel.grid.major = element_line(colour = "transparent")
-    )
-    noticks <- theme(
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank()
-    )
-
-    # Get longitude and latitude
-    infile <- file.path(indir.deepsequence.data, "RCCS_R15_R18", "Rakai_community_geography_R15.rda")
-
-    # Fix factors stored as integers (COMM_NUM)
-    # TODO: merge plotDT with rest
-    tmp <- new.env()
-    load(infile, envir = tmp)
-    ds <- as.data.table(tmp$comgps)
-    cols <- c("latitude", "longitude")
-    ds[, (cols) := lapply(.SD, unlist), .SDcols = cols]
-    .f <- function(x) as.integer(as.character(x))
-    ds[, COMM_NUM := .f(COMM_NUM)]
-    tmp1 <- unique(DT[, .(COMM_NUM, FC)])
-    ds <- merge(ds, tmp1)
-    ds[is.na(longitude)]
-    setnames(ds, cols, paste0(toupper(cols), "_JITTER"))
-    ds_sf <- st_as_sf(ds, coords = c("LONGITUDE_JITTER", "LATITUDE_JITTER"), crs = 4326)
-    ds_sf_t <- st_transform(ds_sf, crs = 2163)
-
-    ds_sf_t <- merge(ds_sf_t, plotDT, by = "COMM_NUM")
-
-    plotDT[]
-
-    coord2 <- data.table(
-        x = range(ds$LONGITUDE_JITTER) + c(-.1, .1),
-        y = range(ds$LATITUDE_JITTER) + c(-.1, .1)
-    )
-
-
-    # Latitude from -1.28538 to 3.66088
-    # and longitude from 29.65 to 34.66659.
-
-    long_bounds <- c(22, 43) # x
-    lati_bounds <- c(-10, 10) # y
-
-    # get uganda borders + lakes
-    # __________________________
-
-    uganda_borders <- c("uganda", "kenya", "Tanzania", "rwanda", "democratic republic of the congo")
-
-    africa_sf <- ne_countries(scale = 50, continent = "africa", returnclass = "sf")
-    uganda_sf <- ne_countries(scale = 50, country = c("uganda", "tanzania"), returnclass = "sf")
-
-    # Define bounding box:
-    bb <- c(
-        long_bounds[1], lati_bounds[1],
-        long_bounds[2], lati_bounds[2]
-    )
-    lakes <- opq(bbox = bb, timeout = 150) |>
-        add_osm_feature(key = "natural", value = "water") |>
-        osmdata_sf()
-
-    # Download data of interest
-    lakes10 <- ne_download(scale = 10, type = "lakes", category = "physical", returnclass = "sf")
-    roads10 <- ne_download(scale = 10, type = "roads", category = "cultural", returnclass = "sf")
-    rivers10 <- ne_download(scale = 10, type = "rivers_lake_centerlines", category = "physical", returnclass = "sf")
-
-    p1 <- ggplot() +
-        geom_sf(data = africa_sf, fill = "antiquewhite") +
-        geom_sf(data = lakes10, color = "blue", fill = "lightblue") +
-        geom_sf_text(data = africa_sf, aes(label = name), color = "darkred", fontface = "bold", check_overlap = FALSE) +
-        geom_rect(data = coord2, aes(xmin = x[1], xmax = x[2], ymin = y[1], ymax = y[2]), color = "red", fill = NA) +
-        coord_sf(xlim = long_bounds, ylim = lati_bounds) +
-        labs(x = "", y = "") +
-        mytheme
-
-    if ("FC.x" %in% names(ds_sf_t)) {
-        setnames(ds_sf_t, "FC.x", "FC")
-        ds_sf_t$FC.y <- NULL
-    }
-    p2 <- ggplot() +
-        geom_sf(data = africa_sf, fill = "antiquewhite") +
-        geom_sf(data = rivers10, color = "blue", fill = "lightblue") +
-        geom_sf(data = roads10, color = "grey80") +
-        geom_sf(data = lakes10, color = "blue", fill = "lightblue") +
-        geom_sf(data = ds_sf_t, aes(fill = FC), colour = "black", pch = 21, alpha = .8, size = 3) +
-        coord_sf(xlim = coord2$x, ylim = coord2$y) +
-        scale_fill_manual(values = palettes$comm) +
-        mytheme +
-        theme(
-            legend.position = c(0, 0),
-            legend.background = element_rect(fill = "white", color = "black"),
-            legend.justification = c("left", "bottom"),
-            panel.border = element_rect(color = "red", size = 2)
-        ) +
-        labs(fill = "Community type")
-
-
-    # CAN I PUT THE LEGEND ON NORTH-EAST CORNER to save space?
-    p <- ggarrange(p1, p2, ncol = 1, heights = c(1.1, 1))
-
-    if (!bool.plot.loc) {
-        filename <- "uganda_communities_map_220808.pdf"
-        ggsave2(p, file = filename, w = 5.5, h = 7.5)
-    } else {
-        tmp <- list(
-            list(sex = "women", round = 16),
-            list(sex = "women", round = 19),
-            list(sex = "men", round = 16),
-            list(sex = "men", round = 19)
-        )
-
-        .f <- function(lst) {
-            idx <- which(ds_sf_t$ROUND == lst$round & ds_sf_t$SEX == lst$sex)
-            DS <- ds_sf_t[idx, ]
-            ggplot() +
-                geom_sf(data = africa_sf, fill = "antiquewhite") +
-                geom_sf(data = rivers10, color = "blue", fill = "lightblue") +
-                geom_sf(data = roads10, color = "grey80") +
-                geom_sf(data = lakes10, color = "blue", fill = "lightblue") +
-                geom_sf(data = DS, aes(fill = PVLNSofHIV_MEAN), colour = "black", pch = 21, alpha = .8, size = 3) +
-                scale_fill_gradient2(low = "green", high = "red", midpoint = median(DS$PVLNSofHIV_MEAN)) +
-                facet_grid(SEX ~ ROUND) +
-                coord_sf(xlim = coord2$x, ylim = coord2$y) +
-                mytheme +
-                theme(
-                    legend.position = c(0, 0),
-                    legend.background = element_rect(fill = "white", color = "black"),
-                    legend.justification = c("left", "bottom"),
-                    panel.border = element_rect(color = "red", size = 2)
-                ) +
-                labs(fill = "")
-        }
-
-        tmp1 <- lapply(tmp, .f)
-        p <- ggarrange(tmp1[[1]], tmp1[[2]],
-            tmp1[[3]], tmp1[[4]],
-            align = "hv",
-            nrow = 2, ncol = 2
-        )
-        p <- annotate_figure(p,
-            top = text_grob("Prevalence of unsuppressed among HIV+",
-                face = "bold", size = "14"
-            )
-        )
-
-        return(p)
-    }
 }
 
 glm_random_effects <- function(formula_glm) {

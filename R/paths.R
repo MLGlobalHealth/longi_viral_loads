@@ -81,3 +81,11 @@ path.processed.testing.r1519 <- file.path(indir.deepdata.r1520,"RCCS_processed_p
 path.census.eligible <- file.path(gitdir.data, 'census_eligible_individuals_230514.csv')
 
 path.participation.rates <- file.path(gitdir.data, "participation_rates_230517.rds")
+
+
+#####################
+#     stan args     #
+#####################
+
+path.stan.config <- file.path(gitdir.stan, 'binomial_gp_config.yml')
+

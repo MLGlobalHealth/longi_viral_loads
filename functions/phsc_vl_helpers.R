@@ -660,7 +660,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir. = 
     # Stan file locations
     file.stan <- file.path(gitdir.stan, "vl_binomial_gp.stan")
 
-    .fit.stan.and.plot.by.round <- function(DT, itr = 10e3, wrmp = 5e2, chns = 1, cntrl = list(max_treedepth = 15, adapt_delta = 0.999)) {
+    .fit.stan.and.plot.by.round <- function(DT) {
         #  DT <- copy(vla[ROUND == 16]); vl.out.dir.=vl.out.dir
         round <- DT[, unique(ROUND)]
         stopifnot(length(round) == 1)
@@ -679,10 +679,19 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir. = 
             fit <- readRDS(filename)
         } else {
             stan.model <- stan_model(file = file.stan, model_name = "gp_all")
-            fit <- sampling(stan.model,
+            stan.args <- yaml::read_yaml(path.stan.config)
+
+            fit <- sampling(
+                stan.model,
                 data = stan.data,
-                iter = itr, warmup = wrmp,
-                chains = chns, control = cntrl
+                seed = stan.args$seed,
+                iter = stan.args$iter,
+                warmup = stan.args$warmup,
+                chains = stan.args$chains,
+                control = list(
+                    max_treedepth = stan.args$control$max_treedepth,
+                    adapt_delta = stan.args$control$adapt_delta,
+                )
             )
             saveRDS(fit, file = filename)
         }
@@ -920,188 +929,6 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir. = 
     }
 }
 
-vl.prevalence.by.gender.loc.age.icar <- function(DT) {
-    # DT <- copy(dall)
-    DT <- .preprocess.ds.oli(DT)
-
-    tmp <- c("N", "HIV_N", "VLNS_N", "ARV_N")
-    vla <- .preprocess.make.vla(DT, select = tmp)
-
-    # Stan file locations
-    file.stan.1 <- file.path(gitdir.stan, "vl_prevalence_by_gender_loc_age_icar_1.stan")
-    file.stan.2 <- file.path(gitdir.stan, "vl_prevalence_by_gender_loc_age_icar_2.stan")
-
-    .fit.stan.and.plot.by.round <- function(DT, iter = 20e3, warmup = 5e2, chains = 1, control = list(max_treedepth = 15, adapt_delta = 0.999)) {
-        round <- DT[, unique(ROUND)]
-        stopifnot(length(round) == 1)
-        cat("Fitting stan model for round ", round, "\n")
-
-        # Specify stan data
-        # __________________
-        stan.data <- list(
-            N     = nrow(vla),
-            TOTAL = vla[, N],
-            K     = vla[, HIV_N],
-            AGE_N = vla[, max(AGE)],
-            AGE   = vla[, AGE],
-            SEX   = vla[, SEX],
-            LOC   = vla[, LOC]
-        )
-
-        # second order RW prior,
-        node1 <- c(vla[, seq.int(1, max(AGE) - 1L)], vla[, seq.int(1, max(AGE) - 2L)])
-        node2 <- c(vla[, seq.int(2, max(AGE))], vla[, seq.int(3, max(AGE))])
-        tmp <- sort(node1, index.return = TRUE)$ix
-        stan.data$node1 <- node1[tmp]
-        stan.data$node2 <- node2[tmp]
-        stan.data$N_edges <- length(stan.data$node1)
-
-
-        # Fit stan model and save
-        # _______________________
-
-        stan.model <- stan_model(file = file.stan.2, model_name = "icar2")
-
-        fit <- sampling(stan.model,
-            data = stan.data,
-            iter = iter, warmup = warmup, chains = chains,
-            control = control
-        )
-
-        # save(fit, file=file.path(vl.out.dir., "hivprevalence_icar_stanfit_200428.rda"))		# trends by age quite rough, using Cauchy prior on sigma
-        # save(fit, file=file.path(vl.out.dir., "hivprevalence_icar_stanfit_200428c.rda"))	# trends by age still quite rough, using N(0,0.1) prior on sigma
-        filename <- paste0("hivprevalence_icar_stanfit_round", round, "_220729.rds")
-        saveRDS(fit, file = file.path(vl.out.dir., filename))
-
-        min(summary(fit)$summary[, "n_eff"])
-        re <- rstan::extract(fit)
-        ps <- c(0.025, 0.5, 0.975)
-
-        quantile(re$sigma_loc0, probs = ps)
-
-        # make prevalence plot by age
-        # ___________________________
-        tmp <- apply(re$p, 2, quantile, probs = ps)
-        rownames(tmp) <- c("CL", "M", "CU")
-        tmp <- as.data.table(reshape2::melt(tmp))
-        prev.hiv.by.age <- cbind(vla, dcast.data.table(tmp, Var2 ~ Var1, value.var = "value"))
-
-        p <- ggplot(prev.hiv.by.age) +
-            geom_ribbon(aes(x = AGE_LABEL, ymin = CL, ymax = CU, group = interaction(SEX_LABEL, LOC_LABEL)), alpha = 0.2) +
-            geom_line(aes(x = AGE_LABEL, y = M, colour = SEX_LABEL)) +
-            scale_x_continuous(expand = c(0, 0)) +
-            scale_y_continuous(label = scales:::percent) +
-            scale_colour_manual(values = c("M" = "royalblue3", "F" = "deeppink2")) +
-            facet_wrap(~LOC_LABEL, ncol = 2) +
-            theme_bw() +
-            labs(
-                x = "\nage at visit (years)",
-                y = "HIV prevalence (95% credibility interval)\n",
-                colour = "gender",
-                linetype = "location"
-            )
-
-        filename <- paste0("220729_hivprevalence_vs_age_by_gender_fishinland_icar_round", round, ".pdf")
-        filename <- file.path(vl.out.dir., filename)
-        cat("Saving", filename, "...\n")
-        filename2 <- gsub("pdf$", "png", filename)
-        ggsave(p, filename = filename2, w = 6, h = 5)
-        ggsave(p, filename = filename, w = 6, h = 5)
-
-        # extract basic prevalence estimates
-        # __________________________________
-        rp <- as.data.table(reshape2::melt(re$p))
-        setnames(rp, 2:3, c("ROW_ID", "P"))
-        rp <- merge(rp, vla, by = "ROW_ID")
-        rp <- rp[, list(P = sum(P * N) / sum(N)), by = c("LOC", "SEX", "iterations")]
-        rp <- rp[, list(Q = quantile(P, probs = ps), P = c("CL", "M", "CU")), by = c("LOC", "SEX")]
-        rp <- dcast.data.table(rp, LOC + SEX ~ P, value.var = "Q")
-        rp[, LABEL := paste0(round(M, d = 2), "% (", round(CL, d = 2), "% - ", round(CU, d = 2), "%)")]
-        rp <- merge(unique(subset(vla, select = c(LOC, LOC_LABEL, SEX, SEX_LABEL))), rp, by = c("LOC", "SEX"))
-        prev.hiv.by.sex.loc <- copy(rp)
-
-        # extract prevalence ratio female:male and male:female
-        # ____________________________________________________
-        rp <- as.data.table(reshape2::melt(re$p))
-        setnames(rp, 2:3, c("ROW_ID", "P"))
-        rp <- merge(rp, vla, by = "ROW_ID")
-        rp <- rp[, list(P = sum(P * N) / sum(N)), by = c("LOC", "SEX", "iterations")]
-        rp <- merge(unique(subset(vla, select = c(LOC, LOC_LABEL, SEX, SEX_LABEL))), rp, by = c("LOC", "SEX"))
-        rp <- dcast.data.table(rp, LOC + LOC_LABEL + iterations ~ SEX_LABEL, value.var = "P")
-        rp <- rp[, list(PR_FM = F / M, PR_MF = M / F), by = c("LOC", "iterations")]
-        rp <- melt(rp, id.vars = c("LOC", "iterations"))[, list(Q = quantile(value, probs = ps), P = c("CL", "M", "CU")), by = c("LOC", "variable")]
-        rp <- dcast.data.table(rp, LOC + variable ~ P, value.var = "Q")
-        rp[, LABEL := paste0(round(M, d = 2), " (", round(CL, d = 2), " - ", round(CU, d = 2), ")")]
-        rp <- merge(unique(subset(vla, select = c(LOC, LOC_LABEL))), rp, by = c("LOC"))
-        prevratio.hiv.by.loc <- copy(rp)
-
-        # plot prevalence ratio female:male and male:female by age
-        # ________________________________________________________
-
-        rp <- as.data.table(reshape2::melt(re$p))
-        setnames(rp, 2:3, c("ROW_ID", "P"))
-        rp <- merge(rp, vla, by = "ROW_ID")
-        rp <- dcast.data.table(rp, LOC + LOC_LABEL + iterations + AGE + AGE_LABEL ~ SEX_LABEL, value.var = "P")
-        rp[, PR_FM := F / M]
-        rp[, PR_MF := M / F]
-        rp <- melt(rp, id.vars = c("LOC_LABEL", "AGE_LABEL", "iterations"), measure.vars = c("PR_FM", "PR_MF"))[, list(Q = quantile(value, probs = ps), P = c("CL", "M", "CU")), by = c("LOC_LABEL", "AGE_LABEL", "variable")]
-        rp <- dcast.data.table(rp, LOC_LABEL + AGE_LABEL + variable ~ P, value.var = "Q")
-        prevratio.hiv.by.loc.age <- copy(rp)
-        p <- ggplot(subset(prevratio.hiv.by.loc.age, variable == "PR_FM")) +
-            geom_hline(yintercept = 1, linetype = 2) +
-            geom_ribbon(aes(x = AGE_LABEL, ymin = CL, ymax = CU, group = LOC_LABEL), alpha = 0.2) +
-            geom_line(aes(x = AGE_LABEL, y = M)) +
-            scale_x_continuous(expand = c(0, 0)) +
-            facet_wrap(~LOC_LABEL, ncol = 2) +
-            theme_bw() +
-            labs(
-                x = "\nage at visit (years)",
-                y = "female to male HIV prevalence ratio\n(95% credibility interval)\n"
-            )
-
-        filename <- paste0("220729_hivprevalenceration_vs_age_by_fishinland_icar_round", round, ".pdf")
-        filename <- file.path(vl.out.dir., filename)
-        cat("Saving", filename, "...\n")
-        filename2 <- gsub("pdf$", "png", filename)
-        ggsave(p, filename = filename2, w = 10, h = 5)
-        ggsave(p, filename = filename, w = 10, h = 5)
-
-        # extract if difference in F:M prevalence risk ratio in fishing vs inland
-        # _______________________________________________________________________
-
-        rp <- as.data.table(reshape2::melt(re$p))
-        setnames(rp, 2:3, c("ROW_ID", "P"))
-        rp <- merge(rp, vla, by = "ROW_ID")
-        rp <- rp[, list(P = sum(P * N) / sum(N)), by = c("LOC", "SEX", "iterations")]
-        rp <- merge(unique(subset(vla, select = c(LOC, LOC_LABEL, SEX, SEX_LABEL))), rp, by = c("LOC", "SEX"))
-        rp <- dcast.data.table(rp, LOC + LOC_LABEL + iterations ~ SEX_LABEL, value.var = "P")
-        rp <- rp[, list(PR_FM = F / M, PR_MF = M / F), by = c("LOC_LABEL", "iterations")]
-        rp <- dcast.data.table(rp, iterations ~ LOC_LABEL, value.var = "PR_FM")
-        rp[, PR_FM_D := inland - fishing]
-        rp[, list(Q = quantile(PR_FM_D, probs = ps), P = c("CL", "M", "CU"))]
-
-        filename <- file.path(vl.out.dir., paste0("hivprevalence_round", round, "220729.rda"))
-        cat("Saving", filename, "...\n")
-        save(vla, re, prev.hiv.by.age, prevratio.hiv.by.loc,
-            prev.hiv.by.sex.loc, prevratio.hiv.by.loc.age,
-            file = filename
-        )
-
-        TRUE
-    }
-
-    foreach(
-        r = vla[, unique(ROUND)],
-        .combine = "c"
-    ) %dopar% {
-        cat("Running Round", r, "\n")
-        .fit.stan.and.plot.by.round(vla[ROUND == r, ], iter = 10e3)
-    } -> tmp
-    tmp
-
-    return(tmp)
-}
-
 vl.meanviralload.by.gender.loc.age.icar <- function(DT) {
     # DT <- copy(dall)
     DT <- .preprocess.ds.oli(DT)
@@ -1164,7 +991,7 @@ vl.meanviralload.by.gender.loc.age.icar <- function(DT) {
 
     stan.model <- stan_model(file = file.stan.1, model_name = "icar_age_interactions")
 
-    .fit.stan.and.plot.by.round <- function(DT, iter = 20e3, warmup = 5e2, chains = 1, control = list(max_treedepth = 15, adapt_delta = 0.999)) {
+    .fit.stan.and.plot.by.round <- function(DT) {
         # DT <- copy(vla[ROUND == 16] )
         round <- DT[, unique(ROUND)]
         stopifnot(length(round) == 1)
@@ -1193,7 +1020,20 @@ vl.meanviralload.by.gender.loc.age.icar <- function(DT) {
             N_edges = length(tmp)
         )
 
-        fit <- sampling(stan.model, data = stan.data, iter = iter, warmup = warmup, chains = chains, control = control)
+        stan.args <- yaml::read_yaml(path.stan.config)
+
+        fit <- sampling(
+            stan.model,
+            data = stan.data,
+            seed = stan.args$seed,
+            iter = stan.args$iter,
+            warmup = stan.args$warmup,
+            chains = stan.args$chains,
+            control = list(
+                max_treedepth = stan.args$control$max_treedepth,
+                adapt_delta = stan.args$control$adapt_delta,
+            )
+        )
         saveRDS(fit, file = file.path(vl.out.dir., filename))
 
         min(summary(fit)$summary[, "n_eff"])
@@ -1258,7 +1098,7 @@ vl.suppofinfected.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir
 
     file.stan.1 <- file.path(gitdir.stan, "vl_binomial_gp.stan")
 
-    .fit.stan.and.plot.by.round <- function(DT, itr = 10e3, wrmp = 5e2, chns = 1, cntrl = list(max_treedepth = 15, adapt_delta = 0.999)) {
+    .fit.stan.and.plot.by.round <- function(DT) {
         # DT <- copy(vla[ROUND == 16] )
         round <- DT[, unique(ROUND)]
         stopifnot(length(round) == 1)
@@ -1276,10 +1116,19 @@ vl.suppofinfected.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir
             fit <- readRDS(filename)
         } else {
             stan.model <- stan_model(file.stan.1, model_name = "gp_all")
-            fit <- sampling(stan.model,
+            stan.args <- yaml::read_yaml(path.stan.config)
+
+            fit <- sampling(
+                stan.model,
                 data = stan.data,
-                iter = itr, warmup = wrmp,
-                chains = chns, control = cntrl
+                seed = stan.args$seed,
+                iter = stan.args$iter,
+                warmup = stan.args$warmup,
+                chains = stan.args$chains,
+                control = list(
+                    max_treedepth = stan.args$control$max_treedepth,
+                    adapt_delta = stan.args$control$adapt_delta,
+                )
             )
             saveRDS(fit, file = filename)
         }
@@ -1287,26 +1136,26 @@ vl.suppofinfected.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir
         # compare to self-report
         # ______________________
 
-        arv_bool <- DT[, any(ARV_N) > 0]
-        if (arv_bool) {
-            DT[, HIV_NARV_N := HIV_N - ARV_N]
-            stan.data.2 <- .make.stan.data.gp(DT, num.var = "HIV_NARV_N", den.var = "HIV_N")
+        # arv_bool <- DT[, any(ARV_N) > 0]
+        # if (arv_bool) {
+        #     DT[, HIV_NARV_N := HIV_N - ARV_N]
+        #     stan.data.2 <- .make.stan.data.gp(DT, num.var = "HIV_NARV_N", den.var = "HIV_N")
 
-            filename <- paste0("220729f_notARVAmongInfected_gp_stan_round", round, ".rds")
-            filename <- file.path(vl.out.dir., filename)
+        #     filename <- paste0("220729f_notARVAmongInfected_gp_stan_round", round, ".rds")
+        #     filename <- file.path(vl.out.dir., filename)
 
-            if (file.exists(filename) & refit == FALSE) {
-                cat("Loading previously run HMC... \n")
-                fit2 <- readRDS(filename)
-            } else {
-                fit2 <- sampling(stan.model,
-                    data = stan.data,
-                    iter = iter, warmup = warmup,
-                    chains = chains, control = control
-                )
-                saveRDS(fit2, file = filename)
-            }
-        }
+        #     if (file.exists(filename) & refit == FALSE) {
+        #         cat("Loading previously run HMC... \n")
+        #         fit2 <- readRDS(filename)
+        #     } else {
+        #         fit2 <- sampling(stan.model,
+        #             data = stan.data,
+        #             iter = iter, warmup = warmup,
+        #             chains = chains, control = control
+        #         )
+        #         saveRDS(fit2, file = filename)
+        #     }
+        # }
 
         # Analyse posterior
         # _________________
@@ -1638,7 +1487,7 @@ vl.suppofinfected.by.gender.loc.age.icar <- function(DT, refit = FALSE) {
     # list.files(gitdir.stan, pattern='suppofinfected')
     stan.model1 <- stan_model(file.stan.1, model_name = "icar_age_interactions")
 
-    .fit.stan.and.plot.by.round <- function(DT, iter = 20e3, warmup = 5e2, chains = 1, control = list(max_treedepth = 15, adapt_delta = 0.999)) {
+    .fit.stan.and.plot.by.round <- function(DT) {
         # DT <- copy(vla[ROUND == 16] )
         round <- DT[, unique(ROUND)]
         stopifnot(length(round) == 1)
@@ -1666,7 +1515,7 @@ vl.suppofinfected.by.gender.loc.age.icar <- function(DT, refit = FALSE) {
             node2 = node2[tmp],
             N_edges = length(node1)
         )
-        fit <- sampling(stan.model, data = stan.data, iter = iter, warmup = warmup, chains = chains, control = control)
+        # fit <- sampling(stan.model, data = stan.data, iter = iter, warmup = warmup, chains = chains, control = control)
         # trends by age quite rough, using Cauchy prior on sigma
         # trends by age still quite rough, using N(0,0.1) prior on sigma
 
@@ -1674,10 +1523,19 @@ vl.suppofinfected.by.gender.loc.age.icar <- function(DT, refit = FALSE) {
             cat("Loading previously run HMC... \n")
             fit <- readRDS(filename)
         } else {
-            fit <- sampling(stan.model,
+            stan.args <- yaml::read_yaml(path.stan.config)
+
+            fit <- sampling(
+                stan.model,
                 data = stan.data,
-                iter = iter, warmup = warmup,
-                chains = chains, control = control
+                seed = stan.args$seed,
+                iter = stan.args$iter,
+                warmup = stan.args$warmup,
+                chains = stan.args$chains,
+                control = list(
+                    max_treedepth = stan.args$control$max_treedepth,
+                    adapt_delta = stan.args$control$adapt_delta,
+                )
             )
             saveRDS(fit, file = filename)
         }
@@ -1970,7 +1828,7 @@ vl.suppofpop.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir. = v
     # Stan file locations
     file.stan <- file.path(gitdir.stan, "vl_binomial_gp.stan")
 
-    .fit.stan.and.plot.by.round <- function(DT, itr = 10e3, wrmp = 5e2, chns = 1, cntrl = list(max_treedepth = 15, adapt_delta = 0.999)) {
+    .fit.stan.and.plot.by.round <- function(DT) {
         #  DT <- copy(vla[ROUND == 16]); refit=FALSE
         round <- DT[, unique(ROUND)]
         stopifnot(length(round) == 1)
@@ -1987,10 +1845,19 @@ vl.suppofpop.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir. = v
             fit <- readRDS(filename)
         } else {
             stan.model <- stan_model(file = file.stan, model_name = "gp_all")
-            fit <- sampling(stan.model,
+            stan.args <- yaml::read_yaml(path.stan.config)
+
+            fit <- sampling(
+                stan.model,
                 data = stan.data,
-                iter = itr, warmup = wrmp,
-                chains = chns, control = cntrl
+                seed = stan.args$seed,
+                iter = stan.args$iter,
+                warmup = stan.args$warmup,
+                chains = stan.args$chains,
+                control = list(
+                    max_treedepth = stan.args$control$max_treedepth,
+                    adapt_delta = stan.args$control$adapt_delta,
+                )
             )
             saveRDS(fit, file = filename)
         }
@@ -2235,7 +2102,7 @@ vl.suppofpop.by.gender.loc.age.icar <- function(DT) {
     stan.model2 <- stan_model(file.stan.2, model_name = "icar_age_interactions")
 
 
-    .fit.stan.and.plot.by.round <- function(DT, iter = 20e3, warmup = 5e2, chains = 1, control = list(max_treedepth = 15, adapt_delta = 0.999)) {
+    .fit.stan.and.plot.by.round <- function(DT) {
         # DT <- copy(DT[ROUND == 16] )
         round <- DT[, unique(ROUND)]
         stopifnot(length(round) == 1)

@@ -52,7 +52,6 @@ file.exists(path.hivstatusvl.r1520) |>
     all() |>
     stopifnot()
 
-
 ################
 #     MAIN     #
 ################
@@ -80,36 +79,6 @@ stopifnot(dir.exists(vl.out.dir))
 
 # get data
 dall <- get.dall(path = path.hivstatusvl.r1520, only_firstpart = args$only.firstparticipants)
-
-if (0) { # Info for introduction to results
-
-    .mean2 <- function(x) paste0(round(100 * mean(x), 2), "%")
-
-    # proportions of viraemic measurements
-    dall[VL_COPIES > VIREMIC_VIRAL_LOAD, .mean2(SEX == "F"), ]
-    dall[VL_COPIES > VIREMIC_VIRAL_LOAD, .mean2(SEX == "F"), by = "ROUND"]
-    dall[VL_COPIES > VIREMIC_VIRAL_LOAD, .mean2(FC == "inland"), by = "ROUND"]
-
-    # ARVs
-    dall[HIV_AND_VL == 1, .mean2(is.na(ARVMED)), by = "ROUND"]
-    cat("mean log10 VL across people not reporting ARVMED\n")
-    dall[HIV_AND_VL == 1 & is.na(ARVMED), .(VLmean = mean(log(VL_COPIES + 1, 10))), by = "ROUND"]
-    cat("mean log10 VL across people reporting ARVMED\n")
-    dall[HIV_AND_VL == 1 & !is.na(ARVMED), .(VLmean = mean(log(VL_COPIES + 1, 10))), by = "ROUND"]
-    #
-}
-
-# Make some plots? 
-# ________________
-
-
-
-# community analysis
-# __________________
-
-if (args$run.comm.analysis) {
-    source(file.path(gitdir.scripts, 'community_analysis.R'))
-}
 
 # Estimate HIV prevalence
 # ________________________
