@@ -36,6 +36,9 @@ echo "\n\n=========================================\n\n
 Installing R dependencies\n\n"
 
 R -e '
+r = getOption("repos")
+r["CRAN"] = "http://cran.us.r-project.org"
+options(repos = r)
 options(unzip = "internal"); 
 install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
 install.packages(
@@ -44,7 +47,7 @@ c(
     "lubridate", "haven", "Hmisc",
     "DiagrammeR", "DiagrammeRsvg",
     "loo", "tidybayes", "bayestestR", "bayesplot", 
-    "rsvg", "htmltools", "hmisc", "raster", "rnaturalearth", "osmdata", "sf", "foreach", "patchwork", "knitr", "foreign", "nnet", "stargazer", "tint", "scales", "ggthemes", "gganimate", "ggtext", "ggpubr", "readxl", "rgdal", "rgeos", "RColorBrewer", "mvtnorm", "lme4", "optparse", "bh", "mcmcpack", "here", "yaml"
+    "rsvg", "htmltools", "raster", "rnaturalearth", "osmdata", "sf", "foreach", "patchwork", "knitr", "foreign", "nnet", "stargazer", "tint", "scales", "ggthemes", "gganimate", "ggtext", "ggpubr", "readxl", "rgdal", "rgeos", "RColorBrewer", "mvtnorm", "lme4", "optparse", "bh", "mcmcpack", "here", "yaml"
 ))
 '
 
