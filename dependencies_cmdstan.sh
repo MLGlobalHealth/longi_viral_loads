@@ -37,14 +37,14 @@ Installing R dependencies\n\n"
 
 R -e '
 options(unzip = "internal"); 
-devtools::install_github("stan-dev/cmdstanr"))
-insall.packages(
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+install.packages(
 c(
     "data.table", "dplyr", 
     "lubridate", "haven", "Hmisc",
     "DiagrammeR", "DiagrammeRsvg",
     "loo", "tidybayes", "bayestestR", "bayesplot", 
-    "rsvg", "htmltools", "raster", "rnaturalearth", "osmdata", "sf", "foreach", "patchwork", "knitr", "foreign", "nnet", "stargazer", "tint", "scales", "ggthemes", "gganimate", "ggtext", "ggpubr", "readxl", "rgdal", "rgeos", "RColorBrewer", "mvtnorm", "lme4", "optparse", "bh", "mcmcpack", "here", "yaml"
+    "rsvg", "htmltools", "hmisc", "raster", "rnaturalearth", "osmdata", "sf", "foreach", "patchwork", "knitr", "foreign", "nnet", "stargazer", "tint", "scales", "ggthemes", "gganimate", "ggtext", "ggpubr", "readxl", "rgdal", "rgeos", "RColorBrewer", "mvtnorm", "lme4", "optparse", "bh", "mcmcpack", "here", "yaml"
 ))
 '
 
