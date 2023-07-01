@@ -466,12 +466,12 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
                 stan.model,
                 data = stan.data,
                 seed = stan.args$seed,
-                iter = stan.args$iter,
-                warmup = stan.args$warmup,
+                iter_sampling = stan.args$iter,
+                iter_warmup = stan.args$warmup,
                 chains = stan.args$chains,
                 control = list(
                     max_treedepth = stan.args$control$max_treedepth,
-                    adapt_delta = stan.args$control$adapt_delta,
+                    adapt_delta = stan.args$control$adapt_delta
                 )
             )
             saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
@@ -724,8 +724,8 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
                 stan.model,
                 data = stan.data,
                 seed = stan.args$seed,
-                iter = stan.args$iter,
-                warmup = stan.args$warmup,
+                iter_sampling = stan.args$iter,
+                iter_warmup = stan.args$warmup,
                 chains = stan.args$chains,
                 control = list(
                     max_treedepth = stan.args$control$max_treedepth,
@@ -770,8 +770,8 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
                     stan.model,
                     data = stan.data,
                     seed = stan.args$seed,
-                    iter = stan.args$iter,
-                    warmup = stan.args$warmup,
+                    iter_sampling = stan.args$iter,
+                    iter_warmup = stan.args$warmup,
                     chains = stan.args$chains,
                     control = list(
                         max_treedepth = stan.args$control$max_treedepth,
@@ -1023,8 +1023,8 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
                 stan.model,
                 data = stan.data,
                 seed = stan.args$seed,
-                iter = stan.args$iter,
-                warmup = stan.args$warmup,
+                iter_sampling = stan.args$iter,
+                iter_warmup = stan.args$warmup,
                 chains = stan.args$chains,
                 control = list(
                     max_treedepth = stan.args$control$max_treedepth,
