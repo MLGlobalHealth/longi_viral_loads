@@ -2,6 +2,17 @@
 
 This repository contains the code used to analyse Viral Load data obtained from Rakai, with the objective of answering some questions posed in the [LONGVIEW](TODO:LINK) grant.
 
+# Installation:
+
+There are 2 installation scripts ...
+
+Concerning cmdstanr, you may get an error such as: "Need to set TBB_CXX_TYPE" (see [here](https://bytemeta.vip/repo/stan-dev/cmdstanpy/issues/374?page=1) )
+In this case, it is necessary to locat the path to the cmdstanr installed repository and add the following lines to the `make/local` file.
+```{bash make/local}
+CXX=g++
+TBB_CXX_TYPE=gcc
+```
+
 # Data.
 
 Data used exclusively for this analysis is stored on the HPC, at `$DEEPDATA/RCCS_R15_R20`. 
