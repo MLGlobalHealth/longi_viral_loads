@@ -469,10 +469,8 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
                 iter_sampling = stan.args$iter,
                 iter_warmup = stan.args$warmup,
                 chains = stan.args$chains,
-                control = list(
-                    max_treedepth = stan.args$control$max_treedepth,
-                    adapt_delta = stan.args$control$adapt_delta
-                )
+                max_treedepth = stan.args$control$max_treedepth,
+                adapt_delta = stan.args$control$adapt_delta
             )
             saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
         }
@@ -720,6 +718,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
             stan.model <- cmdstan_model(stan_file = file.stan)
             stan.args <- yaml::read_yaml(path.stan.config)
 
+            ?sample
             fit <- stan.model$sample(
                 stan.model,
                 data = stan.data,
@@ -727,10 +726,8 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
                 iter_sampling = stan.args$iter,
                 iter_warmup = stan.args$warmup,
                 chains = stan.args$chains,
-                control = list(
-                    max_treedepth = stan.args$control$max_treedepth,
-                    adapt_delta = stan.args$control$adapt_delta,
-                )
+                max_treedepth = stan.args$control$max_treedepth,
+                adapt_delta = stan.args$control$adapt_delta
             )
 
             saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
@@ -773,10 +770,8 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
                     iter_sampling = stan.args$iter,
                     iter_warmup = stan.args$warmup,
                     chains = stan.args$chains,
-                    control = list(
-                        max_treedepth = stan.args$control$max_treedepth,
-                        adapt_delta = stan.args$control$adapt_delta,
-                    )
+                    max_treedepth = stan.args$control$max_treedepth,
+                    adapt_delta = stan.args$control$adapt_delta
                 )
 
                 saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
@@ -1026,10 +1021,8 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
                 iter_sampling = stan.args$iter,
                 iter_warmup = stan.args$warmup,
                 chains = stan.args$chains,
-                control = list(
-                    max_treedepth = stan.args$control$max_treedepth,
-                    adapt_delta = stan.args$control$adapt_delta,
-                )
+                max_treedepth = stan.args$control$max_treedepth,
+                adapt_delta = stan.args$control$adapt_delta
             )
             saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
         }
