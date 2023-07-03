@@ -806,18 +806,15 @@ plot.rakai.map <- function(.size=3){
     names(comms) <- toupper(names(comms))
     comms[, COMM_NUM := as.character(COMM_NUM)]
 
-    # load gps
+    # load gps and merge to comms
     env_gps <- new.env()
     load(path.community.gps, envir=env_gps)
-    with(env_gps$comgps, {
+    comms <- with(env_gps$comgps, {
         data.table(
             COMM_NUM=as.character(COMM_NUM),
             longitude=as.numeric(longitude),
             latitude=as.numeric(latitude)
-    )}) -> comms_gps
-
-    # merge
-    comms <- merge(comms, comms_gps, by='COMM_NUM')
+    )}) |> merge(x=comms,y=_, by="COMM_NUM") 
     comms[, TYPE := fifelse(COMM_ID %like% 'i', 'inland', 'fishing') ]
 
     # if 2 comms have the same COMM_ID, take average of lat/long
@@ -826,11 +823,9 @@ plot.rakai.map <- function(.size=3){
         latitude = mean(latitude),
         longitude = mean(longitude)
     ), by=COMM_ID]
-    comms
 
     # get population sizes.
     tmp <- readRDS(path.comm.censsize)
-    tmp
     comms <- merge(comms, tmp, by.x=c('COMM_ID', 'TYPE'), by.y=c('COMM_IDX', 'TYPE'))
 
     with(comms, c(
@@ -840,7 +835,6 @@ plot.rakai.map <- function(.size=3){
             top=max(latitude) + .05
     )) -> box
 
-    # can also use get_map if have access to the GOOGLE API KEY
     ggmap::get_stamenmap(
         bbox = box,
         maptype = 'watercolor',
@@ -850,24 +844,22 @@ plot.rakai.map <- function(.size=3){
     prettify_labels(comms)
     p <- ggmap(map) + 
         geom_point(data=comms, 
-        aes(x=longitude, y=latitude, 
-            shape=LOC_LAB, # size=POP_SIZE,
-            color=LOC_LAB, fill=LOC_LAB
-        ), size=.size) +
+            aes(x=longitude, y=latitude, 
+                shape=LOC_LAB, # size=POP_SIZE,
+                color=LOC_LAB, fill=LOC_LAB
+            ), size=.size) +
+        scale_shape_manual(values=c('inland'=21, 'fishing'=25, "Inland"=21, "Fishing"=25)) +
         scale_color_manual(values=c('black', 'black')) +
-        scale_fill_manual(values=palettes$comm) +
-        scale_shape_manual(values=c('Inland'=21, 'Fishing'=25)) +
-        # scale_y_continuous(breaks = seq(-.9,.4, by=.1), limits=c(NA, NA)) +
-        # scale_x_continuous(n.breaks = 0) +
+        scale_fill_manual(values=palettes$comm) + 
         my_labs(color=NULL, fill=NULL, shape=NULL, x="Longitude (°E)", y="Latitude(°N)") +
         theme(
             legend.position = c(1,1),
             legend.justification = c(1,1),
             legend.background = element_rect(fill='white', color='black'),
             legend.direction = 'horizontal'
-        ) + 
+        )  +
         ggsn::scalebar(
-            x.min=box['left'] + .01,
+            x.min=box['left'] + .02,
             x.max=box['right'] - 0.01, 
             y.min=box['bottom'] + .03,
             y.max=box['top'] - .01 ,
@@ -878,8 +870,7 @@ plot.rakai.map <- function(.size=3){
             height=0.01,
             st.bottom = FALSE,
             st.dist=0.04,
-            st.size=2) 
-        # north2(p, x=.93, y=.22, symbol=10)
+            st.size=2)
     p
 }
 
@@ -956,8 +947,43 @@ plot_2yaxis_hist_lines <- function(DThist, DTline, sec_name="Contribution to HIV
         scale_color_manual(values=palettes$sex) +  
         facet_grid( . ~ LOC_LAB )  +
         my_labs(y = "HIV prevalence by age") +
-        theme_default(
-            strip.placement = "outside",
-        ) +
+        theme_default() +
         NULL
+}
+
+plot.uganda.map <- function(zoom="far"){
+
+    require(ggmap)
+
+    stopifnot(zoom %in% c("far", "medium","close"))
+
+    # decide zoomed in we want the pic to be
+    zoom <- "medium"
+    box_uganda <- if( zoom == "far" ){
+        c(top=6.158199, left=24.681059, bottom=- 6.314563, right=42.125359)
+    }else if( zoom == "medium" ){
+        c(top=5, left=28, bottom=- 5, right=39)
+    }else if( zoom == "close" ){
+        c(top=NA_real_, left=NA_real_, bottom=NA_real_, right=NA_real_)
+    }
+
+    # get bounding box for Rakai region
+    env_gps <- new.env()
+    load(path.community.gps, envir=env_gps)
+    box <- with(env_gps$comgps, {
+        data.table(top=max(latitude), left=min(longitude), bottom=min(latitude), right=max(longitude))
+    }) 
+    
+    # plot
+    uganda <- get_stamenmap( 
+        bbox=box_uganda, 
+        maptype = "toner-hybrid",
+        source = "stamen",
+        zoom = 6,
+    )
+    ggmap(uganda)  +
+        geom_polygon(data = map_data("lakes"), aes(x = long, y = lat, group = group), fill = "blue", alpha = 0.2) +
+        # geom_polygon(data=comms, aes(x=longitude, y=latitude), color='red') +
+        geom_rect(xmin=box$left, xmax=box$right, ymin=box$bottom, ymax=box$top, fill=NA, color='red') + 
+        theme_void()
 }
