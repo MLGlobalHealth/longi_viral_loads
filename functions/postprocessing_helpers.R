@@ -444,7 +444,7 @@ plot.agesex.contributions.by.roundcomm <- function(DT, label, include_baseline =
 
 plot.agesex.contributions.by.roundcomm2 <- function(DT, label, include_baseline = FALSE) {
     # DT <- copy(dcontrib); label = 'run-gp-supp-pop'
-    dplot <- subset(DT, MODEL == label) |>
+    dplot <- subset(DT, MODEL == label & AGEGROUP != "Total") |>
         prettify_labels()
 
     # if(include_baseline){

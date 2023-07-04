@@ -211,7 +211,18 @@ if (make_plots) {
     ggsave2(p = p_supp, file = .fnm("suppofhiv"), LALA = out.dir.figures, .w, .h)
     ggsave2(p = p_vir, file = .fnm("suppofpop"), LALA = out.dir.figures, .w, .h)
     
-    rm(.w, .h)
+    # need to compare suppression in Round 19 in Inland and fishing communities...
+    .w <- 10; .h <- 7
+
+    p1_vir <- plot.comparison.prevalence.fishinginland.oneround(DT=djoint, model="run-gp-supp-pop", round=19)
+    p1_supp <- plot.comparison.prevalence.fishinginland.oneround(DT=djoint, model="run-gp-supp-hiv", round=19, ylim=1)
+    p1_hiv <- plot.comparison.prevalence.fishinginland.oneround(DT=djoint, model="run-gp-prevl", round=19)
+    .fnm <- function(lab) {
+        paste("fit", lab, "comparefishinland_bygender_round19.pdf", sep = "_")
+    }
+    ggsave2(p = p1_hiv, file = .fnm("hivprev"), LALA = out.dir.figures, .w, .h)
+    ggsave2(p = p1_supp, file = .fnm("suppofhiv"), LALA = out.dir.figures, .w, .h)
+    ggsave2(p = p1_vir, file = .fnm("suppofpop"), LALA = out.dir.figures, .w, .h)
 
     if( exists("env_list") ){
         p <- plot.comparison.ftp.nonftp.and.all(env=env_list, DT=djoint, model="run-gp-supp-hiv")
@@ -220,6 +231,7 @@ if (make_plots) {
     }
 
 
+    rm(.w, .h)
 }
 
 

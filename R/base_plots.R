@@ -154,7 +154,9 @@ palettes <- list(
         fishing="#9ac0cd",
         inland="#9C964A",
         Fishing="#9ac0cd",
-        Inland="#9C964A"
+        Inland="#9C964A",
+        `Fishing communities with high HIV prevalence` ="#9ac0cd",
+        `Inland communities with typical HIV prevalence` ="#9C964A"
     ),
 
     arvmed = c(
@@ -219,6 +221,12 @@ palettes <- list(
         "#d90000",
         "#ffffff",
         "#9ca69c"
+    ),
+
+
+    minimal = c(
+        "#0F4392",
+        "#FF4949"
     ),
 
     NULL

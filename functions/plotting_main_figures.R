@@ -1100,3 +1100,30 @@ plot.comparison.ftp.nonftp.and.all <- function(env=env_list, DT=djoint, model="r
         NULL
     return(p)
 }
+
+plot.comparison.prevalence.fishinginland.oneround <- function(DT, model, round, ylim=NA){
+
+    require(geomtextpath)
+    stopifnot(model %in% names(model_dictionary) )
+
+    dplot <- subset(DT, MODEL == model & ROUND == round) |> 
+        prettify_labels()
+    dplot[ , LOC_LAB := community_dictionary$longest[LOC_LAB] ]
+
+    ggplot(dplot, aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=LOC_LAB, color=LOC_LAB)) + 
+        geom_line() +
+        geom_ribbon(alpha=ALPHA, color=NA) + {
+            if(MODEL == 'run-gp-supp-hiv'){
+                geom_texthline(
+                    yintercept=.95^3, color='red', linetype='dashed', 
+                    label="UNAIDS 95-95-95", vjust=0.5, hjust=1) 
+            }else{ NULL }
+        } +
+        facet_grid(~ SEX_LAB) +
+        scale_color_manual(values=palettes$comm)  +
+        scale_fill_manual(values=palettes$comm)  +
+        scale_x_continuous(expand = c(0,0), breaks= c(seq(15, 45, 5))) + 
+        scale_y_continuous(labels=scales::label_percent(), limits=c(0,ylim), expand=c(0,0)) + 
+        theme_default() +
+        my_labs(y=model_dictionary[model])
+}
