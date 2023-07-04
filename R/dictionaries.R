@@ -47,27 +47,25 @@ answers_dict <- list(
 )
 
 stan_dicts <- list(
-    SEXtoINT=c(
-        `F`=0L,
-        `M`=1L,
-        `Female`=0L,
-        `Male`=1L,
-        `female`=0L,
-        `male`=1L
+    SEXtoINT = c(
+        `F` = 0L,
+        `M` = 1L,
+        `Female` = 0L,
+        `Male` = 1L,
+        `female` = 0L,
+        `male` = 1L
     ),
-    INTtoSEX=c(
-        `0`="F",
-        `1`="M"
+    INTtoSEX = c(
+        `0` = "F",
+        `1` = "M"
     ),
-
-    LOCtoINT=c(
+    LOCtoINT = c(
         `inland` = 0L,
         `fishing` = 1L
     ),
-
-    INTtoLOC=c(
-        `0` = 'inland',
-        `1` = 'fishing'
+    INTtoLOC = c(
+        `0` = "inland",
+        `1` = "fishing"
     )
 )
 
@@ -93,10 +91,10 @@ community_dictionary <- list(
         "Inland" = "Inland communities with typical HIV prevalence"
     )
 
-        # I would probably try "Fishing communities with high HIV prevalence", "Inland communities with typical/more moderate HIV prevalence"
+    # I would probably try "Fishing communities with high HIV prevalence", "Inland communities with typical/more moderate HIV prevalence"
 )
 
-sex_dictionary <- c(M = "Male", F = "Female", `0`="Female", `1`="Male")
+sex_dictionary <- c(M = "Male", F = "Female", `0` = "Female", `1` = "Male")
 
 loc_dictionary <- c(
     inland = "Inland",
@@ -107,6 +105,11 @@ loc_dictionary <- c(
     `1` = "Fishing"
 )
 
+model_dictionary <- c(
+    "run-gp-supp-hiv" = "Prevalence of viral suppression among HIV positive individuals",
+    "run-gp-supp-pop" = "Prevalence of viraemia",
+    "run-gp-prevl" = "HIV prevalence"
+)
 
 round_dictionary <- c(
     "R016" = "Round 16",
@@ -131,9 +134,9 @@ drounds <- data.table(
 drounds[, LABS := paste0(LABS, START, " to ", END)]
 
 round_labs <- rep(drounds$LABS, 2)
-names(round_labs) <- with(drounds, c(ROUND, paste('Round', ROUND)) )
+names(round_labs) <- with(drounds, c(ROUND, paste("Round", ROUND)))
 
-round_labs2 <- gsub('\n',' ',round_labs)
+round_labs2 <- gsub("\n", " ", round_labs)
 
 dall_dictionaries <- list(
     TEST_YEAR_AGO = c(
@@ -161,8 +164,8 @@ postproc_dictionaries <- list(
 
 model_dict <- c(
     `run-gp-prevl` = "HIV prevalence",
-    `run-gp-supp-hiv` ="Prevalence of suppression among HIV positive",
-    `run-gp-supp-pop` ="Prevalence of viraemia"
+    `run-gp-supp-hiv` = "Prevalence of suppression among HIV positive",
+    `run-gp-supp-pop` = "Prevalence of viraemia"
 )
 
 # to work together with my_labs() function
@@ -185,9 +188,9 @@ my_labs_dictionary <- c(
     LOESS_SPAN = "Loess span",
     PARTRATE = "Participation rate",
     PART_RATE = "Participation rate",
-    PHIV_MEAN = 'HIV prevalence',
-    PVLNS_MEAN = 'Prevalence of viraemia among population',
-    PVLNSofHIV_MEAN = 'Prevalence of viraemia among HIV infected',
+    PHIV_MEAN = "HIV prevalence",
+    PVLNS_MEAN = "Prevalence of viraemia among population",
+    PVLNSofHIV_MEAN = "Prevalence of viraemia among HIV infected",
     ROUND = "Interview round",
     ROUND_LAB = "Interview round",
     ROUND_LABEL = "Interview round",
