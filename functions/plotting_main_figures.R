@@ -951,18 +951,17 @@ plot_2yaxis_hist_lines <- function(DThist, DTline, sec_name="Contribution to HIV
         NULL
 }
 
-plot.uganda.map <- function(zoom="far"){
+plot.uganda.map <- function(zoom="medium"){
 
     require(ggmap)
 
     stopifnot(zoom %in% c("far", "medium","close"))
 
     # decide zoomed in we want the pic to be
-    zoom <- "medium"
     box_uganda <- if( zoom == "far" ){
         c(top=6.158199, left=24.681059, bottom=- 6.314563, right=42.125359)
     }else if( zoom == "medium" ){
-        c(top=5, left=28, bottom=- 5, right=39)
+        c(top=5, left=28, bottom= -5, right=39)
     }else if( zoom == "close" ){
         c(top=NA_real_, left=NA_real_, bottom=NA_real_, right=NA_real_)
     }
