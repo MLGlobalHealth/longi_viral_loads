@@ -12,7 +12,6 @@ paper_statements_overall_prevalence <- function(DT=djoint_agegroup){
 
     tmp <- subset(DT, MODEL == 'run-gp-prevl' & AGEGROUP == 'Total')
     tmp[, CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE)]
-    tmp[, .(ROUND, LOC, SEX, CELL)]
 
     tmp[ROUND == 16 & SEX == "Total", {
         sprintf(
@@ -21,6 +20,17 @@ paper_statements_overall_prevalence <- function(DT=djoint_agegroup){
         ) |> cat()
         NULL
     }]
+    tmp
+}
+
+paper_statements_female_prevalence <- function(DT=djoint_agegroup){
+
+    tmp <- subset(DT, ROUND == 19 & AGEGROUP == 'Total' & SEX == "F" & MODEL == "run-gp-prevl")
+    tmp[, CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE)]
+    tmp[, {
+        sprintf("while on average %s of all women had HIV in inland communities .... . Vice versa, while on average %s of all women had HIV in fishing communities, we found that ...\n", 
+        CELL[ LOC == 'inland'], CELL[ LOC == 'fishing' ]) |> cat()
+    },]
     tmp
 }
 
@@ -51,4 +61,15 @@ paper_statements_suppression_above_959595 <- function(DT=djoint){
         NULL
     }, by = 'SEX_LAB']
     return(tmp)
+}
+
+paper_statements_female_contributions_prevalence <- function(DT=dcontrib_agegroup){
+    tmp <- subset(DT, MODEL == 'run-gp-prevl' & ROUND == 19 & AGEGROUP == 'Total' & SEX == "F") 
+    tmp[, CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE)]
+    tmp[, {
+        sprintf("We found that %s of all individuals with HIV in %s communities were female\n",
+        CELL, LOC) |> cat()
+        NULL
+    }, by=LOC]
+    tmp
 }

@@ -28,10 +28,6 @@ cat("\nStart of: VL_jointpostprocessing.R\n")
 # NOTE: contributions by age/group do not make sense in the "among hiv", if we merge by dcens.
 # instead, we should be merging by the N of hiv+
 
-# TODO: 
-# - 2. [X] make table with improvements over time in tot # usuppressed by loc and gender
-# - 3. [] I am not saving the sex comparison in the  plot.comparison.ftptype.colsex section: do it
-
 gitdir <- here::here()
 source(file.path(gitdir, "R/paths.R"))
 
@@ -225,8 +221,6 @@ catn("Get quantiles for population prevalences by agegroup")
 
 filename_rds <- file.path(out.dir.tables, "posterior_quantiles_agegroups.rds")
 
-# dcens custom to prove 
-
 if( file.exists(filename_rds) & !overwrite ){
     djoint_agegroup <- readRDS(filename_rds)
 } else {
@@ -270,7 +264,7 @@ if( file.exists(filename_rds) & !overwrite ){
 }
 
 if(make_tables){
-    tmp <- paper_statements_overall_prevalence(djoint_agegroup)
+    tmp <- paper_statements_female_prevalence(djoint_agegroup)
 }
 
 catn("Get quantiles for population prevalences aggregated over age") 
@@ -567,12 +561,17 @@ if (file.exists(filename_rds) & !overwrite) {
                             list( z = sum(z))
                         },
                         by = c(dot.cols, "LOC", "SEX", "AGEGROUP")
-                    ][, list(
+                    ]
+                    tmp <- tmp[, list(
                         AGEGROUP = AGEGROUP,
                         SEX = SEX,
                         CONTRIBUTION = z/sum(z)
-                    ),
-                    by=c(dot.cols, "LOC")]
+                    ), by=c(dot.cols, "LOC")]
+                    tmp1 <- tmp[, .(
+                        AGEGROUP="Total",
+                        CONTRIBUTION=sum(CONTRIBUTION)
+                    ), by=c(dot.cols, "LOC", "SEX")]
+                    tmp <- rbind(tmp, tmp1)
                     tmp[, quantile2(CONTRIBUTION), by = c("SEX", "LOC", "AGEGROUP")]
                 }
             )
@@ -619,6 +618,10 @@ if(make_tables){
     filename <- 'table_contrib_hivpop.pdf'
     p <- table.to.plot(t_contrib_hiv)
     ggsave2(p=p, file=filename, LALA=out.dir.tables, w=22.5, h=5.5)
+}
+
+if(make_tables){
+    tmp <- paper_statements_female_contributions_prevalence(dcontrib_agegroup)
 }
 
 catn("Get log-ratio for suppression among FTP and non-FTP") 
