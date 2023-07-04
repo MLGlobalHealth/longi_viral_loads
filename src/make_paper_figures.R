@@ -89,6 +89,10 @@ stopifnot(check_more_elig_than_part)
 filename_rds_contrib <- file.path(out.dir.tables, "fullpop_allcontributions.rds")
 filename_rds_prevalence <- file.path(out.dir.tables, "fullpop_posteriorquantiles_by_agesexround.rds")
 filename_rds_prevalence_agegroup <- file.path(out.dir.tables, "posterior_quantiles_agegroups.rds")
+filename_rds_contrib_agegroup <- file.path(out.dir.tables, "fullpop_allcontributions_byagegroup.rds")
+
+djoint_agegroup <- readRDS(filename_rds_prevalence_agegroup)
+dcontrib_agegroup <- readRDS(filename_rds_contrib_agegroup)
 
 ###########
 # HELPERS #
@@ -109,7 +113,7 @@ fig1a <- plot.rakai.map(.size=2) +
     theme(panel.border = element_rect(colour = "red",size=2))
 
 subfig1a <- plot.uganda.map(zoom="medium")
-subfig1a | fig1a 
+
 
 # pyramid of census eligible, participants, and smooth
 fig1b <- plot.pyramid.bysexround( dprop[ROUND %in% c(19)], 
@@ -145,12 +149,11 @@ if(0){
 }
 
 
+# fig 1c
 dcontrib <- .load.model.subset(filename_rds_contrib, MODEL=="run-gp-prevl" & ROUND == 19) |> prettify_labels()
 dprev <- .load.model.subset(filename_rds_prevalence, MODEL=="run-gp-prevl" & ROUND == 19) |> prettify_labels()
-
 # p_i <- plot_2yaxis_hist_lines(dcontrib[LOC == 'inland'],  dprev[LOC == 'inland'], sec_name="")
 # p_f <- plot_2yaxis_hist_lines(dcontrib[LOC == 'fishing'], dprev[LOC == 'fishing']) + labs(y="")
-
 fig1c <- plot_prevalenceandcontrid(dprev, dcontrib)  + 
     labs(tag = "c")
 
@@ -164,6 +167,17 @@ fig1 <- (
 fig1 <- fig1 + plot_layout(heights = c(1,2)) & theme(legend.key.size = unit(0.4, "cm")) + nm_reqs  
 filename <- paste0('main_figure_populationcomposition.pdf')
 ggsave_nature(p=fig1, filename=filename, LALA=out.dir.figures, w=21, h=19)
+
+# Statment in section 1.
+{
+    tmp1 <- paper_statements_female_prevalence(djoint_agegroup)
+    tmp2 <- paper_statements_female_contributions_prevalence(dcontrib_agegroup)
+    sprintf( 
+        "while on average %s of all women had HIV in inland communities, we found that %s of all individuals with HIV in inland communities were female, and it is the latter proportion that is relevant for intervention planning in these communities. Vice versa, while on average %s of all women had HIV in fishing communities, we found that %s of all individuals with HIV in fishing communities were female.", 
+        tmp1[LOC == "inland" & SEX=="F"]$CELL, tmp2[LOC == "inland" & SEX=="F"]$CELL, 
+        tmp1[LOC == "fishing" & SEX=="F"]$CELL, tmp2[LOC == "fishing" & SEX=="F"]$CELL
+    )
+}
 
 ########################
 catn("=== FIGURE 2 ===")

@@ -973,6 +973,7 @@ plot_prevalenceandcontrid <- function(DTprev, DTcontrib, sec_name="Contribution 
             `Contribution to HIV prevalence`="distribution of individuals with HIV by 1-year age band"
         )
         DT[, LABEL2 := tmp_labs[ LABEL ] ]
+        DT[, LABEL2 := factor(LABEL2, levels=tmp_labs, ordered=TRUE)]
 
         # I would probably try "Fishing communities with high HIV prevalence", "Inland communities with typical/more moderate HIV prevalence"
         
@@ -989,8 +990,8 @@ plot_prevalenceandcontrid <- function(DTprev, DTcontrib, sec_name="Contribution 
                     name=sec_name) 
             ) +
             scale_x_continuous(expand = c(0,0), breaks= c(seq(15, 45, 5), 50)) + 
-            scale_fill_viridis_d(option="B", begin=.2, end=.9)  +
-            scale_color_viridis_d(option="B", begin=.2, end=.9)  +
+            scale_fill_manual(values=palettes$minimal)  +
+            scale_color_manual(values=palettes$minimal)  +
             facet_grid( SEX_LAB ~ LOC_LAB, labeller=labeller(LOC_LAB=community_dictionary$longest) )  +
             my_labs(y = "HIV prevalence by age", x="", color="", fill="") +
             theme_default(strip.placement = "outside") +
