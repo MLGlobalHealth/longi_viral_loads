@@ -1056,3 +1056,47 @@ plot.uganda.map <- function(zoom="medium"){
         geom_rect(xmin=box$left, xmax=box$right, ymin=box$bottom, ymax=box$top, fill=NA, color='red') + 
         theme_void()
 }
+
+plot.comparison.ftp.nonftp.and.all <- function(env=env_list, DT=djoint, model="run-gp-supp-hiv", round=19, y_upper_limit=NA){
+    
+
+    ALPHA = .3
+    cols <- c("LOC_LAB", "SEX_LAB", "AGEYRS", "M", "CL", "CU", "FTP_LAB")
+    model_lab <- fcase(
+        model == "run-gp-supp-hiv", "nsinf.by.age",
+        model == "run-gp-supp-pop", "nspop.by.age",
+        model == "run-gp-prevl", "prev.hiv.by.age",
+        default = NA_character_)
+    ylab <- fcase(
+        model == "run-gp-supp-hiv", "Prevalence of viral suppression among HIV positive individuals",
+        model == "run-gp-supp-pop", "Prevalence of viraemia among population",
+        model == "run-gp-prevl", "Prevalence of HIV",
+        default = NA_character_
+    )
+    stopifnot( "Unknown model label" = !is.na(model_lab) )
+
+    # subset to data of interest
+    comp <- rbind.ftpstatus.datatables.by.round(model_lab, round, envir_list = env) |> 
+        prettify_labels() |> 
+        setnames("AGE_LABEL", "AGEYRS") |>
+        subset(select=cols, AGEYRS %between% c(15, 49))
+    merged <- djoint |> 
+        subset(MODEL == model & ROUND == round) |> 
+        prettify_labels() |> 
+        subset(select=setdiff(cols, "FTP_LAB")) 
+    merged[, FTP_LAB := "Weighted average"]
+
+
+    # make plot
+    p <- rbind(comp, merged) |> ggplot(aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, linetype=FTP_LAB)) + 
+        geom_ribbon(data=merged, color=NA, alpha=ALPHA) +
+        geom_line() +
+        scale_y_continuous(labels=scales:::percent, expand=c(0,0), limits=c(0, y_upper_limit)) +
+        scale_x_continuous(expand = c(0,0), breaks= c(seq(15, 45, 5), 50)) + 
+        scale_linetype_manual(values=c(2,3,1)) + 
+        facet_grid(SEX_LAB ~ LOC_LAB) +
+        my_labs(y=ylab) +
+        theme_default() + 
+        NULL
+    return(p)
+}

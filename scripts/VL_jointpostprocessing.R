@@ -129,7 +129,6 @@ if (make_plots) {
         filename <- paste0("fit_hivprev_byftpstatus_round", round, ".pdf")
         ggsave2(p = p1, file = filename, LALA = out.dir.figures, w = 9, h = 8)
 
-
         # suppression among infected: again similar, no significant differences except for 'olde'
         nsinf.by.age <- rbind.ftpstatus.datatables.by.round("nsinf.by.age", round, envir_list = env_list)
         nsinf.by.age |> plot.comparison.ftptype.colsex(ylab = "Viral suppression among HIV positives")
@@ -213,6 +212,14 @@ if (make_plots) {
     ggsave2(p = p_vir, file = .fnm("suppofpop"), LALA = out.dir.figures, .w, .h)
     
     rm(.w, .h)
+
+    if( exists("env_list") ){
+        p <- plot.comparison.ftp.nonftp.and.all(env=env_list, DT=djoint, model="run-gp-supp-hiv")
+        filename <- "fit_suppofhiv_compare_ftp_non_andall.pdf"
+        ggsave2(p = p, file = filename, LALA = out.dir.figures, w = 9, h = 8)
+    }
+
+
 }
 
 
