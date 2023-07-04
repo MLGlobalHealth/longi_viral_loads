@@ -105,7 +105,11 @@ catn("=== FIGURE 1 ===")
 ########################
 
 # Map of the Rakai communities
-fig1a <- plot.rakai.map(.size=2) 
+fig1a <- plot.rakai.map(.size=2) + 
+    theme(panel.border = element_rect(colour = "red",size=2))
+
+subfig1a <- plot.uganda.map(zoom="medium")
+subfig1a | fig1a 
 
 # pyramid of census eligible, participants, and smooth
 fig1b <- plot.pyramid.bysexround( dprop[ROUND %in% c(19)], 
@@ -144,28 +148,22 @@ if(0){
 dcontrib <- .load.model.subset(filename_rds_contrib, MODEL=="run-gp-prevl" & ROUND == 19) |> prettify_labels()
 dprev <- .load.model.subset(filename_rds_prevalence, MODEL=="run-gp-prevl" & ROUND == 19) |> prettify_labels()
 
-p_i <- plot_2yaxis_hist_lines(dcontrib[LOC == 'inland'],  dprev[LOC == 'inland'], sec_name="")
-p_f <- plot_2yaxis_hist_lines(dcontrib[LOC == 'fishing'], dprev[LOC == 'fishing']) + labs(y="")
+# p_i <- plot_2yaxis_hist_lines(dcontrib[LOC == 'inland'],  dprev[LOC == 'inland'], sec_name="")
+# p_f <- plot_2yaxis_hist_lines(dcontrib[LOC == 'fishing'], dprev[LOC == 'fishing']) + labs(y="")
 
-# fig1c <- ggarrange_nature(p_i, p_f, ncol=2, common.legend = TRUE, legend = "bottom", labels = c("c", ""))
-# fig1ab <- ggarrange(
-#     fig1a + labs(tag = "a"),
-#     fig1b + labs(tag = "b") +  nm_reqs+ theme(legend.position = "none"),
-#     ncol=2, labels = c("a", "b"))
-# fig1 <- ggarrange(fig1ab, fig1c, nrow=2)
-# fig1
-
+fig1c <- plot_prevalenceandcontrid(dprev, dcontrib)  + 
+    labs(tag = "c")
 
 # patchwork:
 fig1 <- ( 
-    (fig1a + labs(tag="a") | fig1b + theme(legend.position = "none") + labs(tag='b') ) + plot_layout(widths = c(1, 1.4))
+    (subfig1a + labs(tag="a") | fig1a | fig1b + theme(legend.position = "none") + labs(tag='b') ) + plot_layout(widths = c(1, 1, 1.5))
 )/(
-    (p_i + labs(tag='c') + theme(legend.position="none") | p_f) & plot_layout(guides="collect")
-)  & theme(legend.key.size = unit(0.4, "cm")) + nm_reqs  
-
+    # (p_i + labs(tag='c') + theme(legend.position="none") | p_f) & plot_layout(guides="collect")
+    fig1c
+)  
+fig1 <- fig1 + plot_layout(heights = c(1,2)) & theme(legend.key.size = unit(0.4, "cm")) + nm_reqs  
 filename <- paste0('main_figure_populationcomposition.pdf')
-ggsave_nature(p=fig1, filename=filename, LALA=out.dir.figures, w=21, h=16)
-
+ggsave_nature(p=fig1, filename=filename, LALA=out.dir.figures, w=21, h=19)
 
 ########################
 catn("=== FIGURE 2 ===")
