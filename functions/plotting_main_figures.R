@@ -951,6 +951,75 @@ plot_2yaxis_hist_lines <- function(DThist, DTline, sec_name="Contribution to HIV
         NULL
 }
 
+plot_prevalenceandcontrid <- function(DTprev, DTcontrib, sec_name="Contribution to HIV prevalence"){
+
+    ALPHA = .5; DODGE = 1
+
+    .plot.facet <- function(DT){
+
+        naturemed_reqs()
+
+        .sec_axis_scale <- DT[, {
+            max(CU[LABEL == 'Contribution to HIV prevalence']) / max(CU[LABEL == 'HIV prevalence']) 
+        },]
+
+        DT[ LABEL == "Contribution to HIV prevalence", c("M", "CL", "CU") := {
+            stopifnot("probably wrong label"=.N > 0)
+             .(M / .sec_axis_scale, CL / .sec_axis_scale, CU / .sec_axis_scale )
+        }]
+
+        tmp_labs <- c(
+            `HIV prevalence`="HIV prevalence within each 1-year age band",
+            `Contribution to HIV prevalence`="distribution of individuals with HIV by 1-year age band"
+        )
+        DT[, LABEL2 := tmp_labs[ LABEL ] ]
+
+        # I would probably try "Fishing communities with high HIV prevalence", "Inland communities with typical/more moderate HIV prevalence"
+        
+        # rescale 2nd data frame for the secondary axis
+        ggplot(DT, aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=LABEL2, color=LABEL2)) +
+            geom_col(alpha=ALPHA, color='grey80', linewidth=.2 , position=position_dodge(width = DODGE))+
+            geom_linerange(position=position_dodge(width = DODGE)) +
+            scale_y_continuous(
+                labels = scales::label_percent(), 
+                expand = expansion(mult = c(0, .1)),
+                sec.axis = sec_axis(
+                    trans= ~ .*.sec_axis_scale,
+                    labels = scales::label_percent(),
+                    name=sec_name) 
+            ) +
+            scale_x_continuous(expand = c(0,0), breaks= c(seq(15, 45, 5), 50)) + 
+            scale_fill_viridis_d(option="B", begin=.2, end=.9)  +
+            scale_color_viridis_d(option="B", begin=.2, end=.9)  +
+            facet_grid( SEX_LAB ~ LOC_LAB, labeller=labeller(LOC_LAB=community_dictionary$longest) )  +
+            my_labs(y = "HIV prevalence by age", x="", color="", fill="") +
+            theme_default(strip.placement = "outside") +
+            nm_reqs
+    }
+
+    DTprev <- copy(dprev)
+    DTcontrib <- copy(dcontrib)
+    # bind
+    DTprev[, LABEL := "HIV prevalence"]
+    DTcontrib[, LABEL := "Contribution to HIV prevalence"]
+    DT <- rbind(DTprev, DTcontrib)
+    prettify_labels(DT)
+
+    facets_dts <- list(
+        subset(DT, LOC_LAB == "Inland" & SEX_LAB == "Female"),
+        subset(DT, LOC_LAB == "Inland" & SEX_LAB == "Male"),
+        subset(DT, LOC_LAB == "Fishing" & SEX_LAB == "Female"),
+        subset(DT, LOC_LAB == "Fishing" & SEX_LAB == "Male")
+    )
+    ps <- lapply(facets_dts, .plot.facet)
+    p <- ggarrange(
+        ps[[1]], ps[[2]],
+        ps[[3]], ps[[4]],
+        ncol=2, nrow=2, common.legend = TRUE, legend="bottom")
+    p
+
+}
+
 plot.uganda.map <- function(zoom="medium"){
 
     require(ggmap)

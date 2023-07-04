@@ -83,7 +83,17 @@ community_dictionary <- list(
         "I" = "Inlan communitiesd",
         "fishing" = "Fishing communities",
         "inland" = "Inland communities"
+    ),
+    longest = c(
+        "F" = "Fishing communities with high HIV prevalence",
+        "I" = "Inland communities with typical HIV prevalence",
+        "fishing" = "Fishing communities with high HIV prevalence",
+        "inland" = "Inland communities with typical HIV prevalence",
+        "Fishing" = "Fishing communities with high HIV prevalence",
+        "Inland" = "Inland communities with typical HIV prevalence"
     )
+
+        # I would probably try "Fishing communities with high HIV prevalence", "Inland communities with typical/more moderate HIV prevalence"
 )
 
 sex_dictionary <- c(M = "Male", F = "Female", `0`="Female", `1`="Male")
