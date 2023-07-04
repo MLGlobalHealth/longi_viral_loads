@@ -2,6 +2,29 @@
 # Generic helpers #
 ###################
 
+# non-interactive debugging (https://adv-r.hadley.nz/debugging.html#non-interactive-debugging)
+dump_and_quit <- function(){
+    # works in concomitance with 
+    # options(error=dump_and_quit)
+
+    # save debugging info to file last.dump.rda
+    dump.frames(to.file=TRUE)
+    # quit R with error status
+
+    paste(
+        "Load dump file in an interactive session as follows:",
+        "load('last.dump.rda')",
+        "debugger()",
+        sep='\n'
+    ) |> sprintf("")
+
+    q(status=1)
+}
+
+# not sure whether I should keep this here or in the scripts
+if( ! interactive() ){
+    options(error=dump_and_quit)
+}
 
 # saving files
 # ____________
