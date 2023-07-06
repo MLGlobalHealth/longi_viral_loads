@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # use as:
-# ./run_stan.bash
+# ./run_stan.bash VL=... OUTDIR=... ...
 # Flags:
 #    VL : viremic viral load threshold
 #    FTP: subset to first time participants or not
@@ -100,8 +100,37 @@ Rscript \$INDIR/scripts/VL_run_$STANWAY.R \
 
 cp -R --no-preserve=mode,ownership \$PWD/\$JOBNAME/. \$OUTDIR/\$JOBNAME
 
-# cd \$OUTDIR
-# qsub bash-$JOBNAME-$MODEL-postprocessing.pbs
+# submit the postprocessin gonce done.
+cd \$OUTDIR
+qsub bash-$JOBNAME-$MODEL-postprocessing.pbs
+EOF
+
+    cat > $OUTDIR/bash-$JOBNAME-$MODEL-postprocessing.pbs <<EOF
+
+#!/bin/sh
+#PBS -l walltime=24:00:00
+#PBS -l select=1:ncpus=10:ompthreads=1:mem=480gb
+#PBS -j oe
+module load anaconda3/personal
+source activate longivl
+
+INDIR=$INDIR
+OUTDIR=$OUTDIR
+STAN_MODEL=$STAN_MODEL
+JOBNAME=$JOBNAME
+  
+# main directory
+CWD=\$PWD\$JOBNAME
+
+# directories for figure and table
+#mkdir \$CWD
+#mkdir \$CWD/figures
+#mkdir \$CWD/tables
+
+Rscript \$INDIR/src/postprocessing_assess_mixing.R --jobname $JOBNAME  --round \$ROUND
+# would need to check that all the models are done running before VL_postprocessing.R
+Rscript \$INDIR/scripts/VL_postprocessing.R --viremic-viral-load $VL --outdir \$OUTDIR --indir \$OUTDIR
+
 
 EOF
 

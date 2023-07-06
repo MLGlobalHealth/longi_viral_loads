@@ -200,3 +200,48 @@ my_labs_dictionary <- c(
     VL_COPIES = "Viral Load Copies",
     NULL
 )
+
+dict_stan_params <- c(
+
+    `alpha_00` = expression(paste("variance:  ", alpha[0][0])),
+    `alpha_01` = expression(paste("variance:  ", alpha[0][1])),
+    `alpha_10` = expression(paste("variance:  ", alpha[1][0])),
+    `alpha_11` = expression(paste("variance:  ", alpha[1][1])),
+    
+    `rho_00` = expression(paste("lengthscale:  ", rho[0][0])),
+    `rho_01` = expression(paste("lengthscale:  ", rho[0][1])),
+    `rho_10` = expression(paste("lengthscale:  ", rho[1][0])),
+    `rho_11` = expression(paste("lengthscale:  ", rho[1][1])),
+
+    sex_0_loc_0 = expression(paste("baseline:  ", nu[0][0])),
+    sex_0_loc_1 = expression(paste("baseline:  ", nu[0][1])),
+    sex_1_loc_0 = expression(paste("baseline:  ", nu[1][0])),
+    sex_1_loc_1 = expression(paste("baseline:  ", nu[1][1])),
+
+    NULL
+)
+
+dict_stan_params2 <- with(stan_dicts, c(
+
+    `alpha_00` = expression(paste("variance:  ", alpha["F"]["-fi"])),
+    `alpha_01` = expression(paste("variance:  ", alpha["F"]["-in"])),
+    `alpha_10` = expression(paste("variance:  ", alpha["M"]["-fi"])),
+    `alpha_11` = expression(paste("variance:  ", alpha["M"]["-in"])),
+    
+    `rho_00` = expression(paste("lengthscale:  ",  rho["F"]["-fi"])),
+    `rho_01` = expression(paste("lengthscale:  ",  rho["F"]["-in"])),
+    `rho_10` = expression(paste("lengthscale:  ",  rho["M"]["-fi"])),
+    `rho_11` = expression(paste("lengthscale:  ",  rho["M"]["-in"])),
+
+    sex_0_loc_0 = expression(paste("baseline:  ",   nu["F"]["-fi"])),
+    sex_0_loc_1 = expression(paste("baseline:  ",   nu["F"]["-in"])),
+    sex_1_loc_0 = expression(paste("baseline:  ",   nu["M"]["-fi"])),
+    sex_1_loc_1 = expression(paste("baseline:  ",   nu["M"]["-in"])),
+
+    NULL
+
+))
+
+# same but with names = t(parname)
+dict_stan_params_t <- copy(dict_stan_params)
+names(dict_stan_params_t) <- paste0( "t(", names(dict_stan_params_t), ")")
