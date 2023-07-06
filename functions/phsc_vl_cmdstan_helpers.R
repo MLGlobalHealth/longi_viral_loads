@@ -463,7 +463,6 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
             stan.args <- yaml::read_yaml(path.stan.config)
 
             fit <- stan.model$sample(
-                stan.model,
                 data = stan.data,
                 seed = stan.args$seed,
                 iter_sampling = stan.args$iter,
@@ -720,7 +719,6 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
 
             ?sample
             fit <- stan.model$sample(
-                stan.model,
                 data = stan.data,
                 seed = stan.args$seed,
                 iter_sampling = stan.args$iter,
@@ -764,7 +762,6 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
                 stan.args <- yaml::read_yaml(path.stan.config)
 
                 fit <- stan.model$sample(
-                    stan.model,
                     data = stan.data,
                     seed = stan.args$seed,
                     iter_sampling = stan.args$iter,
@@ -1015,7 +1012,6 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
             stan.args <- yaml::read_yaml(path.stan.config)
 
             fit <- stan.model$sample(
-                stan.model,
                 data = stan.data,
                 seed = stan.args$seed,
                 iter_sampling = stan.args$iter,
