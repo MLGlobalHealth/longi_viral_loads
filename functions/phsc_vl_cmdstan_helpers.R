@@ -145,7 +145,7 @@ extract.stan.hyperparams.rho <- function(re, encoding){
 {
 
     summ <- {
-        if( "CmdStanFit" %in% class(fit) ){
+        if( "CmdStanFit" %in% class(FIT) ){
             FIT$summary(names_vars %which.not.like% "rho_hyper_par|L_cov|^\\.")
         }
     }  |> as.data.table()
