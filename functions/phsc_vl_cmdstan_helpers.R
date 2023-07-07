@@ -459,7 +459,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
 
         } else {
 
-            stan.model <- cmdstan_model(stan_file = file.stan)
+            stan.model <- cmdstan_model(stan_file = file.stan, cpp_options=list(stan_threads = TRUE))
             stan.args <- yaml::read_yaml(path.stan.config)
 
             fit <- stan.model$sample(
@@ -469,7 +469,9 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
                 iter_warmup = stan.args$warmup,
                 chains = stan.args$chains,
                 max_treedepth = stan.args$control$max_treedepth,
-                adapt_delta = stan.args$control$adapt_delta
+                adapt_delta = stan.args$control$adapt_delta,
+                parallel_chains = stan.args$chains,
+                threads_per_chain = 1
             )
             saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
         }
@@ -714,10 +716,9 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
 
         } else {
 
-            stan.model <- cmdstan_model(stan_file = file.stan)
+            stan.model <- cmdstan_model(stan_file = file.stan, cpp_options=list(stan_threads = TRUE))
             stan.args <- yaml::read_yaml(path.stan.config)
 
-            ?sample
             fit <- stan.model$sample(
                 data = stan.data,
                 seed = stan.args$seed,
@@ -725,7 +726,9 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
                 iter_warmup = stan.args$warmup,
                 chains = stan.args$chains,
                 max_treedepth = stan.args$control$max_treedepth,
-                adapt_delta = stan.args$control$adapt_delta
+                adapt_delta = stan.args$control$adapt_delta,
+                parallel_chains = stan.args$chains,
+                threads_per_chain = 1
             )
 
             saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
@@ -758,7 +761,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
 
             } else {
 
-                stan.model <- cmdstan_model(stan_file = file.stan)
+                stan.model <- cmdstan_model(stan_file = file.stan, cpp_options=list(stan_threads = TRUE))
                 stan.args <- yaml::read_yaml(path.stan.config)
 
                 fit <- stan.model$sample(
@@ -768,7 +771,9 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
                     iter_warmup = stan.args$warmup,
                     chains = stan.args$chains,
                     max_treedepth = stan.args$control$max_treedepth,
-                    adapt_delta = stan.args$control$adapt_delta
+                    adapt_delta = stan.args$control$adapt_delta,
+                    parallel_chains = stan.args$chains,
+                    threads_per_chain = 1
                 )
 
                 saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
@@ -1008,7 +1013,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
 
         } else {
             
-            stan.model <- cmdstan_model(stan_file = file.stan)
+            stan.model <- cmdstan_model(stan_file = file.stan, cpp_options=list(stan_threads = TRUE))
             stan.args <- yaml::read_yaml(path.stan.config)
 
             fit <- stan.model$sample(
@@ -1018,7 +1023,8 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
                 iter_warmup = stan.args$warmup,
                 chains = stan.args$chains,
                 max_treedepth = stan.args$control$max_treedepth,
-                adapt_delta = stan.args$control$adapt_delta
+                parallel_chains = stan.args$chains,
+                threads_per_chain = 1
             )
             saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
         }
