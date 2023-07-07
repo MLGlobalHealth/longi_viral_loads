@@ -487,7 +487,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
         ps <- c(CL=0.025, IL=0.25, M=0.5, IU=0.75, CU=0.975)
 
         # Extract summary excluding hyper parameters
-        dsum <- .get.summary.without.hyperparams(fit, verbose=TRUE)
+        dsum <- .get.summary.without.hyperparams(FIT=fit, verbose=TRUE)
 
         # extract hyperparams rho
         prev.hiv.gp.pars <- extract.stan.hyperparams.rho(
@@ -791,7 +791,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
         ps <- c(CL=0.025, IL=0.25, M=0.5, IU=0.75, CU=0.975)
 
         # Extract summary excluding hyper parameters
-        dsum <- .get.summary.without.hyperparams(fit, verbose=TRUE)
+        dsum <- .get.summary.without.hyperparams(FIT=fit, verbose=TRUE)
 
 
         # extract hyperparams rho
@@ -1040,7 +1040,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
         ps <- c(CL=0.025, IL=0.25, M=0.5, IU=0.75, CU=0.975)
 
         # Extract summary excluding hyper parameters
-        dsum <- .get.summary.without.hyperparams(fit, verbose=TRUE)
+        dsum <- .get.summary.without.hyperparams(FIT=fit, verbose=TRUE)
 
         # extract hyperparams rho
         nspop.gp.pars <- extract.stan.hyperparams.rho(
