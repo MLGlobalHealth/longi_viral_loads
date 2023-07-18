@@ -877,7 +877,7 @@ plot.rakai.map <- function(.size=3){
 plot.relative.suppression.vs.round16.ratio <- function(DT= dincreasessupp)
 {
     
-    dplot <- copy(dincreasessupp)
+    dplot <- copy(DT)
     prettify_labels(dplot)
 
     ggplot(dplot, aes(x=AGEYRS, color=SEX_LAB, fill=SEX_LAB)) + 

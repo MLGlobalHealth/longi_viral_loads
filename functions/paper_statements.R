@@ -49,7 +49,7 @@ paper_statements_suppression_above_959595 <- function(DT=djoint){
 
     tmp <- subset(DT, MODEL == 'run-gp-supp-hiv' & ROUND == 19)
     prettify_labels(tmp)
-    sprintf("By 2019, medians for prevalnce of suppression exceeded the 95-95-95 goals in:\n") |> cat()
+    sprintf("By 2019, medians for prevalence of suppression exceeded the 95-95-95 goals in:\n") |> cat()
     tmp[ M > .95^3, {
         sprintf("- %s %s aged %s or more\n", unique(LOC_LAB), unique(SEX), min(AGEYRS)) |> cat()
         NULL
