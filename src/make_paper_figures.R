@@ -103,7 +103,6 @@ dcontrib_agegroup <- readRDS(filename_rds_contrib_agegroup)
     readRDS(file) |> subset( eval(expr) )
 }
 
-
 ########################
 catn("=== FIGURE 1 ===")
 ########################
@@ -198,6 +197,45 @@ filename <- paste0('main_figure_changesinsuppression.pdf')
 ggsave_nature(p=fig1, filename=filename, LALA=out.dir.figures, w=21, h=16)
 
 # fig2b
+
+########################
+catn(" FIGURE for KATE")
+########################
+
+# who achive
+groups_above_95 <- paper_statements_suppression_above_959595(djoint) |> 
+    subset(M > .95^3) 
+groups_above_95_range <- groups_above_95[, .(m=min(AGEYRS), M=max(AGEYRS)), by = .(SEX_LAB, LOC_LAB)]
+
+# plots
+p_sub <- groups_above_95_range |> 
+    ggplot(aes(x=m, y=SEX_LAB, color=SEX_LAB)) + 
+    geom_segment(aes(xend=M, yend=SEX_LAB), linewidth = 2) +
+    geom_point(size=4, shape='triangle') +
+    facet_grid(. ~ LOC_LAB) +
+    scale_x_continuous(expand = c(0, 0), limits = c(15, 49), breaks = age_breaks) +
+    scale_y_discrete(labels=c("", "")) +
+    guides(color = FALSE) +
+    scale_color_manual(values=palettes$sex) +
+    my_labs( y = "", x="Ages having achieved 95-95-95 suppression levels") +
+    theme_default() +
+    NULL
+
+# suppression
+dcontrib <- .load.model.subset(filename_rds_contrib, MODEL=="run-gp-supp-pop" & ROUND == 19) |> prettify_labels()
+p_contrib_suppp <- plot.agesex.contributions.by.roundcomm(dcontrib, label = "run-gp-supp-pop", include_baseline = TRUE)
+
+fig_kate_1 <- (p_contrib_suppp / p_sub) + plot_layout(heights = c(5, 1)) +  plot_layout(guides = "collect") & theme(legend.position = 'bottom') + nm_reqs
+
+fig_kate_1b <- p_contrib_suppp + 
+    geom_segment(data=groups_above_95_range,
+        aes(x=m, xend=M, y=0.0003+.0004*(SEX_LAB=="Female"), yend=0.0003 + .0004*(SEX_LAB=='Female'), ymin=NULL, ymax=NULL),
+    linewidth = 4, alpha=.5) 
+
+ggsave_nature(p = fig_kate_1, filename="whopepfar_fig1.pdf", LALA="~/Downloads", w=21, h=16)
+ggsave_nature(p = fig_kate_1b, filename="whopepfar_fig1b.pdf", LALA="~/Downloads", w=21, h=16)
+ggsave_nature(p = fig1c , filename="whopepfar_fig2.pdf", LALA="~/Downloads", w=21, h=18)
+
 
 
 
