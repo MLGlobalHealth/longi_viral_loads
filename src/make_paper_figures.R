@@ -190,28 +190,45 @@ catn(" FIGURE for KATE")
 ########################
 
 {
-    fig_kate2 <- plot_prevalenceandcontrid(dprev[LOC=="inland"], dcontrib[LOC=="inland"], legend.key.size=unit(0.3, "cm")) + 
-        labs(tag = "c")
+    horizontal <- TRUE
     fig_pyr <- plot.pyramid.bysexround( dprop[ROUND == 19 & FC=='inland'], 
-        .ylab = 'Number of participants among census eligible individuals',
-        NUM="N_PART",
-        DEN='ELIGIBLE',
+        .ylab = 'Number of census eligible individuals',
+        NUM="ELIGIBLE", DEN='ELIGIBLE',
         percent_lab = FALSE) +
-        facet_grid(ROUND_LAB ~ FC_LAB, labeller = labeller(ROUND_LAB=round_labs2, FC_LAB = community_dictionary$long), scales='free_x') +
+
+        facet_grid(. ~ FC_LAB, labeller = labeller(ROUND_LAB=round_labs2, FC_LAB = community_dictionary$long), scales='free_x') +
         geom_hline(yintercept=0, color='black') +
-        geom_line( aes(y=ELIGIBLE_SMOOTH * (1 - 2*(SEX == 'M')), color=SEX_LAB )) +
-        my_labs(color="Gender") +   
         scale_y_continuous(labels=abs, limits=c(-800, 800)) + 
-        theme(legend.key.size = unit(.3, "cm")) +
-        nm_reqs
+        theme(legend.key.size = unit(.3, "cm"), strip.text.x=element_blank()) +
+        slides_reqs
+    fig_pyr
+
+    fig_kate2 <- plot_prevalenceandcontrid(
+        sec_name="Contribution of each age group to HIV prevalence",
+        dprev[LOC=="inland"], dcontrib[LOC=="inland"],
+        legend.key.size=unit(0.3, "cm"),
+        slides=TRUE,
+        extra_fig = fig_pyr,
+        CrI = FALSE
+    ) 
+    plot_prevalence <- fig_kate2
 
     # (fig1b + theme(strip.text.y=element_blank()) | fig_kate2) + plot_layout(ncol=2, widths=c(1,2.5))
-    plot_prevalence <- (
-        (fig_pyr + theme(strip.text.y=element_blank()) + labs(tag='a')) /
-        fig_kate2 + labs(tag='b')
-    ) +  plot_layout(ncol=1, heights=c(1,2.4)) 
+    # if(!horizontal){
+    #     plot_prevalence <- (
+    #         (fig_pyr + theme(strip.text.y=element_blank()) + labs(tag='a')) /
+    #         fig_kate2 + labs(tag='b')
+    #     ) +  plot_layout(ncol=1, heights=c(1,2.4)) + slides_reqs
+    # } else {
+    #     plot_prevalence <- (
+    #         (fig_pyr + theme(strip.text.y=element_blank()) + labs(tag='a')) |
+    #         fig_kate2 + labs(tag='b')
+    #     ) +  plot_layout(nrow=1, ncol=2, widths=c(1,2.4)) + slides_reqs
+    # }
+    rm(horizontal)
 }
-ggsave_nature(p = plot_prevalence, filename="whopepfar_prevalence.pdf", LALA="~/Downloads", w=22, h=17)
+ggsave_nature(p = plot_prevalence, filename="whopepfar_prevalence.pdf", LALA="~/Downloads", w=25, h=15)
+
 
 
 {
@@ -223,21 +240,27 @@ ggsave_nature(p = plot_prevalence, filename="whopepfar_prevalence.pdf", LALA="~/
     fig_kate_1c <- plot_suppandcontrib(
         dprev_vir[LOC=="inland"], 
         dcontrib_vir[LOC=="inland"],
-        sec_name = "Contribution to viraemic population",
+        sec_name = "Contribution of each age group to people with unsuppressed viral load",
         prevalence.label = "Prevalence of viraemia among population",
-        remove.legend = TRUE
+        remove.legend = TRUE,
+        CrI = FALSE,
+        slides= TRUE
     )
     fig_kate_1d <- plot_suppandcontrib(
         dprev_vir2[LOC=="inland"], 
         dcontrib_vir[LOC=="inland"],
-        sec_name = "Contribution to viraemic population",
-        prevalence.label = "Prevalence of viraemia among HIV positive population"
+        sec_name = "Contribution of each age group to people with unsuppressed viral load",
+        prevalence.label = "Prevalence of viraemia among HIV positive population",
+        slides = TRUE,
+        CrI = FALSE,
+        sec_axis_scale = .069,
     )
 
-    plot_suppression <- (
-        (fig_kate_1c +  labs(tag="Considering entire population") + nm_reqs + labs(x="LALALA")) /
-        (fig_kate_1d +  labs(tag="Considering PLHIV only (as per 95-95-95 goals)") + nm_reqs )
-    ) + plot_layout(guides="collect", ncol=1, heights=c(1,1.1)) + theme(legend.position="bottom")
+    # plot_suppression <- (
+    #     (fig_kate_1c +  labs(tag="Considering entire population") + nm_reqs + labs(x="LALALA")) /
+    #     (fig_kate_1d +  labs(tag="Considering PLHIV only (as per 95-95-95 goals)") + slides_reqs )
+    # ) + plot_layout(guides="collect", ncol=1, heights=c(1,1.1)) + theme(legend.position="bottom")
+    plot_suppression <- fig_kate_1d 
 }
 ggsave_nature(p = plot_suppression, filename="whopepfar_suppression.pdf", LALA="~/Downloads", w=22, h=17)
 

@@ -241,12 +241,12 @@ palettes <- list(
     ),
 
     minimal2 = c(
-        "#374E55FF",
-        "#DF8F44FF"
+        "#374E55",
+        "#DF8F44"
     ),
 
     # minimal3 = c("#FAE48BFF","#FB6467FF"),
-    minimal3 = c("#FCD61F","#284051"),
+    minimal3 = c("purple","darkgreen"),
 
     NULL
 )
