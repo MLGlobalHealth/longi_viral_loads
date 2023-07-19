@@ -101,14 +101,25 @@ Rscript \$INDIR/scripts/VL_run_$STANWAY.R \
     --round \$ROUND \
     --firstpart $FTP
 
+Rscript \$INDIR/src/postprocessing_assess_mixing.R --jobname $JOBNAME  --round \$ROUND
+
 cp -R --no-preserve=mode,ownership \$PWD/\$JOBNAME/. \$OUTDIR/\$JOBNAME
 
-# submit the postprocessin gonce done.
+# submit the postprocessin once done.
 cd \$OUTDIR
-qsub bash-$JOBNAME-$MODEL-postprocessing.pbs
+
+if [ $(find $(pwd) -mindepth 1 -maxdepth 1 -type f -name "*rda" | wc -l) -eq 4 ]; then  
+    echo "All models have finished running. Submitting postprocessing."
+    qsub bash-$JOBNAME-$MODEL-postprocessing.pbs
+else
+    echo "Not all models have finished running. Not submitting postprocessing."
+fi
+
 EOF
 
-    cat > $OUTDIR/bash-$JOBNAME-$MODEL-postprocessing.pbs <<EOF
+done
+
+cat > $OUTDIR/bash-$JOBNAME-$MODEL-postprocessing.pbs <<EOF
 
 #!/bin/sh
 #PBS -l walltime=24:00:00
@@ -125,19 +136,24 @@ JOBNAME=$JOBNAME
 # main directory
 CWD=\$PWD\$JOBNAME
 
+# write code to check there are 4 files ending by rda in $CWD
+# if not, exit
+# if yes, run postprocessing 
+if [ find \$PWD\$JOBNAME -mindepth 1 -maxdepth 1 -type f -name "*rda" | wc -l == 4 ]
+
+
+
 # directories for figure and table
 #mkdir \$CWD
 #mkdir \$CWD/figures
 #mkdir \$CWD/tables
 
-Rscript \$INDIR/src/postprocessing_assess_mixing.R --jobname $JOBNAME  --round \$ROUND
 # would need to check that all the models are done running before VL_postprocessing.R
 Rscript \$INDIR/scripts/VL_postprocessing.R --viremic-viral-load $VL --outdir \$OUTDIR --indir \$OUTDIR
 
 
 EOF
 
-done
 
 cd $OUTDIR
 
