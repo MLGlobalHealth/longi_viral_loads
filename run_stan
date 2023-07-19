@@ -1,13 +1,16 @@
 #!/bin/bash
 
-# use as:
-# ./run_stan.bash VL=... OUTDIR=... ...
-# Flags:
-#    VL : viremic viral load threshold
-#    FTP: subset to first time participants or not
-#    STANWAY : either (r)stan or cmdstan
-#    INDIR : directory where github directory is located
-#    OUTDIR : directory where output will be saved
+# help, usage
+if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "--help" ]]; then
+    echo "Usage: ./run_stan OPTION1=value1 OPTION2=value2 ..."
+    echo "OPTIONs:"
+    echo "    VL : viremic viral load threshold             [default: 1000]"
+    echo "    FTP: subset to first time participants or not [default: FALSE]"
+    echo "    STANWAY : either (r)stan or cmdstan           [default: stan]"
+    echo "    INDIR : directory where github directory is located"
+    echo "    OUTDIR : directory where output will be saved"
+    exit 0
+fi
 
 for ARGUMENT in "$@"
 do
