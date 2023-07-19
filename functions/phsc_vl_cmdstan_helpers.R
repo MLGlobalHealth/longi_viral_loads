@@ -475,7 +475,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
             )
             saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
 
-            filename2 <- gsub('cmd_', 'stanfit', x = filename) 
+            filename2 <- gsub('cmd_', 'stanfit_', x = filename) 
             fit$output_files() |>
                 read_stan_csv(col_major = TRUE) |> 
                 saveRDS(file=filename2)
@@ -739,7 +739,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
 
             saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
 
-            filename2 <- gsub('cmd_', 'stanfit', x = filename) 
+            filename2 <- gsub('cmd_', 'stanfit_', x = filename) 
             fit$output_files() |>
                 read_stan_csv(col_major = TRUE) |> 
                 saveRDS(file=filename2)
@@ -789,7 +789,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
 
                 saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
 
-                filename2 <- gsub('cmd_', 'stanfit', x = filename) 
+                filename2 <- gsub('cmd_', 'stanfit_', x = filename) 
                 fit$output_files() |>
                     read_stan_csv(col_major = TRUE) |> 
                     saveRDS(file=filename2)
@@ -1044,7 +1044,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
             )
             saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
 
-            filename2 <- gsub('cmd_', 'stanfit', x = filename) 
+            filename2 <- gsub('cmd_', 'stanfit_', x = filename) 
             fit$output_files() |>
                 read_stan_csv(col_major = TRUE) |> 
                 saveRDS(file=filename2)
