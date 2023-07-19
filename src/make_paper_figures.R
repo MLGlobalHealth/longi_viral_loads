@@ -263,7 +263,7 @@ ggsave_nature(p = plot_prevalence, filename="whopepfar_prevalence.pdf", LALA="~/
     # ) + plot_layout(guides="collect", ncol=1, heights=c(1,1.1)) + theme(legend.position="bottom")
     plot_suppression <- fig_kate_1d 
 }
-ggsave_nature(p = plot_suppression, filename="whopepfar_suppression.pdf", LALA="~/Downloads", w=22, h=17)
+ggsave_nature(p = plot_suppression, filename="whopepfar_suppression.pdf", LALA="~/Downloads", w=23, h=17)
 
 
 ################################################
