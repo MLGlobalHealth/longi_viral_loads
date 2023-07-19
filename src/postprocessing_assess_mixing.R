@@ -72,7 +72,7 @@ catn("Loading model fit and samples")
 fit <- readRDS(path.stan.output)
 
 if(! "stanfit" %in% class(fit)){
-    fit <- rstan::read_stan_csv(fit$output_files())
+    fit <- rstan::read_cmdstan_csv(fit$output_files())
 }
 
 samples <- rstan::extract(fit, permuted = FALSE, inc_warmup = FALSE)

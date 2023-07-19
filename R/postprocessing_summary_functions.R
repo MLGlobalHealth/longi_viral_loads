@@ -30,7 +30,7 @@ make_convergence_diagnostics_stats = function(fit, re, outfile.prefix, exclude_r
 
     stopifnot(!is.null(fit))
 
-    fit_type <- get.fit.type(fit) # maybe can deprecate thanks 2 read_stan_csv
+    fit_type <- get.fit.type(fit) # maybe can deprecate thanks 2 read_cmdstan_csv
 
     summary = rstan::summary(fit)$summary |>
         as.data.table(keep.rownames =TRUE)
