@@ -59,6 +59,16 @@ naturemed_reqs <- function()
         plot.tag.position = c(0, 1),
         strip.placement = "outside"
     )
+
+    slides_reqs <<- theme( 
+        axis.text = element_text(size=6, family='sans'),
+        text=element_text(size=9,family='sans'),
+        legend.text=element_text(size=9, family='sans'),
+        strip.background = element_rect(colour="white", fill="white"),
+        plot.tag = element_text(size=10, face='bold', color = "black"),
+        plot.tag.position = c(0, 1),
+        strip.placement = "outside"
+    )
 }
 
 ggarrange_nature <- function(
