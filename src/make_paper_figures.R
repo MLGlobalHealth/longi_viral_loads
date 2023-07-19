@@ -201,17 +201,18 @@ catn(" FIGURE for KATE")
         scale_y_continuous(labels=abs, limits=c(-800, 800)) + 
         theme(legend.key.size = unit(.3, "cm"), strip.text.x=element_blank()) +
         slides_reqs
-    fig_pyr
 
     fig_kate2 <- plot_prevalenceandcontrid(
         sec_name="Contribution of each age group to HIV prevalence",
         dprev[LOC=="inland"], dcontrib[LOC=="inland"],
         legend.key.size=unit(0.3, "cm"),
+        sec_axis_scale = .1,
         slides=TRUE,
         extra_fig = fig_pyr,
         CrI = FALSE
     ) 
     plot_prevalence <- fig_kate2
+    plot_prevalence
 
     # (fig1b + theme(strip.text.y=element_blank()) | fig_kate2) + plot_layout(ncol=2, widths=c(1,2.5))
     # if(!horizontal){
@@ -228,7 +229,6 @@ catn(" FIGURE for KATE")
     rm(horizontal)
 }
 ggsave_nature(p = plot_prevalence, filename="whopepfar_prevalence.pdf", LALA="~/Downloads", w=25, h=15)
-
 
 
 {
@@ -254,6 +254,7 @@ ggsave_nature(p = plot_prevalence, filename="whopepfar_prevalence.pdf", LALA="~/
         slides = TRUE,
         CrI = FALSE,
         sec_axis_scale = .069,
+        UNAIDS = TRUE
     )
 
     # plot_suppression <- (
