@@ -382,7 +382,7 @@ plot.pyramid.eligible.participants <- function(DT) {
         NULL
 }
 
-plot.pyramid.bysexround <- function(DT, NUM, DEN, .ylab, percent_lab=TRUE) {
+plot.pyramid.bysexround <- function(DT, NUM, DEN, .ylab, percent_lab=TRUE ) {
     dplot <- copy(DT)
     cols <- c(NUM, DEN)
     new_cols <- paste(c("NUM", "DEN"), "PYR", sep = "_")

@@ -951,12 +951,26 @@ plot_2yaxis_hist_lines <- function(DThist, DTline, sec_name="Contribution to HIV
         NULL
 }
 
-plot_prevalenceandcontrid <- function(DTprev, DTcontrib, sec_name="Contribution to HIV prevalence", legend.key.size=unit(0.5, 'cm')){
+plot_prevalenceandcontrid <- function(
+    DTprev,
+    DTcontrib,
+    sec_name="Contribution to HIV prevalence",
+    legend.key.size=unit(0.5, 'cm'),
+    sec_axis_scale = NA_real_,
+    extra_fig = NULL,
+    CrI=TRUE,
+    slides=FALSE){
 
     ALPHA = .5; DODGE = 1
 
     n_loc <- DTprev[, uniqueN(LOC)]
     n_sex <- DTprev[, uniqueN(SEX)]
+
+    REQS <- if(slides==TRUE){
+        slides_reqs
+    }else{
+        nm_reqs
+    }
 
     .plot.facet <- function(DT){
 
@@ -965,9 +979,12 @@ plot_prevalenceandcontrid <- function(DTprev, DTcontrib, sec_name="Contribution 
 
         naturemed_reqs()
 
-        .sec_axis_scale <- DT[, {
-            max(CU[LABEL == 'Contribution to HIV prevalence']) / max(CU[LABEL == 'HIV prevalence']) 
-        },]
+        .sec_axis_scale <- fcoalesce( 
+            sec_axis_scale,
+            DT[, max(CU[LABEL == 'Contribution to HIV prevalence']) / max(CU[LABEL == 'HIV prevalence'])] 
+        )
+
+        cat(.sec_axis_scale, "\n")
 
         DT[ LABEL == "Contribution to HIV prevalence", c("M", "CL", "CU") := {
             stopifnot("probably wrong label"=.N > 0)
@@ -975,8 +992,8 @@ plot_prevalenceandcontrid <- function(DTprev, DTcontrib, sec_name="Contribution 
         }]
 
         tmp_labs <- c(
-            `HIV prevalence`="HIV prevalence within each 1-year age band",
-            `Contribution to HIV prevalence`="Distribution of individuals with HIV by 1-year age band"
+            `HIV prevalence`="HIV prevalence",
+            `Contribution to HIV prevalence`= sec_name
         )
         DT[, LABEL2 := tmp_labs[ LABEL ] ]
         DT[, LABEL2 := factor(LABEL2, levels=tmp_labs, ordered=TRUE)]
@@ -990,12 +1007,13 @@ plot_prevalenceandcontrid <- function(DTprev, DTcontrib, sec_name="Contribution 
         }
         
         # rescale 2nd data frame for the secondary axis
-        ggplot(DT, aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=LABEL2, color=LABEL2)) +
+        ggplot(DT, aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=LABEL2)) +
             geom_col(alpha=ALPHA, color='grey80', linewidth=.2 , position=position_dodge(width = DODGE))+
-            geom_linerange(position=position_dodge(width = DODGE)) +
+        { if(CrI){ geom_linerange(position=position_dodge(width = DODGE), linewidth=.2) } else {NULL} } +
             scale_y_continuous(
                 labels = scales::label_percent(), 
-                expand = expansion(mult = c(0, .1)),
+                limits=c(0, .3),
+                expand = expansion(mult = c(0, 0)),
                 sec.axis = sec_axis(
                     trans= ~ .*.sec_axis_scale,
                     labels = scales::label_percent(),
@@ -1009,9 +1027,9 @@ plot_prevalenceandcontrid <- function(DTprev, DTcontrib, sec_name="Contribution 
             theme_default(
                 strip.placement = "outside",
                 legend.key.size=legend.key.size, 
-                legend.spacing.x = legend.key.size * 1.5,
+                legend.spacing.x = legend.key.size 
             ) +
-            nm_reqs
+            REQS
     }
 
     # bind
@@ -1039,17 +1057,35 @@ plot_prevalenceandcontrid <- function(DTprev, DTcontrib, sec_name="Contribution 
         p <- ggarrange(
             ps[[2]] + theme(strip.text.y = element_blank(), axis.title.y.right = element_blank()),
             ps[[1]] + theme(strip.text.y = element_blank()) + labs(y=""), 
-            ncol=2, nrow=1, common.legend = TRUE, legend="bottom")
+            nrow=1, common.legend = TRUE, legend="bottom")
+        N <- fifelse(is.null(extra_fig), 1, 2)
+        p <- ggarrange(extra_fig, p, nrow=1, ncol=N, widths=c(1, 2)[1:N])
     }
     return(p)
 }
 
-plot_suppandcontrib <- function(DTprev1, DTcontrib1, sec_name="Contribution to viraemic population", prevalence.label="FILL IT!", viraemia.label="Contribution to viraemic population", legend.key.size=unit(0.4, 'cm'), remove.legend=FALSE){
+plot_suppandcontrib <- function(
+    DTprev1,
+    DTcontrib1, 
+    sec_name="Contribution to viraemic population",
+    prevalence.label="FILL IT!",
+    viraemia.label="Contribution to viraemic population",
+    legend.key.size=unit(0.4, 'cm'),
+    remove.legend=FALSE,
+    sec_axis_scale=NA_real_,
+    slides=FALSE,
+    CrI=TRUE,
+    UNAIDS=TRUE
+){
+    if(UNAIDS){
+        require(geomtextpath)
+    }
 
     ALPHA = .5; DODGE = 1
 
     n_loc <- DTprev1[, uniqueN(LOC)]
     n_sex <- DTprev1[, uniqueN(SEX)]
+    REQS <- c(nm_reqs, slides_reqs)[slides==TRUE + 1]
 
     .plot.facet <- function(DT){
 
@@ -1058,9 +1094,13 @@ plot_suppandcontrib <- function(DTprev1, DTcontrib1, sec_name="Contribution to v
 
         naturemed_reqs()
 
-        .sec_axis_scale <- DT[, {
-            max(CU[LABEL == viraemia.label]) / max(CU[LABEL == prevalence.label]) 
-        },]
+
+        .sec_axis_scale <- fcoalesce( 
+            sec_axis_scale,
+            DT[, { max(CU[LABEL == viraemia.label]) / max(CU[LABEL == prevalence.label]) },]
+        )
+        cat(.sec_axis_scale, "\n")
+
 
         DT[ LABEL == viraemia.label, c("M", "CL", "CU") := {
             stopifnot("probably wrong label"=.N > 0)
@@ -1069,8 +1109,9 @@ plot_suppandcontrib <- function(DTprev1, DTcontrib1, sec_name="Contribution to v
 
         # prettify labels
         tmp_labs <- c(
-            paste(prevalence.label,"within each 1-year age band"),
-            "Distribution of individuals with viraemic viral load by 1-year age band"
+            paste(prevalence.label),
+            sec_name
+            # "Distribution of individuals with viraemic viral load"
         )
         names(tmp_labs) <- c(prevalence.label, viraemia.label)
         DT[, LABEL2 := tmp_labs[LABEL] ]
@@ -1084,17 +1125,24 @@ plot_suppandcontrib <- function(DTprev1, DTcontrib1, sec_name="Contribution to v
         }
 
         # rescale 2nd data frame for the secondary axis
-        ggplot(DT, aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=LABEL2, color=LABEL2)) +
+        ggplot(DT, aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=LABEL2)) +
             geom_col(alpha=ALPHA, color='grey80', linewidth=.2 , position=position_dodge(width = DODGE))+
-            geom_linerange(position=position_dodge(width = DODGE)) +
+            { if(CrI){ geom_linerange(position=position_dodge(width = DODGE), linewidth=.2) } else {NULL} } +
             scale_y_continuous(
                 labels = scales::label_percent(), 
-                expand = expansion(mult = c(0, .1)),
+                limits = c(0, c(.55, .77)[as.integer(CrI == TRUE) + 1] ),
+                expand = expansion(mult=c(0,0)),
                 sec.axis = sec_axis(
                     trans = ~ .*.sec_axis_scale,
                     labels = scales::label_percent(),
                     name = sec_name) 
-            ) +
+            ) + {
+                if(UNAIDS){
+                    geom_texthline(
+                        yintercept=1-.95^3, color='red', linetype='dashed', 
+                        label="UNAIDS 95-95-95", vjust=0.5, hjust=1) 
+                }else{ NULL }
+            } +
             scale_x_continuous(expand = c(0,0), breaks= c(seq(15, 45, 5), 50)) + 
             scale_fill_manual(values=palettes$minimal3)  +
             scale_color_manual(values=palettes$minimal3)  +
@@ -1103,9 +1151,9 @@ plot_suppandcontrib <- function(DTprev1, DTcontrib1, sec_name="Contribution to v
             theme_default(
                 strip.placement = "outside",
                 legend.key.size=legend.key.size, 
-                legend.spacing.x = legend.key.size * 1.5
+                legend.spacing.x = legend.key.size
             ) +
-            nm_reqs 
+            REQS 
 
     }
 
