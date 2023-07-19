@@ -477,7 +477,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
 
             filename2 <- gsub('cmd_', 'stanfit_', x = filename) 
             fit$output_files() |>
-                read_cmdstan_csv() |> 
+                rstan::read_stan_csv() |> 
                 saveRDS(file=filename2)
 
         }
@@ -741,7 +741,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
 
             filename2 <- gsub('cmd_', 'stanfit_', x = filename) 
             fit$output_files() |>
-                read_cmdstan_csv() |> 
+                rstan::read_stan_csv() |> 
                 saveRDS(file=filename2)
         }
 
@@ -791,7 +791,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
 
                 filename2 <- gsub('cmd_', 'stanfit_', x = filename) 
                 fit$output_files() |>
-                    read_cmdstan_csv() |> 
+                    rstan::read_stan_csv() |> 
                     saveRDS(file=filename2)
             }
         }
@@ -1046,7 +1046,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
 
             filename2 <- gsub('cmd_', 'stanfit_', x = filename) 
             fit$output_files() |>
-                read_cmdstan_csv() |> 
+                rstan::read_stan_csv() |> 
                 saveRDS(file=filename2)
         }
 
