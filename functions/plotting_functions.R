@@ -425,8 +425,8 @@ plot.pyramid.bysexround <- function(DT, NUM, DEN, .ylab, percent_lab=TRUE) {
         } + 
         coord_flip() +
         facet_grid(ROUND_LAB ~ FC_LAB, scales = "free_x", labeller = labeller(ROUND_LAB = round_labs)) +
-        scale_fill_manual(values = palettes$sex) +
-        scale_color_manual(values = palettes$sex) +
+        scale_fill_manual(labels=plabels$sex ,values = palettes$sex, limits=rev) +
+        scale_color_manual(labels=plabels$sex ,values = palettes$sex, limits=rev) +
         scale_y_continuous(labels = abs, expand = c(0.05, 0)) +
         scale_x_continuous(expand = c(0, 0), breaks=seq(15,50, by=5)) +
         theme_default() +

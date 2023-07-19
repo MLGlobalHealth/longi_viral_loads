@@ -56,7 +56,8 @@ naturemed_reqs <- function()
         legend.text=element_text(size=7, family='sans'),
         strip.background = element_rect(colour="white", fill="white"),
         plot.tag = element_text(size=8, face='bold', color = "black"),
-        plot.tag.position = c(0, 1)
+        plot.tag.position = c(0, 1),
+        strip.placement = "outside"
     )
 }
 
@@ -228,6 +229,14 @@ palettes <- list(
         "#0F4392",
         "#FF4949"
     ),
+
+    minimal2 = c(
+        "#374E55FF",
+        "#DF8F44FF"
+    ),
+
+    # minimal3 = c("#FAE48BFF","#FB6467FF"),
+    minimal3 = c("#FCD61F","#284051"),
 
     NULL
 )

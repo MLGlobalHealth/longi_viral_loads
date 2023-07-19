@@ -78,9 +78,11 @@ community_dictionary <- list(
     ),
     long = c(
         "F" = "Fishing communities",
-        "I" = "Inlan communitiesd",
+        "I" = "Inland communitiesd",
         "fishing" = "Fishing communities",
-        "inland" = "Inland communities"
+        "inland" = "Inland communities",
+        "Fishing" = "Fishing communities",
+        "Inland" = "Inland communities"
     ),
     longest = c(
         "F" = "Fishing communities with high HIV prevalence",
@@ -95,6 +97,8 @@ community_dictionary <- list(
 )
 
 sex_dictionary <- c(M = "Male", F = "Female", `0` = "Female", `1` = "Male")
+
+sex_dictionary2 <- c(M="Men", F="Women", Male="Men", Female="Women")
 
 loc_dictionary <- c(
     inland = "Inland",
@@ -245,3 +249,14 @@ dict_stan_params2 <- with(stan_dicts, c(
 # same but with names = t(parname)
 dict_stan_params_t <- copy(dict_stan_params)
 names(dict_stan_params_t) <- paste0( "t(", names(dict_stan_params_t), ")")
+
+plabels <- list(
+    
+    sex = c(
+        M = "Men",
+        Male = "Men",
+        F = "Women",
+        W = "Women",
+        Female = "Women"
+    )
+)

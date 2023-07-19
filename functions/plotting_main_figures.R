@@ -951,11 +951,17 @@ plot_2yaxis_hist_lines <- function(DThist, DTline, sec_name="Contribution to HIV
         NULL
 }
 
-plot_prevalenceandcontrid <- function(DTprev, DTcontrib, sec_name="Contribution to HIV prevalence"){
+plot_prevalenceandcontrid <- function(DTprev, DTcontrib, sec_name="Contribution to HIV prevalence", legend.key.size=unit(0.5, 'cm')){
 
     ALPHA = .5; DODGE = 1
 
+    n_loc <- DTprev[, uniqueN(LOC)]
+    n_sex <- DTprev[, uniqueN(SEX)]
+
     .plot.facet <- function(DT){
+
+        # if empty data table do not plot:
+        if(nrow(DT) == 0) return(NULL)
 
         naturemed_reqs()
 
@@ -970,12 +976,18 @@ plot_prevalenceandcontrid <- function(DTprev, DTcontrib, sec_name="Contribution 
 
         tmp_labs <- c(
             `HIV prevalence`="HIV prevalence within each 1-year age band",
-            `Contribution to HIV prevalence`="distribution of individuals with HIV by 1-year age band"
+            `Contribution to HIV prevalence`="Distribution of individuals with HIV by 1-year age band"
         )
         DT[, LABEL2 := tmp_labs[ LABEL ] ]
         DT[, LABEL2 := factor(LABEL2, levels=tmp_labs, ordered=TRUE)]
 
         # I would probably try "Fishing communities with high HIV prevalence", "Inland communities with typical/more moderate HIV prevalence"
+
+        facet_formula <- if(n_loc == 1){
+            as.formula(LOC_LAB ~ SEX_LAB)
+        }else{
+            as.formula(SEX_LAB ~ LOC_LAB)
+        }
         
         # rescale 2nd data frame for the secondary axis
         ggplot(DT, aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=LABEL2, color=LABEL2)) +
@@ -990,16 +1002,18 @@ plot_prevalenceandcontrid <- function(DTprev, DTcontrib, sec_name="Contribution 
                     name=sec_name) 
             ) +
             scale_x_continuous(expand = c(0,0), breaks= c(seq(15, 45, 5), 50)) + 
-            scale_fill_manual(values=palettes$minimal)  +
-            scale_color_manual(values=palettes$minimal)  +
-            facet_grid( SEX_LAB ~ LOC_LAB, labeller=labeller(LOC_LAB=community_dictionary$longest) )  +
+            scale_fill_manual(values=palettes$minimal2)  +
+            scale_color_manual(values=palettes$minimal2)  +
+            facet_grid( facet_formula, labeller=labeller(LOC_LAB=community_dictionary$longest, SEX_LAB=sex_dictionary2) )  +
             my_labs(y = "HIV prevalence by age", x="", color="", fill="") +
-            theme_default(strip.placement = "outside") +
+            theme_default(
+                strip.placement = "outside",
+                legend.key.size=legend.key.size, 
+                legend.spacing.x = legend.key.size * 1.5,
+            ) +
             nm_reqs
     }
 
-    DTprev <- copy(dprev)
-    DTcontrib <- copy(dcontrib)
     # bind
     DTprev[, LABEL := "HIV prevalence"]
     DTcontrib[, LABEL := "Contribution to HIV prevalence"]
@@ -1012,13 +1026,128 @@ plot_prevalenceandcontrid <- function(DTprev, DTcontrib, sec_name="Contribution 
         subset(DT, LOC_LAB == "Fishing" & SEX_LAB == "Female"),
         subset(DT, LOC_LAB == "Fishing" & SEX_LAB == "Male")
     )
+    # remove facets in case they are not needed
     ps <- lapply(facets_dts, .plot.facet)
-    p <- ggarrange(
-        ps[[1]], ps[[2]],
-        ps[[3]], ps[[4]],
-        ncol=2, nrow=2, common.legend = TRUE, legend="bottom")
-    p
+    ps <- ps[! sapply(ps, is.null)]
 
+    if(length(ps) == 4){
+        p <- ggarrange(
+            ps[[1]], ps[[2]],
+            ps[[3]], ps[[4]],
+            ncol=2, nrow=2, common.legend = TRUE, legend="bottom")
+    }else{
+        p <- ggarrange(
+            ps[[2]] + theme(strip.text.y = element_blank(), axis.title.y.right = element_blank()),
+            ps[[1]] + theme(strip.text.y = element_blank()) + labs(y=""), 
+            ncol=2, nrow=1, common.legend = TRUE, legend="bottom")
+    }
+    return(p)
+}
+
+plot_suppandcontrib <- function(DTprev1, DTcontrib1, sec_name="Contribution to viraemic population", prevalence.label="FILL IT!", viraemia.label="Contribution to viraemic population", legend.key.size=unit(0.4, 'cm'), remove.legend=FALSE){
+
+    ALPHA = .5; DODGE = 1
+
+    n_loc <- DTprev1[, uniqueN(LOC)]
+    n_sex <- DTprev1[, uniqueN(SEX)]
+
+    .plot.facet <- function(DT){
+
+        # if empty data table do not plot:
+        if(nrow(DT) == 0) return(NULL)
+
+        naturemed_reqs()
+
+        .sec_axis_scale <- DT[, {
+            max(CU[LABEL == viraemia.label]) / max(CU[LABEL == prevalence.label]) 
+        },]
+
+        DT[ LABEL == viraemia.label, c("M", "CL", "CU") := {
+            stopifnot("probably wrong label"=.N > 0)
+             .(M / .sec_axis_scale, CL / .sec_axis_scale, CU / .sec_axis_scale )
+        }]
+
+        # prettify labels
+        tmp_labs <- c(
+            paste(prevalence.label,"within each 1-year age band"),
+            "Distribution of individuals with viraemic viral load by 1-year age band"
+        )
+        names(tmp_labs) <- c(prevalence.label, viraemia.label)
+        DT[, LABEL2 := tmp_labs[LABEL] ]
+        DT[, LABEL2 := factor(LABEL2, levels=tmp_labs, ordered=TRUE)]
+
+        # conditional faceting order
+        facet_formula <- if(n_loc == 1){
+            as.formula(LOC_LAB ~ SEX_LAB)
+        }else{
+            as.formula(SEX_LAB ~ LOC_LAB)
+        }
+
+        # rescale 2nd data frame for the secondary axis
+        ggplot(DT, aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=LABEL2, color=LABEL2)) +
+            geom_col(alpha=ALPHA, color='grey80', linewidth=.2 , position=position_dodge(width = DODGE))+
+            geom_linerange(position=position_dodge(width = DODGE)) +
+            scale_y_continuous(
+                labels = scales::label_percent(), 
+                expand = expansion(mult = c(0, .1)),
+                sec.axis = sec_axis(
+                    trans = ~ .*.sec_axis_scale,
+                    labels = scales::label_percent(),
+                    name = sec_name) 
+            ) +
+            scale_x_continuous(expand = c(0,0), breaks= c(seq(15, 45, 5), 50)) + 
+            scale_fill_manual(values=palettes$minimal3)  +
+            scale_color_manual(values=palettes$minimal3)  +
+            facet_grid( facet_formula, labeller=labeller(LOC_LAB=community_dictionary$longest, SEX_LAB=sex_dictionary2) )  +
+            my_labs(y = prevalence.label, x="", color="", fill="") +
+            theme_default(
+                strip.placement = "outside",
+                legend.key.size=legend.key.size, 
+                legend.spacing.x = legend.key.size * 1.5
+            ) +
+            nm_reqs 
+
+    }
+
+    DTprev <- copy(DTprev1)
+    DTcontrib <- copy(DTcontrib1)
+
+    # bind
+    DTprev[, LABEL := prevalence.label]
+    # DTprev[, (c('M', 'CL', 'CU')) := lapply(.SD, function(x) 1-x), .SDcols=c('M', 'CL', 'CU')]
+    DTcontrib[, LABEL := viraemia.label]
+    DT <- rbind(DTprev, DTcontrib)
+    prettify_labels(DT)
+
+    facets_dts <- list(
+        subset(DT, LOC_LAB == "Inland" & SEX_LAB == "Female"),
+        subset(DT, LOC_LAB == "Inland" & SEX_LAB == "Male"),
+        subset(DT, LOC_LAB == "Fishing" & SEX_LAB == "Female"),
+        subset(DT, LOC_LAB == "Fishing" & SEX_LAB == "Male")
+    )
+    # remove facets in case they are not needed
+    ps <- lapply(facets_dts, .plot.facet)
+    ps <- ps[! sapply(ps, is.null)]
+
+    if(length(ps) == 4){
+        p <- ggarrange(
+            ps[[1]], ps[[2]],
+            ps[[3]], ps[[4]],
+            ncol=2, nrow=2, common.legend = TRUE, legend="bottom")
+    }else{
+        .theme <- function(x){
+            theme(
+                strip.text.y=element_blank(),
+                strip.text.x=element_text()
+            )
+        }
+        p <- ggarrange(
+            ps[[2]] + theme(strip.text.y = element_blank(), axis.title.y.right = element_blank()),
+            ps[[1]] + theme(strip.text.y = element_blank()) + labs(y=""), 
+            ncol=2, nrow=1, common.legend = TRUE, legend=c("bottom", "none")[remove.legend + 1])
+    }
+
+    return(p)
 }
 
 plot.uganda.map <- function(zoom="medium"){

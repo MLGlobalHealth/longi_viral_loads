@@ -38,16 +38,26 @@ file.exists(
     stopifnot()
 
 # command line options, stored in args. Then subset
-opts_vec <- c("viremic.viral.load", "detectable.viral.load", "out.dir.prefix", "indir", "round", "jobname", "only.firstparticipants")
+opts_vec <- c(
+    "viremic.viral.load", 
+    "detectable.viral.load",
+    "out.dir.prefix",
+    "indir",
+    "round",
+    "jobname",
+    "only.firstparticipants"
+)
 args <- args[names(args) %in% opts_vec]
 
-source(file.path(gitdir.functions, "plotting_main_figures.R"))
-source(file.path(gitdir.functions, "plotting_functions.R"))
-source(file.path(gitdir.functions, "postprocessing_helpers.R"))
-source(file.path(gitdir.functions, "postprocessing_tables.R"))
-source(file.path(gitdir.functions, "phsc_vl_helpers.R"))
-source(file.path(gitdir.functions, "paper_statements.R"))
-naturemed_reqs()
+{
+    source(file.path(gitdir.functions, "plotting_main_figures.R"))
+    source(file.path(gitdir.functions, "plotting_functions.R"))
+    source(file.path(gitdir.functions, "postprocessing_helpers.R"))
+    source(file.path(gitdir.functions, "postprocessing_tables.R"))
+    source(file.path(gitdir.functions, "phsc_vl_helpers.R"))
+    source(file.path(gitdir.functions, "paper_statements.R"))
+    naturemed_reqs()
+}
 
 overwrite <- !interactive()
 make_plots <- TRUE
@@ -125,29 +135,6 @@ fig1b <- plot.pyramid.bysexround( dprop[ROUND %in% c(19)],
     geom_line( aes(y=ELIGIBLE_SMOOTH * (1 - 2*(SEX == 'M')), color=SEX_LAB )) +
     my_labs(color="Gender")
 
-# HIV prevalence over time (maybe round 16, 19 ?)
-if(0){
-    contribution <- TRUE
-    fig1c <- if(contribution){
-        filename_rds <- file.path(out.dir.tables, "fullpop_allcontributions.rds")
-        fig1c <- readRDS(filename_rds) |> 
-            subset(ROUND %in% c(16, 19)) |>
-            plot.agesex.contributions.by.roundcomm(label = "run-gp-prevl", include_baseline =TRUE) 
-    }else{
-        filename_rds <- file.path(out.dir.tables, "fullpop_posteriorquantiles_by_agesexround.rds")
-        fig1c <- readRDS(filename_rds) |>
-            subset(ROUND %in% c(16, 19)) |>
-            plot.fit.weighted.by.ftpstatus("run-gp-prevl",include_baseline = TRUE) 
-    } + facet_grid(LOC_LAB ~ ROUND_LAB, labeller = labeller(ROUND_LAB=round_labs2)) 
-
-    fig1 <- (((fig1a + plot_layout(guides='keep') | fig1b) + plot_layout(widths = c(1, 2)))/ fig1c) + 
-        plot_layout(heights=c(1,1.2), guides='collect') + 
-        plot_annotation(tag_levels = 'a') 
-    fig1 <- fig1 & nm_reqs + theme(plot.tag = element_text(size=8, face='bold'), legend.key.size = unit(0.4, "cm"))
-    fig1
-}
-
-
 # fig 1c
 dcontrib <- .load.model.subset(filename_rds_contrib, MODEL=="run-gp-prevl" & ROUND == 19) |> prettify_labels()
 dprev <- .load.model.subset(filename_rds_prevalence, MODEL=="run-gp-prevl" & ROUND == 19) |> prettify_labels()
@@ -202,43 +189,66 @@ ggsave_nature(p=fig1, filename=filename, LALA=out.dir.figures, w=21, h=16)
 catn(" FIGURE for KATE")
 ########################
 
-# who achive
-groups_above_95 <- paper_statements_suppression_above_959595(djoint) |> 
-    subset(M > .95^3) 
-groups_above_95_range <- groups_above_95[, .(m=min(AGEYRS), M=max(AGEYRS)), by = .(SEX_LAB, LOC_LAB)]
+{
+    fig_kate2 <- plot_prevalenceandcontrid(dprev[LOC=="inland"], dcontrib[LOC=="inland"], legend.key.size=unit(0.3, "cm")) + 
+        labs(tag = "c")
+    fig_pyr <- plot.pyramid.bysexround( dprop[ROUND == 19 & FC=='inland'], 
+        .ylab = 'Number of participants among census eligible individuals',
+        NUM="N_PART",
+        DEN='ELIGIBLE',
+        percent_lab = FALSE) +
+        facet_grid(ROUND_LAB ~ FC_LAB, labeller = labeller(ROUND_LAB=round_labs2, FC_LAB = community_dictionary$long), scales='free_x') +
+        geom_hline(yintercept=0, color='black') +
+        geom_line( aes(y=ELIGIBLE_SMOOTH * (1 - 2*(SEX == 'M')), color=SEX_LAB )) +
+        my_labs(color="Gender") +   
+        scale_y_continuous(labels=abs, limits=c(-800, 800)) + 
+        theme(legend.key.size = unit(.3, "cm")) +
+        nm_reqs
 
-# plots
-p_sub <- groups_above_95_range |> 
-    ggplot(aes(x=m, y=SEX_LAB, color=SEX_LAB)) + 
-    geom_segment(aes(xend=M, yend=SEX_LAB), linewidth = 2) +
-    geom_point(size=4, shape='triangle') +
-    facet_grid(. ~ LOC_LAB) +
-    scale_x_continuous(expand = c(0, 0), limits = c(15, 49), breaks = age_breaks) +
-    scale_y_discrete(labels=c("", "")) +
-    guides(color = FALSE) +
-    scale_color_manual(values=palettes$sex) +
-    my_labs( y = "", x="Ages having achieved 95-95-95 suppression levels") +
-    theme_default() +
-    NULL
-
-# suppression
-dcontrib <- .load.model.subset(filename_rds_contrib, MODEL=="run-gp-supp-pop" & ROUND == 19) |> prettify_labels()
-p_contrib_suppp <- plot.agesex.contributions.by.roundcomm(dcontrib, label = "run-gp-supp-pop", include_baseline = TRUE)
-
-fig_kate_1 <- (p_contrib_suppp / p_sub) + plot_layout(heights = c(5, 1)) +  plot_layout(guides = "collect") & theme(legend.position = 'bottom') + nm_reqs
-
-fig_kate_1b <- p_contrib_suppp + 
-    geom_segment(data=groups_above_95_range,
-        aes(x=m, xend=M, y=0.0003+.0004*(SEX_LAB=="Female"), yend=0.0003 + .0004*(SEX_LAB=='Female'), ymin=NULL, ymax=NULL),
-    linewidth = 4, alpha=.5) 
-
-ggsave_nature(p = fig_kate_1, filename="whopepfar_fig1.pdf", LALA="~/Downloads", w=21, h=16)
-ggsave_nature(p = fig_kate_1b, filename="whopepfar_fig1b.pdf", LALA="~/Downloads", w=21, h=16)
-ggsave_nature(p = fig1c , filename="whopepfar_fig2.pdf", LALA="~/Downloads", w=21, h=18)
+    # (fig1b + theme(strip.text.y=element_blank()) | fig_kate2) + plot_layout(ncol=2, widths=c(1,2.5))
+    plot_prevalence <- (
+        (fig_pyr + theme(strip.text.y=element_blank()) + labs(tag='a')) /
+        fig_kate2 + labs(tag='b')
+    ) +  plot_layout(ncol=1, heights=c(1,2.4)) 
+}
+ggsave_nature(p = plot_prevalence, filename="whopepfar_prevalence.pdf", LALA="~/Downloads", w=22, h=17)
 
 
+{
+    dprev_vir <- .load.model.subset(filename_rds_prevalence, MODEL=="run-gp-supp-pop" & ROUND == 19) |> prettify_labels()
+    dcontrib_vir <- .load.model.subset(filename_rds_contrib, MODEL=="run-gp-supp-pop" & ROUND == 19) |> prettify_labels()
+    dprev_vir2 <- .load.model.subset(filename_rds_prevalence, MODEL=="run-gp-supp-hiv" & ROUND == 19) |> prettify_labels()
+    dprev_vir2[, (c("M", "CU", "CL")) := lapply(.SD, function(x) 1-x), .SDcols = c("M", "CL", "CU")]
+
+    fig_kate_1c <- plot_suppandcontrib(
+        dprev_vir[LOC=="inland"], 
+        dcontrib_vir[LOC=="inland"],
+        sec_name = "Contribution to viraemic population",
+        prevalence.label = "Prevalence of viraemia among population",
+        remove.legend = TRUE
+    )
+    fig_kate_1d <- plot_suppandcontrib(
+        dprev_vir2[LOC=="inland"], 
+        dcontrib_vir[LOC=="inland"],
+        sec_name = "Contribution to viraemic population",
+        prevalence.label = "Prevalence of viraemia among HIV positive population"
+    )
+
+    plot_suppression <- (
+        (fig_kate_1c +  labs(tag="Considering entire population") + nm_reqs + labs(x="LALALA")) /
+        (fig_kate_1d +  labs(tag="Considering PLHIV only (as per 95-95-95 goals)") + nm_reqs )
+    ) + plot_layout(guides="collect", ncol=1, heights=c(1,1.1)) + theme(legend.position="bottom")
+}
+ggsave_nature(p = plot_suppression, filename="whopepfar_suppression.pdf", LALA="~/Downloads", w=22, h=17)
 
 
 ################################################
 catn("Make table with study pop characteristics")
 #################################################
+
+filename_rds <- file.path(out.dir.tables, "fullpop_allcontributions.rds")
+fig1c <- readRDS(filename_rds) |> 
+    subset(ROUND==19 & LOC=='inland') |>
+    plot.agesex.contributions.by.roundcomm(label = "run-gp-prevl", include_baseline =TRUE) 
+
+
