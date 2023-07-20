@@ -71,7 +71,7 @@ parameters {
 }
 
 transformed parameters {
-  // matrix[N_predict, N_predict] L_cov;
+  matrix[N_predict, N_predict] L_cov;
   vector[N_predict] logit_p_predict_00;
 	vector[N_predict] logit_p_predict_10;
 	vector[N_predict] logit_p_predict_01;
