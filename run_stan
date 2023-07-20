@@ -94,6 +94,12 @@ CWD=\$PWD/\$JOBNAME/$MODEL
 
 mkdir -p \$CWD
 
+echo ""
+echo "-------------"
+echo "  RUN STAN   "
+echo "-------------"
+echo ""
+
 Rscript \$INDIR/scripts/VL_run_$STANWAY.R \
     --viremic-viral-load $VL \
     --outdir \$CWD \
@@ -101,11 +107,17 @@ Rscript \$INDIR/scripts/VL_run_$STANWAY.R \
     --round \$ROUND \
     --firstpart $FTP
 
+echo ""
+echo "-------------"
+echo "ASSESS MIXING"
+echo "-------------"
+echo ""
+
 Rscript \$INDIR/src/postprocessing_assess_mixing.R --jobname $JOBNAME  --round \$ROUND
 
 cp -R --no-preserve=mode,ownership \$PWD/\$JOBNAME/. \$OUTDIR/\$JOBNAME
 
-# submit the postprocessin once done.
+# submit the postprocessing once done.
 cd \$OUTDIR
 
 if [ $(find $(pwd) -mindepth 1 -maxdepth 1 -type f -name "*rda" | wc -l) -eq 4 ]; then  
