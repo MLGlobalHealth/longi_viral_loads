@@ -1,5 +1,9 @@
 #!/bin/Rscript
 
+# non-interactive debugging
+if( ! interactive() )
+    options(error=dump.frames)
+
 # AIMS:
 # - adapt older code from Oli to multi-round, longitudinal settings
 # TODO: discuss: we are removing individuals with missing VLs: they are very little
