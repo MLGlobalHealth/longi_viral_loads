@@ -47,7 +47,7 @@ c(
     "lubridate", "haven", "Hmisc",
     "DiagrammeR", "DiagrammeRsvg",
     "loo", "tidybayes", "bayestestR", "bayesplot", 
-    "rsvg", "htmltools", "raster", "rnaturalearth", "osmdata", "sf", "foreach", "patchwork", "knitr", "foreign", "nnet", "stargazer", "tint", "scales", "geomtextpath","ggthemes", "gganimate", "ggtext", "ggpubr", "readxl", "rgdal", "rgeos", "RColorBrewer", "mvtnorm", "lme4", "optparse", "bh", "mcmcpack", "here", "yaml"
+    "rsvg", "htmltools", "raster", "rnaturalearth", "osmdata", "sf", "foreach", "patchwork", "knitr", "foreign", "nnet", "stargazer", "tint", "scales", "geomtextpath","ggthemes", "gganimate", "ggtext", "ggpubr", "readxl", "rgdal", "rgeos", "RColorBrewer", "mvtnorm", "lme4", "optparse", "bh", "MCMCpack", "here", "yaml"
 ))
 '
 
