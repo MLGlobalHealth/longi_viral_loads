@@ -141,12 +141,13 @@ extract.stan.hyperparams.rho <- function(re, encoding){
     stan.data
 }
 
-.get.summary.without.hyperparams <- function(FIT, verbose=TRUE)
+.get.summary.without.hyperparams <- function(FIT, verbose=TRUE, vars)
 {
+    # weird bug whereby names_vars was not recognised, so using vars instead.
 
     summ <- {
         if( "CmdStanFit" %in% class(FIT) ){
-            FIT$summary(names_vars %which.not.like% "rho_hyper_par|L_cov|^\\.")
+            FIT$summary(vars %which.not.like% "rho_hyper_par|L_cov|^\\.")
         }
     }  |> as.data.table()
 
@@ -489,7 +490,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
         ps <- c(CL=0.025, IL=0.25, M=0.5, IU=0.75, CU=0.975)
 
         # Extract summary excluding hyper parameters
-        dsum <- .get.summary.without.hyperparams(FIT=fit, verbose=TRUE)
+        dsum <- .get.summary.without.hyperparams(FIT=fit, verbose=TRUE, vars=names_vars)
 
         # extract hyperparams rho
         prev.hiv.gp.pars <- extract.stan.hyperparams.rho(
@@ -792,8 +793,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
         ps <- c(CL=0.025, IL=0.25, M=0.5, IU=0.75, CU=0.975)
 
         # Extract summary excluding hyper parameters
-        dsum <- .get.summary.without.hyperparams(FIT=fit, verbose=TRUE)
-
+        dsum <- .get.summary.without.hyperparams(FIT=fit, verbose=TRUE, vars=names_vars)
 
         # extract hyperparams rho
         prev.hiv.gp.pars <- extract.stan.hyperparams.rho(
@@ -1042,7 +1042,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
         ps <- c(CL=0.025, IL=0.25, M=0.5, IU=0.75, CU=0.975)
 
         # Extract summary excluding hyper parameters
-        dsum <- .get.summary.without.hyperparams(FIT=fit, verbose=TRUE)
+        dsum <- .get.summary.without.hyperparams(FIT=fit, verbose=TRUE, vars=names_vars)
 
         # extract hyperparams rho
         nspop.gp.pars <- extract.stan.hyperparams.rho(
