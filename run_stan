@@ -9,6 +9,7 @@ if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "--help" ]]; then
     echo "    STANWAY : either (r)stan or cmdstan           [default: stan]"
     echo "    INDIR : directory where github directory is located"
     echo "    OUTDIR : directory where output will be saved"
+    echo "    REFIT : if FALSE, will use previously fitted model, good for debugging "
     exit 0
 fi
 
@@ -26,6 +27,7 @@ done
 # default options
 VL="${VL:-1000}" 
 FTP="${FTP:-FALSE}"
+REFIT="${FTP:-TRUE}"
 STANWAY="${STAN_MODEL:-stan}"
 INDIR="${INDIR:-/rds/general/user/ab1820/home/git/longi_viral_loads}"
 OUTDIR="${OUTDIR:-/rds/general/user/ab1820/home/projects/2022/longvl}"
@@ -45,6 +47,11 @@ if [[ ! "$FTP" =~ ^(TRUE|FALSE)$ ]]; then
     echo "FTP must be either TRUE or FALSE."
     exit 1
 fi
+# stop if REFIT is not True, TRUE, T, False, FALSE, F
+if [[ ! "$REFIT" =~ ^(TRUE|FALSE)$ ]]; then
+    echo "REFIT must be either TRUE or FALSE."
+    exit 1
+fi
 
 echo "Selected options:"
 echo "VL = $VL"
@@ -52,6 +59,7 @@ echo "FTP = $FTP"
 echo "STANWAY = $STANWAY"
 echo "INDIR = $INDIR"
 echo "OUTDIR = $OUTDIR"
+echo "REFIT = $REFIT"
 
 # "build" jobname
 JOBNAME="${STANWAY}_vl_$VL"
@@ -103,7 +111,8 @@ Rscript \$INDIR/scripts/VL_run_$STANWAY.R \
     --outdir \$CWD \
     --$MODEL TRUE \
     --round \$ROUND \
-    --firstpart $FTP
+    --firstpart $FTP \
+    --refit $REFIT
 
 echo "-------------"
 echo "ASSESS MIXING"
