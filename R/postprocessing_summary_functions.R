@@ -5,6 +5,20 @@ get.fit.type <- function(fit){
     )
 }
 
+samples.names.cmdstan.to.rstan <- function(x){
+    # translate cmdstan names to rstan. 
+    # should not have consequences if run from rstan object
+    dict <- c(
+        iteration = "iterations", 
+        iterations = "iterations", 
+        chain = "chains",
+        chains = "chains",
+        variable = "parameters",
+        variable = "variable"
+    )
+    unname(dict[x])
+}
+
 stan.number.to.code <- function(v){
     # Assumes first code for sex and second code for loc
     .f <- function(x){

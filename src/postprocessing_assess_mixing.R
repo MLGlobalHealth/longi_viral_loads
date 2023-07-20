@@ -86,10 +86,6 @@ if(fit.type == "rstan"){
     stop("Unknown fit type")
 }
 
-# if(! "stanfit" %in% class(fit)){
-#     fit <- rstan::read_cmdstan_csv(fit$output_files())
-# }
-
 catn("Extracting samples")
 # ________________________
 
