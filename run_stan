@@ -94,11 +94,9 @@ CWD=\$PWD/\$JOBNAME/$MODEL
 
 mkdir -p \$CWD
 
-echo ""
 echo "-------------"
 echo "  RUN STAN   "
 echo "-------------"
-echo ""
 
 Rscript \$INDIR/scripts/VL_run_$STANWAY.R \
     --viremic-viral-load $VL \
@@ -107,13 +105,14 @@ Rscript \$INDIR/scripts/VL_run_$STANWAY.R \
     --round \$ROUND \
     --firstpart $FTP
 
-echo ""
 echo "-------------"
 echo "ASSESS MIXING"
 echo "-------------"
-echo ""
 
-Rscript \$INDIR/src/postprocessing_assess_mixing.R --jobname $JOBNAME  --round \$ROUND
+Rscript \$INDIR/src/postprocessing_assess_mixing.R \
+    --jobname $JOBNAME  \
+    --$MODEL TRUE \
+    --round \$ROUND
 
 cp -R --no-preserve=mode,ownership \$PWD/\$JOBNAME/. \$OUTDIR/\$JOBNAME
 
