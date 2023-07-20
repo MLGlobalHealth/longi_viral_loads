@@ -441,10 +441,10 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
             num.var = "HIV_N",
             den.var = "N")
 
-        filename <- file.path(
-            vl.out.dir.,
-            paste0("cmd_hivprevalence_gp_stanfit_round", round, ".rds")
-        )
+        # file paths for fit and standata
+        .prefix <- file.path(vl.out.dir., "cmd_hivprevalence_gp_stanfit_round")
+        filename <- paste0(.prefix, round, ".rds")
+        filename_standata <- paste0(.prefix, round, "_standata.rds")
 
         sprintf("Fitting stan model for round %s, with filename:\n %s\n",
             round, filename) |> cat()
@@ -452,10 +452,8 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
         if (file.exists(filename) & refit == FALSE) {
 
             cat("Loading previously run HMC... \n")
-            tmp <- readRDS(filename)
-            fit <- tmp$fit
-            stan.data <- tmp$stan.data
-            rm(tmp)
+            fit <- readRDS(filename)
+            stan.data <- readRDS(filename_standata)
 
         } else {
 
@@ -473,12 +471,10 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
                 parallel_chains = stan.args$chains,
                 threads_per_chain = 1
             )
-            saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
 
-            filename2 <- gsub('cmd_', 'stanfit_', x = filename) 
-            fit$output_files() |>
-                rstan::read_stan_csv() |> 
-                saveRDS(file=filename2)
+            # save
+            fit$save_object(file = filename)
+            saveRDS(object=stan.data, file = filename_standata)
 
         }
 
@@ -704,10 +700,9 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
             num.var = "VLSUP_N",
             den.var = "HIV_N")
 
-        filename <- file.path(
-            vl.out.dir.,
-            paste0("cmd_notsuppAmongInfected_gp_stan_round", round, ".rds")
-        )
+        .prefix <- file.path(vl.out.dir., "cmd_notsuppAmongInfected_gp_stan_round")
+        filename <- paste0(.prefix, round, ".rds")
+        filename_standata <- paste0(.prefix, round, "_standata.rds")
 
         sprintf("Fitting stan model for round %s, with filename:\n %s\n",
             round, filename) |> cat()
@@ -715,10 +710,8 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
         if (file.exists(filename) & refit == FALSE) {
 
             cat("Loading previously run HMC... \n")
-            tmp <- readRDS(filename)
-            fit <- tmp$fit
-            stan.data <- tmp$stan.data
-            rm(tmp)
+            fit <- readRDS(filename)
+            stan.data <- readRDS(filename_standata)
 
         } else {
 
@@ -737,12 +730,9 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
                 threads_per_chain = 1
             )
 
-            saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
-
-            filename2 <- gsub('cmd_', 'stanfit_', x = filename) 
-            fit$output_files() |>
-                rstan::read_stan_csv() |> 
-                saveRDS(file=filename2)
+            # save
+            fit$save_object(file = filename)
+            saveRDS(object=stan.data, file = filename_standata)
         }
 
         # compare to self-report
@@ -757,26 +747,24 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
                 den.var = "HIV_N")
 
             
-            filename <- file.path(
-                vl.out.dir.,
-                paste0("cmd_notARVAmongInfected_gp_stan_round", round, ".rds")
-            )
+            # file paths for fit and standata
+            .prefix <- file.path(vl.out.dir., "cmd_notARVAmongInfected_gp_stan_round")
+            filename.2 <- paste0(.prefix, round, ".rds")
+            filename_standata.2 <- paste0(.prefix, round, "_standata.rds")
 
-            if (file.exists(filename) & refit == FALSE) {
+            if (file.exists(filename.2) & refit == FALSE) {
 
                 cat("Loading previously run HMC... \n")
-                tmp <- readRDS(filename)
-                fit2 <- tmp$fit
-                stan.data.2 <- tmp$stan.data
-                rm(tmp)
+                fit2 <- readRDS(filename.2)
+                stan.data.2 <- readRDS(filename_standata.2)
 
             } else {
 
                 stan.model <- cmdstan_model(stan_file = file.stan, cpp_options=list(stan_threads = TRUE))
                 stan.args <- yaml::read_yaml(path.stan.config)
 
-                fit <- stan.model$sample(
-                    data = stan.data,
+                fit2 <- stan.model$sample(
+                    data = stan.data.2,
                     seed = stan.args$seed,
                     iter_sampling = stan.args$iter,
                     iter_warmup = stan.args$warmup,
@@ -787,12 +775,9 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
                     threads_per_chain = 1
                 )
 
-                saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
-
-                filename2 <- gsub('cmd_', 'stanfit_', x = filename) 
-                fit$output_files() |>
-                    rstan::read_stan_csv() |> 
-                    saveRDS(file=filename2)
+                # save
+                fit2$save_object(file = filename.2)
+                saveRDS(object=stan.data.2, file = filename_standata.2)
             }
         }
 
@@ -1011,10 +996,10 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
             num.var = "VLNS_N",
             den.var = "N")
 
-        
-        filename <- file.path(
-            vl.out.dir.,
-            paste0("cmd_suppAmongPop_gp_stan_round", round, ".rds"))
+        # outputs paths
+        .prefix <- file.path(vl.out.dir., "cmd_suppAmongPop_gp_stan_round")
+        filename <- paste0(.prefix, round, ".rds")
+        filename_standata <- paste0(.prefix, round, "_standata.rds")
 
         sprintf("Fitting stan model for round %s, with filename:\n %s\n",
             round, filename) |> cat()
@@ -1022,10 +1007,8 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
         if (file.exists(filename) & refit == FALSE) {
 
             cat("Loading previously run HMC... \n")
-            tmp <- readRDS(filename)
-            fit <- tmp$fit
-            stan.data <- tmp$stan.data
-            rm(tmp)
+            fit <- readRDS(filename)
+            stan.data <- readRDS(filename_standata)
 
         } else {
             
@@ -1042,12 +1025,10 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
                 parallel_chains = stan.args$chains,
                 threads_per_chain = 1
             )
-            saveRDS(list(fit=fit, stan.data=stan.data), file = filename)
 
-            filename2 <- gsub('cmd_', 'stanfit_', x = filename) 
-            fit$output_files() |>
-                rstan::read_stan_csv() |> 
-                saveRDS(file=filename2)
+            # save
+            fit$save_object(file = filename)
+            saveRDS(object=stan.data, file = filename_standata)
         }
 
         # Analyse posterior
