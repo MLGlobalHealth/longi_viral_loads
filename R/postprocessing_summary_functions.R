@@ -1,7 +1,7 @@
 get.fit.type <- function(fit){
     data.table::fcase( 
         "stanfit" %in% class(fit), "rstan",
-        "CmdStan..." %in% class(fit), "cmdstan"
+        "CmdStanMCMC" %in% class(fit), "cmdstan"
     )
 }
 

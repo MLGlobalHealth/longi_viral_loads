@@ -8,11 +8,18 @@
 #   Libraries   #
 #################
 
-library(data.table)
-library(ggplot2)
-library(rstan)
-library(rstanarm)
-library(bayesplot)
+# load libraries
+{
+    library(data.table)
+    library(ggplot2)
+    library(bayesplot)
+    library(posterior)
+    if(system.file(package='rstan') != ""){
+        library(rstan)
+    } else {
+        library(cmdstanr)
+    }
+}
 
 # paths
 self_relative_path <- "src/postprocessing_assess_mixing.R"
@@ -29,13 +36,11 @@ source(file.path(gitdir, "R/paths.R"))
 
 # options:
 args <- args[names(args) %like% "jobname|run|out.dir|round"]
-
-with(args, 
-    if( run.gp.supp.hiv ){
-        1
-    }
-)
-
+if(interactive()){
+    args$jobname <- 'cmdstan_vl_1000_firstpart'
+    args$run.gp.prevl <- TRUE
+    args$round <- 17
+}
 ##################
 #      Main      #
 ##################
@@ -71,14 +76,24 @@ catn("Loading model fit and samples")
 
 fit <- readRDS(path.stan.output)
 
-if(! "stanfit" %in% class(fit)){
-    fit <- rstan::read_cmdstan_csv(fit$output_files())
+fit.type <- get.fit.type(fit)
+
+if(fit.type == "rstan"){
+    samples <- rstan::extract(fit, permuted = FALSE, inc_warmup = FALSE)
+} else if (fit.type == "cmdstanr"){
+    samples <- fit$draws()
+} else {
+    stop("Unknown fit type")
 }
 
-samples <- rstan::extract(fit, permuted = FALSE, inc_warmup = FALSE)
+# if(! "stanfit" %in% class(fit)){
+#     fit <- rstan::read_cmdstan_csv(fit$output_files())
+# }
 
 catn("Extracting samples")
 # ________________________
+
+# note samples are only really needed for WAIC and LOO here...
 
 make_convergence_diagnostics_stats(
     fit=fit,
