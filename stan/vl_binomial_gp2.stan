@@ -142,22 +142,20 @@ generated quantities {
   array[N_predict] int y_observed_01_rep;
   array[N_predict] int y_observed_10_rep;
   array[N_predict] int y_observed_11_rep;
-
+  
   // compute pointwise log likelihood and posterior predictive at every iteration
-
-  for( i in 1:N_observed){
-
-    log_lik_00[i] = binomial_logit_lpmf( y_observed_00 | total_observed_00, logit_p_predict_00[i] );
-    log_lik_01[i] = binomial_logit_lpmf( y_observed_01 | total_observed_01, logit_p_predict_01[i] );
-    log_lik_10[i] = binomial_logit_lpmf( y_observed_10 | total_observed_10, logit_p_predict_10[i] );
-    log_lik_11[i] = binomial_logit_lpmf( y_observed_11 | total_observed_11, logit_p_predict_11[i] );
-
+  
+  for (i in 1 : N_observed) {
+    log_lik_00[i] = binomial_logit_lpmf(y_observed_00 | total_observed_00, logit_p_predict_00[i]);
+    log_lik_01[i] = binomial_logit_lpmf(y_observed_01 | total_observed_01, logit_p_predict_01[i]);
+    log_lik_10[i] = binomial_logit_lpmf(y_observed_10 | total_observed_10, logit_p_predict_10[i]);
+    log_lik_11[i] = binomial_logit_lpmf(y_observed_11 | total_observed_11, logit_p_predict_11[i]);
+    
     // y_observed_00_rep[i] ~ binomial_logit(total_observed_00, logit_p_predict_00[i]);
     // y_observed_01_rep[i] ~ binomial_logit(total_observed_01, logit_p_predict_01[i]);
     // y_observed_10_rep[i] ~ binomial_logit(total_observed_10, logit_p_predict_10[i]);
     // y_observed_11_rep[i] ~ binomial_logit(total_observed_11, logit_p_predict_11[i]);
   }
-
   
   p_predict_00 = inv_logit(logit_p_predict_00);
   p_predict_01 = inv_logit(logit_p_predict_01);
