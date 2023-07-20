@@ -32,8 +32,16 @@ make_convergence_diagnostics_stats = function(fit, re, outfile.prefix, exclude_r
 
     fit_type <- get.fit.type(fit) # maybe can deprecate thanks 2 read_cmdstan_csv
 
-    summary = rstan::summary(fit)$summary |>
-        as.data.table(keep.rownames =TRUE)
+    if(fit_type == 'rstan'){
+        summary = rstan::summary(fit)$summary |>
+            as.data.table(keep.rownames =TRUE)
+        time <- sum(rstan::get_elapsed_time(fit))
+    }else{
+        summary = fit$summary() |>
+            as.data.table() |>
+            setnames(c('ess_bulk', 'rhat', 'variable'), c('n_eff', 'Rhat', 'rn'))
+        time <- fit$time()
+    }
 
     if(! is.na(exclude_rgx)){
         summary <- summary[! rn %like% exclude_rgx]
@@ -57,7 +65,7 @@ make_convergence_diagnostics_stats = function(fit, re, outfile.prefix, exclude_r
     n_eff <- .min.max.statement(n_eff, "effective sampe size")
     R_hat <- .min.max.statement(Rhat, "R hat")
 
-    if(n_eff_range$min < 500 ) cat('\nEffective sample size smaller than 500 \n')
+    if(n_eff$min < 500 ) cat('\nEffective sample size smaller than 500 \n')
 
     # tryCatch({
     #     sampler_params <- get_sampler_params(fit, inc_warmup = FALSE)[[1]]
@@ -73,9 +81,9 @@ make_convergence_diagnostics_stats = function(fit, re, outfile.prefix, exclude_r
 
     # check diagnostics related to sampler parameters
     if(fit_type == 'rstan'){
-        check_hmc_diagnostics(fit)
+        rstan::check_hmc_diagnostics(fit)
     }else if (fit_type == 'cmdstan'){
-        fit$diagnostic_summary()
+        fit$diagnostic_summary() |> print()
     }
 
     # compute WAIC and LOO
@@ -90,9 +98,6 @@ make_convergence_diagnostics_stats = function(fit, re, outfile.prefix, exclude_r
             LOO = .LOO$pointwise
         }} , error = function(e) e
     )
-
-    # time of execution
-    time = sum(rstan::get_elapsed_time(fit))
 
     saveRDS2 <- function(x, suffix){
         x <- enexpr(x)
@@ -135,17 +140,16 @@ check_n_eff <- function(summ, iter=NA) {
     tmp[, neff_over_niter := n_eff / iter]
     tmp[, warning := neff_over_niter < 0.001]
 
-    tmp[ warning == TRUE, if(.N == 0){
+    nowarnings <- tmp[ warning == TRUE, if(.N == 0){
         cat("n_eff / iter looks reasonable for all parameters\n")
     }else{
-        anywarnings <<- TRUE
         sprintf("n_eff / iter for parameter %s is %s!\n", rn, neff_over_niter) |> cat()
-    }, by=rn]
+    }, by=rn] |> nrow() |> identical(0) 
 
-    if(anywarnings == TRUE){
-        cat('x n_eff / iter below 0.001 indicates that the effective sample size has likely been overestimated\n')
+    if(nowarnings == FALSE){
+        cat('- [x] n_eff / iter below 0.001 indicates that the effective sample size has likely been overestimated\n')
     }else{
-        cat("v n_eff / iter looks reasonable for all parameters\n")
+        cat("- [v] n_eff / iter looks reasonable for all parameters\n")
     }
 }
 
