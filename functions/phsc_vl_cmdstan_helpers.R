@@ -479,8 +479,8 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
 
         }
 
-        # Analyse posterior
-        # _________________
+        catn("Analyse posterior")
+        # _______________________
 
         re <- fit$draws(format="df") |> as.data.table()
         names_vars <- dimnames(re)[[2]]
@@ -507,15 +507,15 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
         filename <- paste0("hivprevalence_gppars_round", round, ".pdf")
         ggsave2(p, file = filename, w = 6, h = 3)
 
-        # make use stan.data for PPC.
-        # ___________________________
+        catn("make use stan.data for PPC.")
+        # _________________________________
 
         ppDT <- copy(DT)
         cols <- c("M", "CU", "CL")
         ppDT[, (cols) := binconf(HIV_N, N, return.df = T)]
 
-        # make prevalence plot by age
-        # ___________________________
+        catn("make prevalence plot by age")
+        # _________________________________
 
         q <- c("M"=.5, "CL"=.025, "CU"=.975)
         cols <- names(re) %which.like% '^p_predict_'
@@ -539,8 +539,8 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
         ggsave2(plots[[1]], file = filenames[[1]], w = 6, h = 5)
         ggsave2(plots[[2]], file = filenames[[2]], w = 6, h = 5)
 
-        # extract basic prevalence estimates
-        # __________________________________
+        catn("extract basic prevalence estimates")
+        # ________________________________________
 
         # ps <- c(0.025, 0.5, 0.975)
         draws <- subset(re, select=names(re) %like% '^p_predict|\\.draw')
@@ -562,8 +562,8 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
         prev.hiv.by.sex.loc <- merge(prev.hiv.by.sex.loc, group_codes, by=c('LOC', 'SEX'))
 
 
-        # extract prevalence ratio female:male and male:female
-        # ____________________________________________________
+        catn("extract prevalence ratio female:male and male:female")
+        # __________________________________________________________
 
         rp <- merge(group_codes, rp, by = c("LOC", "SEX"))
         rp <- dcast.data.table(rp, LOC_LABEL + .draw ~ SEX_LABEL, value.var = "P")
@@ -575,8 +575,8 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
 
         prevratio.hiv.by.loc <- copy(rp)
 
-        # plot prevalence ratio F:M and M:F by age
-        # ________________________________________________________
+        catn("plot prevalence ratio F:M and M:F by age")
+        # ______________________________________________
 
 
         rp <- dcast.data.table(draws, 
@@ -597,8 +597,8 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
         filename <- paste0("fit_hivprevalenceratio_vs_age_by_fishinland_stan_round", round, ".pdf")
         ggsave2(p, file = filename, w = 8, h = 5)
 
-        # extract if diff in F:M prevalence risk ratio in fish vs inland
-        # ______________________________________________________________
+        catn("extract if diff in F:M prevalence risk ratio in fish vs inland")
+        # ____________________________________________________________________
 
         by_cols <- c("LOC", "SEX", "AGE_LABEL")
         rp <- merge(subset(DT, select = c(by_cols, 'N') ), draws, by = by_cols )
@@ -736,8 +736,8 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
             saveRDS(object=stan.data, file = filename_standata)
         }
 
-        # compare to self-report
-        # ______________________
+        catn("compare to self-report")
+        # ____________________________
 
         arv_bool <- DT[, any(ARV_N) > 0]
         if (arv_bool) {
@@ -782,8 +782,8 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
             }
         }
 
-        # Analyse posterior
-        # _________________
+        catn("Analyse posterior")
+        # _______________________
 
         re <- fit$draws(format="df") |> as.data.table()
         names_vars <- dimnames(re)[[2]]
@@ -810,16 +810,16 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
         filename <- paste0("cmd_notsuppAmongInfected_gppars_round", round, ".pdf")
         ggsave2(p, file = filename, w = 6, h = 3)
 
-        # make use stan.data for PPC.
-        # ___________________________
+        catn("make use stan.data for PPC.")
+        # _________________________________
 
         ppDT <- copy(DT)
         cols <- c("M", "CU", "CL")
         ppDT[, (cols) := binconf(HIV_N - VLNS_N, HIV_N, return.df = T)]
 
 
-        # make prevalence plot by age
-        # ___________________________
+        catn("make prevalence plot by age")
+        # _________________________________
         
 
         ps <- c("CL"=.025, "IL"=.25, "M"=.5, "IU"=.75, "CU"=.975)
@@ -847,8 +847,8 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
         ggsave2(plots[[1]], file = filenames[[1]], w = 6, h = 5)
         ggsave2(plots[[2]], file = filenames[[2]], w = 6, h = 5)
 
-        # extract basic not supp estimates
-        # ________________________________
+        catn("extract basic not supp estimates")
+        # ______________________________________
 
         ps <- c("CL"=0.025, "M"=0.5, "CU"=0.975)
 
@@ -871,8 +871,8 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
         nsinf.by.sex.loc <- merge(nsinf.by.sex.loc, group_codes, by=c('LOC', 'SEX'))
 
 
-        # extract risk ratio of suppressed VL female:male and male:female
-        # _______________________________________________________________
+        catn("extract risk ratio of suppressed VL female:male and male:female")
+        # _____________________________________________________________________
 
         rp <- merge(
             draws, DT[, .(SEX_LABEL, LOC_LABEL, AGE_LABEL, N )],
@@ -886,8 +886,8 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
         rp[, LABEL := .write.CIs(M, CL, CU, d = 2)]
         nsinf.by.loc <- copy(rp)
 
-        # extract risk ratio of unsuppressed VL female:male and male:female by age
-        # ________________________________________________________________________
+        catn("extract risk ratio of unsuppressed VL female:male and male:female by age")
+        # ______________________________________________________________________________
 
         rp <- dcast.data.table(draws, 
             LOC_LABEL + .draw + AGE_LABEL ~ SEX_LABEL, 
@@ -899,8 +899,8 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
         nsinf.ratio.by.loc.age <- copy(rp)
 
 
-        # extract if F:M risk ratio of unsupp VL is diff in fishing vs inland
-        # ___________________________________________________________________
+        catn("extract if F:M risk ratio of unsupp VL is diff in fishing vs inland")
+        # _________________________________________________________________________
 
         rp <- merge(
             draws, DT[, .(SEX_LABEL, LOC_LABEL, AGE_LABEL, N )],
@@ -924,8 +924,8 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
         )
 
 
-        # make table version suppressed
-        # _____________________________
+        catn("make table version suppressed")
+        # ___________________________________
 
         nsinf.by.age
         nsinf.by.age[, LABEL := prettify_cell(M*100, CL*100,CU*100, percent = TRUE, precision=1)]
@@ -1031,8 +1031,8 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
             saveRDS(object=stan.data, file = filename_standata)
         }
 
-        # Analyse posterior
-        # ___________________
+        catn("Analyse posterior")
+        # _______________________
 
         re <- fit$draws(format="df") |> as.data.table()
         names_vars <- dimnames(re)[[2]]
@@ -1059,15 +1059,15 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
         ggsave2(p, file = filename, w = 6, h = 3)
 
 
-        # make use stan.data for PPC.
-        # ___________________________
+        catn("make use stan.data for PPC.")
+        # _________________________________
 
         ppDT <- copy(DT)
         cols <- c("M", "CU", "CL")
         ppDT[, (cols) := binconf(VLNS_N, N, return.df = T)]
 
-        # make prevalence plot by age
-        # ___________________________
+        catn("make prevalence plot by age")
+        # _________________________________
 
         q <- c("M"=.5, "CL"=.025, "CU"=.975)
         cols <- names(re) %which.like% '^p_predict_'
@@ -1091,8 +1091,8 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
         ggsave2(plots[[1]], file = filenames[[1]], w = 6, h = 5)
         ggsave2(plots[[2]], file = filenames[[2]], w = 6, h = 5)
 
-        # extract basic not supp estimates
-        # ________________________________
+        catn("extract basic not supp estimates")
+        # ______________________________________
 
         draws <- subset(re, select=names(re) %like% '^p_predict|\\.draw')
         draws <- melt( draws,  id.vars='.draw', value.name='P')
@@ -1112,8 +1112,8 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
         nspop.by.sex.loc [, LABEL := prettify_cell(M*100, CL*100, CU*100, percent = TRUE) ]
         nspop.by.sex.loc <- merge(nspop.by.sex.loc, group_codes, by=c('LOC', 'SEX'))
 
-        # extract risk ratio of suppressed VL female:male and male:female
-        # _______________________________________________________________
+        catn("extract risk ratio of suppressed VL female:male and male:female")
+        # _____________________________________________________________________
 
         rp <- merge(group_codes, rp, by = c("LOC", "SEX"))
         rp <- dcast.data.table(rp, LOC_LABEL + .draw ~ SEX_LABEL, value.var = "P")
@@ -1125,8 +1125,8 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
 
         nspop.by.loc <- copy(rp)
 
-        # extract risk ratio of unsuppressed VL F:M and M:F by age
-        # ________________________________________________________
+        catn("extract risk ratio of unsuppressed VL F:M and M:F by age")
+        # ______________________________________________________________
 
         rp <- dcast.data.table(draws, LOC_LABEL + .draw + AGE_LABEL ~ SEX_LABEL, value.var = "P")
         rp[,  `:=` (PR_FM = F / M, PR_MF = M / F, M = NULL, F = NULL)]
@@ -1135,8 +1135,8 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
         nspop.ratio.by.loc.age <- copy(rp)
 
 
-        # extract if diff in F:M riskratio of unsuppr VL is different in fish vs inland
-        # _____________________________________________________________________________
+        catn("extract if diff in F:M riskratio of unsuppr VL is different in fish vs inland")
+        # ___________________________________________________________________________________
 
         rp <- merge(draws, DT[, .(LOC_LABEL, SEX_LABEL, AGE_LABEL, N)], by=c('LOC_LABEL', "SEX_LABEL", "AGE_LABEL"))
         rp <- rp[, list(P = sum(P * N) / sum(N)), by = c("LOC_LABEL", "SEX_LABEL", ".draw")]
@@ -1153,8 +1153,8 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
         )
 
 
-        # make table version suppressed
-        # _____________________________
+        catn("make table version suppressed")
+        # ___________________________________
 
         nspop.by.age[, LABEL := .write.CIs(M, CL, CU, percent = T, d = 1)]
         setnames(nspop.ratio.by.loc.age, "LABEL", "LABEL2")
