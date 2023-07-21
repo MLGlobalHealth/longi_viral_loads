@@ -1,6 +1,6 @@
 seed: 1234
-warmup: 1000
-iter: 10000
+warmup: 500
+iter: 4000
 chains: 4
 cores: 4
 control:
