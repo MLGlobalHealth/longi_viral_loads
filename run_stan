@@ -32,7 +32,6 @@ REFIT="${FTP:-TRUE}"
 STANWAY="${STANWAY:-stan}"
 INDIR="${INDIR:-$ABSOLUTE_PATH}"
 OUTDIR="${OUTDIR:-/rds/general/user/ab1820/home/projects/2022/longvl}"
-# ENVNAME="${ENVNAME:-phylowSI-RakaiAgeGender}"
 
 #################
 # OPTION CHECKS #
@@ -62,8 +61,13 @@ echo "INDIR = $INDIR"
 echo "OUTDIR = $OUTDIR"
 echo "REFIT = $REFIT"
 
-# "build" jobname
-JOBNAME="${STANWAY}_vl_$VL"
+# "build" jobname and envname
+ENVNAME="longivl"
+JOBNAME="vl_$VL"
+if [[ "$STANWAY" == "cmdstan" ]]; then
+	JOBNAME="${STANWAY}_${JOBNAME}"
+	ENVNAME="${ENVNAME}_cmdstan"
+fi
 if [[ "$FTP" == "TRUE" ]]; then
     JOBNAME="$JOBNAME"_firstpart
 fi
@@ -88,7 +92,7 @@ do
 #PBS -j oe
 #PBS -o $OUTDIR/logs/\$PBS_JOBNAME.o\$PBS_JOBID.\$PBS_ARRAY_INDEX
 module load anaconda3/personal
-source activate longivl
+source activate $ENVNAME
 
 #  job will fail as soon as error occurs in your job script and that you don’t reference unset environment variables.
 set -euo pipefail
