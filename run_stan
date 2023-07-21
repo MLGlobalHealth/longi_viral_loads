@@ -113,21 +113,21 @@ echo "-------------"
 echo "  RUN STAN   "
 echo "-------------"
 
-Rscript \$INDIR/scripts/VL_run_$STANWAY.R \
-    --viremic-viral-load $VL \
-    --outdir \$CWD \
-    --$MODEL TRUE \
-    --round \$ROUND \
-    --firstpart $FTP \
+Rscript \$INDIR/scripts/VL_run_$STANWAY.R \\
+    --viremic-viral-load $VL \\\
+    --outdir \$CWD \\
+    --$MODEL TRUE \\
+    --round \$ROUND \\
+    --firstpart $FTP \\
     --refit $REFIT
 
 echo "-------------"
 echo "ASSESS MIXING"
 echo "-------------"
 
-Rscript \$INDIR/src/postprocessing_assess_mixing.R \
-    --jobname $JOBNAME  \
-    --$MODEL TRUE \
+Rscript \$INDIR/src/postprocessing_assess_mixing.R \\
+    --jobname $JOBNAME  \\
+    --$MODEL TRUE \\
     --round \$ROUND
 
 cp -R --no-preserve=mode,ownership \$PWD/\$JOBNAME/. \$OUTDIR/\$JOBNAME
@@ -177,7 +177,10 @@ if [ find \$PWD\$JOBNAME -mindepth 1 -maxdepth 1 -type f -name "*rda" | wc -l ==
 #mkdir \$CWD/tables
 
 # would need to check that all the models are done running before VL_postprocessing.R
-Rscript \$INDIR/scripts/VL_postprocessing.R --viremic-viral-load $VL --outdir \$OUTDIR --indir \$OUTDIR
+Rscript \$INDIR/scripts/VL_postprocessing.R \\
+    --viremic-viral-load $VL \\
+    --outdir \$OUTDIR \\
+    --indir \$OUTDIR
 
 
 EOF
