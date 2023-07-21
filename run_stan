@@ -137,9 +137,7 @@ fi
 
 EOF
 
-done
-
-cat > $OUTDIR/bash-$JOBNAME-$MODEL-postprocessing.pbs <<EOF
+    cat > $OUTDIR/bash-$JOBNAME-$MODEL-postprocessing.pbs <<EOF
 
 #!/bin/sh
 #PBS -l walltime=24:00:00
@@ -173,6 +171,9 @@ Rscript \$INDIR/scripts/VL_postprocessing.R --viremic-viral-load $VL --outdir \$
 
 
 EOF
+
+done
+
 
 
 cd $OUTDIR
