@@ -187,8 +187,6 @@ extract.stan.hyperparams.rho <- function(re, encoding){
 
 .plot.gp.hyperparameters <- function(GP, PR) {
 
-    GP=copy(prev.hiv.gp.pars); PR=copy(tmp)
-
     p <- ggplot(GP, aes(
         colour = col,
         x = paste0(GP_hyper_par, " ", LOC_LABEL, " ", SEX_LABEL)
