@@ -83,14 +83,12 @@ MODELS="run-gp-prevl run-gp-supp-hiv run-gp-supp-pop"
 for MODEL in $MODELS
 do
     cat > $OUTDIR/bash-$JOBNAME-$MODEL.pbs <<EOF
-
 #!/bin/sh
 #PBS -l walltime=48:00:00
 #PBS -l select=1:ncpus=4:ompthreads=1:mem=99gb
 #PBS -J 16-19
 #PBS -N $JOBNAME-$MODEL
 #PBS -j oe
-#PBS -o $OUTDIR/logs/\$PBS_JOBNAME.o\$PBS_JOBID.\$PBS_ARRAY_INDEX
 module load anaconda3/personal
 source activate $ENVNAME
 
@@ -148,13 +146,11 @@ fi
 EOF
 
     cat > $OUTDIR/bash-$JOBNAME-$MODEL-postprocessing.pbs <<EOF
-
 #!/bin/sh
 #PBS -l walltime=24:00:00
 #PBS -l select=1:ncpus=4:ompthreads=1:mem=99gb
 #PBS -j oe
 #PBS -N $JOBNAME-$MODEL-postprocessing
-#PBS -o $OUTDIR/logs/\$PBS_JOBNAME.o\$PBS_JOBID.\$PBS_ARRAY_INDEX
 module load anaconda3/personal
 source activate longivl
 
