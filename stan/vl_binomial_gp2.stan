@@ -11,14 +11,14 @@ functions {
   }
   
   vector make_logits_from_gp(int N_predict, array[] real x_predict,
-                             real alpha, real rho, real sexloc,
+                             real alpha, real rho, real baseline,
                              vector f_tilde) {
     matrix[N_predict, N_predict] L_cov;
     vector[N_predict] logit_p_predict;
     
     L_cov = cholesky_decompose(gp_exp_quad_cov(x_predict, alpha, rho)
                                + diag_matrix(rep_vector(1e-10, N_predict)));
-    logit_p_predict = sexloc + L_cov * f_tilde;
+    logit_p_predict = baseline + L_cov * f_tilde;
     
     return logit_p_predict;
   }
