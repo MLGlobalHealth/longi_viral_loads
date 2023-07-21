@@ -84,11 +84,15 @@ do
 #!/bin/sh
 #PBS -l walltime=48:00:00
 #PBS -l select=1:ncpus=4:ompthreads=1:mem=99gb
-#PBS -j oe
 #PBS -J 16-19
 #PBS -N $JOBNAME-$MODEL
+#PBS -j oe
+#PBS -o $OUTDIR/logs/\$PBS_JOBNAME.o\$PBS_JOBID.\$PBS_ARRAY_INDEX
 module load anaconda3/personal
 source activate longivl
+
+#  job will fail as soon as error occurs in your job script and that you don’t reference unset environment variables.
+set -euo pipefail
 
 JOB_TEMP=\${EPHEMERAL}/\${PBS_JOBID}
 mkdir -p \$JOB_TEMP
@@ -147,8 +151,12 @@ EOF
 #PBS -l select=1:ncpus=4:ompthreads=1:mem=99gb
 #PBS -j oe
 #PBS -N $JOBNAME-$MODEL-postprocessing
+#PBS -o $OUTDIR/logs/\$PBS_JOBNAME.o\$PBS_JOBID.\$PBS_ARRAY_INDEX
 module load anaconda3/personal
 source activate longivl
+
+#  job will fail as soon as error occurs in your job script and that you don’t reference unset environment variables.
+set -euo pipefail
 
 INDIR=$INDIR
 OUTDIR=$OUTDIR
@@ -162,8 +170,6 @@ CWD=\$PWD\$JOBNAME
 # if not, exit
 # if yes, run postprocessing 
 if [ find \$PWD\$JOBNAME -mindepth 1 -maxdepth 1 -type f -name "*rda" | wc -l == 4 ]
-
-
 
 # directories for figure and table
 #mkdir \$CWD
