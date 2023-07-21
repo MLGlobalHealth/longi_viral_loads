@@ -1,4 +1,6 @@
 #!/bin/bash
+ABSOLUTE_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+ABSOLUTE_PATH="$(dirname $ABSOLUTE_PATH)"
 
 # help, usage
 if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "--help" ]]; then
@@ -29,7 +31,7 @@ VL="${VL:-1000}"
 FTP="${FTP:-FALSE}"
 REFIT="${FTP:-TRUE}"
 STANWAY="${STANWAY:-stan}"
-INDIR="${INDIR:-/rds/general/user/ab1820/home/git/longi_viral_loads}"
+INDIR="${INDIR:-$ABSOLUTE_PATH}"
 OUTDIR="${OUTDIR:-/rds/general/user/ab1820/home/projects/2022/longvl}"
 # ENVNAME="${ENVNAME:-phylowSI-RakaiAgeGender}"
 
@@ -84,6 +86,7 @@ do
 #PBS -l select=1:ncpus=4:ompthreads=1:mem=99gb
 #PBS -j oe
 #PBS -J 16-19
+#PBS -N $JOBNAME-$MODEL
 module load anaconda3/personal
 source activate longivl
 
@@ -143,6 +146,7 @@ EOF
 #PBS -l walltime=24:00:00
 #PBS -l select=1:ncpus=4:ompthreads=1:mem=99gb
 #PBS -j oe
+#PBS -N $JOBNAME-$MODEL-postprocessing
 module load anaconda3/personal
 source activate longivl
 
