@@ -833,8 +833,6 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
         ) ]
         nsinf.by.age <- .stan.get.sex.and.loc(nsinf.by.age, 'variable')
 
-        nsinf.by.age2 <- copy(nsinf.by.age)
-
         plots <- .plot.stan.fit(
             nsinf.by.age,
             ylims = c(0,1),
