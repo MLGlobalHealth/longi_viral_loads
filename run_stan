@@ -22,7 +22,6 @@ do
    KEY_LENGTH=${#KEY}
    VALUE="${ARGUMENT:$KEY_LENGTH+1}"
 
-   echo "export $KEY=$VALUE"
    export "$KEY"="$VALUE"
 done
 
