@@ -170,12 +170,12 @@ extract.stan.hyperparams.rho <- function(re, encoding){
     return(x)
 }
 
-.stan.brackets.to.age <- function(x) {
+.stan.brackets.to.age <- function(x, .stan.data=stan.data) {
 
     x <- gsub( "^.*\\[([0-9]*)\\]$", "\\1", x)
 
-    dict <- unique( stan.data$x_predict)
-    names(dict) <- as.character(seq_along(stan.data$x_predict))
+    dict <- unique( .stan.data$x_predict)
+    names(dict) <- as.character(seq_along(.stan.data$x_predict))
 
     out <- unname(dict[x])
 
