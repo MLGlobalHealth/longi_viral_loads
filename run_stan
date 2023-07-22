@@ -87,7 +87,7 @@ do
 #PBS -l walltime=48:00:00
 #PBS -l select=1:ncpus=4:ompthreads=1:mem=99gb
 #PBS -J 16-19
-#PBS -N $JOBNAME-$MODEL
+#PBS -N l-$JOBNAME-$MODEL
 #PBS -j oe
 module load anaconda3/personal
 source activate $ENVNAME
@@ -115,7 +115,7 @@ echo "  RUN STAN   "
 echo "-------------"
 
 Rscript \$INDIR/scripts/VL_run_$STANWAY.R \\
-    --viremic-viral-load $VL \\\
+    --viremic-viral-load $VL \\
     --outdir \$CWD \\
     --$MODEL TRUE \\
     --round \$ROUND \\
@@ -150,7 +150,7 @@ EOF
 #PBS -l walltime=24:00:00
 #PBS -l select=1:ncpus=4:ompthreads=1:mem=99gb
 #PBS -j oe
-#PBS -N $JOBNAME-$MODEL-postprocessing
+#PBS -N l-$JOBNAME-$MODEL-postprocessing
 module load anaconda3/personal
 source activate longivl
 

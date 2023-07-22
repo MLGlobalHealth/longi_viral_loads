@@ -170,7 +170,7 @@ extract.stan.hyperparams.rho <- function(re, encoding){
     return(x)
 }
 
-.stan.brackets.to.age <- function(x, .stan.data=stan.data) {
+.stan.brackets.to.age <- function(x, .stan.data) {
 
     x <- gsub( "^.*\\[([0-9]*)\\]$", "\\1", x)
 
@@ -206,8 +206,6 @@ extract.stan.hyperparams.rho <- function(re, encoding){
 
 .plot.stan.fit <- function(DT, DT2=ppDT, ylab, ylims=NA) {
 
-
-    tmp <- copy(DT); tmp2 <- copy(DT2)
     tmp <- prettify_labels(DT)
     tmp2 <- prettify_labels(DT2)
 
@@ -522,7 +520,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
         tmp <- melt( tmp, id.vars = "quantile")
         prev.hiv.by.age <- dcast.data.table(tmp, variable ~ quantile, value.var = "value")
         prev.hiv.by.age[ , `:=` (
-            AGE_LABEL = .stan.brackets.to.age(variable),
+            AGE_LABEL = .stan.brackets.to.age(variable, .stan.data=stan.data),
             variable = .stan.remove.brackets(variable)
         ) ]
         prev.hiv.by.age <- .stan.get.sex.and.loc(prev.hiv.by.age, 'variable')
@@ -828,7 +826,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
 
         nsinf.by.age <- dcast.data.table(tmp, variable ~ quantile, value.var = "value")
         nsinf.by.age[ , `:=` (
-            AGE_LABEL = .stan.brackets.to.age(variable),
+            AGE_LABEL = .stan.brackets.to.age(variable, .stan.data=stan.data),
             variable = .stan.remove.brackets(variable)
         ) ]
         nsinf.by.age <- .stan.get.sex.and.loc(nsinf.by.age, 'variable')
@@ -1072,7 +1070,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
         tmp <- melt( tmp, id.vars = "quantile")
         nspop.by.age <- dcast.data.table(tmp, variable ~ quantile, value.var = "value")
         nspop.by.age[ , `:=` (
-            AGE_LABEL = .stan.brackets.to.age(variable),
+            AGE_LABEL = .stan.brackets.to.age(variable, .stan.data=stan.data),
             variable = .stan.remove.brackets(variable)
         ) ]
         nspop.by.age <- .stan.get.sex.and.loc(nspop.by.age, 'variable')
