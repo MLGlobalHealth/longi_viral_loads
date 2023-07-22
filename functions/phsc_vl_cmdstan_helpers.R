@@ -109,7 +109,7 @@ extract.stan.hyperparams.rho <- function(re, encoding){
 .make.stan.data.gp <- function(DTsd,
                                num.var = NA,
                                den.var = NA,
-                               rho_hyper_lower_bound = 1, rho_hyper_upper_bound = 35 / 2) {
+                               rho_hyper_lower_bound = 1, rho_hyper_upper_bound = 35 ) {
     stopifnot(length(num.var == 1) & length(den.var == 1))
 
     tmp <- seq(DTsd[, min(AGE_LABEL)], DTsd[, max(AGE_LABEL) + 1], .5)
