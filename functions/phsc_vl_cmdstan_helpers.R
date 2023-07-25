@@ -622,9 +622,9 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
             file = file.path(vl.out.dir., filename)
         )
 
-        ## 	make table version suppressed
+        catn("make table version suppressed")
 
-        prev.hiv.by.age[, LABEL := .p1(M, CL, CU)]
+        # prev.hiv.by.age[, LABEL := .p1(M, CL, CU)]
         prev.hiv.by.age[, LABEL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE) ]
         prevratio.hiv.by.loc.age[, LABEL2 := prettify_cell(M, CL, CU)]
 
@@ -891,7 +891,9 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
             LOC_LABEL + .draw + AGE_LABEL ~ SEX_LABEL, 
             value.var = "P")
         rp[, `:=` (PR_FM = F / M, PR_MF = M / F, M = NULL, F = NULL)]
-        rp <- melt(rp, id.vars = c("LOC_LABEL", "AGE_LABEL", ".draw"), measure.vars = c("PR_FM", "PR_MF"))
+        rp <- melt(rp,
+            id.vars = c("LOC_LABEL", "AGE_LABEL", ".draw"),
+            measure.vars = c("PR_FM", "PR_MF"))
         rp <- rp[, quantile2(value), by=c("LOC_LABEL", "AGE_LABEL", "variable")]
         rp[, LABEL := .write.CIs(M, CL, CU, d = 2)]
         nsinf.ratio.by.loc.age <- copy(rp)
@@ -925,11 +927,12 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
         catn("make table version suppressed")
         # ___________________________________
 
-        nsinf.by.age
         nsinf.by.age[, LABEL := prettify_cell(M*100, CL*100,CU*100, percent = TRUE, precision=1)]
         nsinf.ratio.by.loc.age[, LABEL2 := prettify_cell(M, CL, CU)]
 
-        dt <- subset(nsinf.by.age, AGE_LABEL %in% c(20.5, 25.5, 30.5, 35.5, 40.5, 45.5))
+        vec_ages <- c(20.5, 25.5, 30.5, 35.5, 40.5, 45.5)
+
+        dt <- subset(nsinf.by.age, AGE_LABEL %in% vec_ages)
         dt <- dcast.data.table(dt, LOC_LABEL + AGE_LABEL ~ SEX_LABEL, value.var = "LABEL")
         .f <- function(var){
             tmp <- subset( nsinf.ratio.by.loc.age,
@@ -1129,6 +1132,9 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
 
         rp <- dcast.data.table(draws, LOC_LABEL + .draw + AGE_LABEL ~ SEX_LABEL, value.var = "P")
         rp[,  `:=` (PR_FM = F / M, PR_MF = M / F, M = NULL, F = NULL)]
+        rp <- melt(rp, 
+            id.vars = c("LOC_LABEL", "AGE_LABEL", ".draw"),
+            measure.vars = c("PR_FM", "PR_MF"))
         rp <- rp[, quantile2(value, ps = q), by = c("LOC_LABEL", "AGE_LABEL","variable")]
         rp[, LABEL := prettify_cell(M, CL, CU)]
         nspop.ratio.by.loc.age <- copy(rp)
@@ -1159,7 +1165,6 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
         setnames(nspop.ratio.by.loc.age, "LABEL", "LABEL2")
 
         vec_ages <- c(20.5, 25.5, 30.5, 35.5, 40.5, 45.5)
-
 
         dt <- subset(nspop.by.age, AGE_LABEL %in% vec_ages) |>
             dcast.data.table(LOC_LABEL + AGE_LABEL ~ SEX_LABEL, value.var = "LABEL")
