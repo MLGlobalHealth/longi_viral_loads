@@ -116,7 +116,7 @@ echo "-------------"
 
 Rscript \$INDIR/scripts/VL_run_$STANWAY.R \\
     --viremic-viral-load $VL \\
-    --outdir $CWD \\
+    --outdir \$OUTDIR/\$JOBNAME/$MODEL \\
     --$MODEL TRUE \\
     --round \$ROUND \\
     --firstpart $FTP \\
@@ -130,7 +130,7 @@ Rscript \$INDIR/src/postprocessing_assess_mixing.R \\
     --jobname $JOBNAME  \\
     --$MODEL TRUE \\
     --round \$ROUND \\
-    --outdir $CWD
+    --outdir $OUTDIR
 
 cp -R --no-preserve=mode,ownership \$PWD/\$JOBNAME/. \$OUTDIR/\$JOBNAME
 
