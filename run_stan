@@ -54,12 +54,12 @@ if [[ ! "$REFIT" =~ ^(TRUE|FALSE)$ ]]; then
 fi
 
 echo "Selected options:"
-echo "VL = $VL"
-echo "FTP = $FTP"
-echo "STANWAY = $STANWAY"
-echo "INDIR = $INDIR"
-echo "OUTDIR = $OUTDIR"
-echo "REFIT = $REFIT"
+echo "  VL = $VL"
+echo "  FTP = $FTP"
+echo "  STANWAY = $STANWAY"
+echo "  INDIR = $INDIR"
+echo "  OUTDIR = $OUTDIR"
+echo "  REFIT = $REFIT"
 
 # "build" jobname and envname
 ENVNAME="longivl"
@@ -101,12 +101,12 @@ cd \$JOB_TEMP
 PWD=\$(pwd)
 
 INDIR=$INDIR
-OUTDIR=$OUTDIR
+# OUTDIR=$OUTDIR
 JOBNAME=$JOBNAME
 ROUND=\$PBS_ARRAY_INDEX
 
 # main directory
-CWD=\$PWD/\$JOBNAME/$MODEL
+# CWD=\$OUTDIR/\$JOBNAME/$MODEL
 
 mkdir -p \$CWD
 
@@ -116,7 +116,7 @@ echo "-------------"
 
 Rscript \$INDIR/scripts/VL_run_$STANWAY.R \\
     --viremic-viral-load $VL \\
-    --outdir \$CWD \\
+    --outdir $CWD \\
     --$MODEL TRUE \\
     --round \$ROUND \\
     --firstpart $FTP \\
@@ -129,7 +129,8 @@ echo "-------------"
 Rscript \$INDIR/src/postprocessing_assess_mixing.R \\
     --jobname $JOBNAME  \\
     --$MODEL TRUE \\
-    --round \$ROUND
+    --round \$ROUND \\
+    --outdir $CWD
 
 cp -R --no-preserve=mode,ownership \$PWD/\$JOBNAME/. \$OUTDIR/\$JOBNAME
 
@@ -163,7 +164,7 @@ STAN_MODEL=$STAN_MODEL
 JOBNAME=$JOBNAME
   
 # main directory
-CWD=\$PWD\$JOBNAME
+# CWD=\$PWD\$JOBNAME
 
 # write code to check there are 4 files ending by rda in $CWD
 # if not, exit

@@ -1169,7 +1169,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
         dt <- subset(nspop.by.age, AGE_LABEL %in% vec_ages) |>
             dcast.data.table(LOC_LABEL + AGE_LABEL ~ SEX_LABEL, value.var = "LABEL")
         .f <- function(var){
-            tmp <- subset( nspop,nspop.ratio.by.loc.age,
+            tmp <- subset(nspop.ratio.by.loc.age,
                 variable == var & AGE_LABEL %in% vec_ages,
                 select=c('LOC_LABEL', 'AGE_LABEL', 'LABEL2')
             )

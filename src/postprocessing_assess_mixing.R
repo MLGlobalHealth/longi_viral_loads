@@ -36,11 +36,13 @@ source(file.path(gitdir, "R/paths.R"))
 
 # options:
 args <- args[names(args) %like% "jobname|run|out.dir|round"]
+print(args)
 if(interactive()){
     args$jobname <- 'cmdstan_vl_1000_firstpart'
     args$run.gp.prevl <- TRUE
     args$round <- 17
 }
+
 ##################
 #      Main      #
 ##################
@@ -48,20 +50,26 @@ if(interactive()){
 catn("Locate model fit and output directories")
 # _____________________________________________
 
-outdir <- with(args, {
-    model <- which( c( 
-        `run-gp-prevl` = run.gp.prevl,
-        `run-gp-supp-hiv` = run.gp.supp.hiv,
-        `run-gp-supp-pop` = run.gp.supp.pop
-    )) |> names()
-    stopifnot("One of the models needs be specified" = length(model) > 0)
+outdir <- args$out.dir.exact
 
-    if(length(model) > 1){
-        warning("Only assessing mixing for the model:", model[1])
-    }
+if(is.na(outdir)){
+    outdir <- with(args, {
+        model <- which( c( 
+            `run-gp-prevl` = run.gp.prevl,
+            `run-gp-supp-hiv` = run.gp.supp.hiv,
+            `run-gp-supp-pop` = run.gp.supp.pop
+        )) |> names()
+        stopifnot("One of the models needs be specified" = length(model) > 0)
 
-    file.path(out.dir.prefix, jobname, model[1])
-})
+        if(length(model) > 1){
+            warning("Only assessing mixing for the model:", model[1])
+        }
+
+        file.path(out.dir.prefix, jobname, model[1])
+    })
+    stopifnot("Output directory does not exist" = dir.exists(outdir))
+}
+
 path.stan.output <- list.files( 
     outdir, 
     paste0('round', args$round, '.rds'), 
