@@ -108,7 +108,7 @@ ROUND=\$PBS_ARRAY_INDEX
 # main directory
 # CWD=\$OUTDIR/\$JOBNAME/$MODEL
 
-mkdir -p \$CWD
+# mkdir -p \$CWD
 
 echo "-------------"
 echo "  RUN STAN   "
