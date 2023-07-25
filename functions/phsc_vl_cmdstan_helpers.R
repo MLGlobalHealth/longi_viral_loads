@@ -9,7 +9,7 @@
     }
 
     if(! is.null(codes)){
-        DT <- merge(DT, group_codes, by=c("SEX", "LOC"))
+        DT <- merge(DT, codes, by=c("SEX", "LOC"))
     }
 
     return(DT)
