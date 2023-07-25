@@ -1,4 +1,4 @@
-.stan.get.sex.and.loc <- function(DT, var, var_overwrite=TRUE){
+.stan.get.sex.and.loc <- function(DT, var='variable', var_overwrite=TRUE, codes=NULL){
 
     .s <- function(reg, x) gsub("^(.*)_([0-9])([0-9])", reg, x)
     DT[, SEX := as.integer(.s("\\2", get(var)))]
@@ -8,11 +8,13 @@
         DT[, (var) := .s("\\1", get(var))]
     }
 
-    if(exists("group_codes"))
+    if(! is.null(codes)){
         DT <- merge(DT, group_codes, by=c("SEX", "LOC"))
+    }
 
     return(DT)
 }
+
 
 extract.stan.hyperparams.rho <- function(re, encoding){
 
@@ -523,10 +525,11 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
             AGE_LABEL = .stan.brackets.to.age(variable, .stan.data=stan.data),
             variable = .stan.remove.brackets(variable)
         ) ]
-        prev.hiv.by.age <- .stan.get.sex.and.loc(prev.hiv.by.age, 'variable')
+        prev.hiv.by.age <- .stan.get.sex.and.loc(prev.hiv.by.age, 'variable', codes = group_codes)
 
         plots <- .plot.stan.fit(
             prev.hiv.by.age, 
+            DT2=ppDT,
             ylims = c(0,.75),
             ylab="HIV prevalence (95% credibility intervals)")
 
@@ -542,10 +545,10 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
         draws <- subset(re, select=names(re) %like% '^p_predict|\\.draw')
         draws <- melt( draws,  id.vars='.draw', value.name='P')
         draws[ , `:=` (
-            AGE_LABEL = .stan.brackets.to.age(variable),
+            AGE_LABEL = .stan.brackets.to.age(variable, .stan.data=stan.data),
             variable = .stan.remove.brackets(variable)
         ) ]
-        draws <- .stan.get.sex.and.loc(draws, 'variable')
+        draws <- .stan.get.sex.and.loc(draws, 'variable', codes=group_codes)
         draws[, variable := NULL ]
 
         rp <- merge(
@@ -829,12 +832,13 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
             AGE_LABEL = .stan.brackets.to.age(variable, .stan.data=stan.data),
             variable = .stan.remove.brackets(variable)
         ) ]
-        nsinf.by.age <- .stan.get.sex.and.loc(nsinf.by.age, 'variable')
+        nsinf.by.age <- .stan.get.sex.and.loc(nsinf.by.age, 'variable', codes=group_codes)
 
         plots <- .plot.stan.fit(
             nsinf.by.age,
+            DT2=ppDT,
             ylims = c(0,1),
-            ylab = "HIV+ individuals with suppressed viral load\n(95% credibility interval)\n",
+            ylab = "HIV+ individuals with suppressed viral load\n(95% credibility interval)\n"
         )
 
         filenames <- paste0("suppAmongInfected_vs_age_by_gender_fishinland_",c("", "data_"),"gp_round", round, ".pdf")
@@ -844,15 +848,15 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
         catn("extract basic not supp estimates")
         # ______________________________________
 
-        ps <- c("CL"=0.025, "M"=0.5, "CU"=0.975)
+        q <- c("CL"=0.025, "M"=0.5, "CU"=0.975)
 
         draws <- subset(re, select=names(re) %like% '^p_predict|\\.draw')
         draws <- melt( draws,  id.vars='.draw', value.name='P')
         draws[ , `:=` (
-            AGE_LABEL = .stan.brackets.to.age(variable),
+            AGE_LABEL = .stan.brackets.to.age(variable, .stan.data=stan.data),
             variable = .stan.remove.brackets(variable)
         ) ]
-        draws <- .stan.get.sex.and.loc(draws, 'variable')
+        draws <- .stan.get.sex.and.loc(draws, 'variable', codes=group_codes)
         draws[, variable := NULL ]
 
         rp <- merge(
@@ -1073,10 +1077,11 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
             AGE_LABEL = .stan.brackets.to.age(variable, .stan.data=stan.data),
             variable = .stan.remove.brackets(variable)
         ) ]
-        nspop.by.age <- .stan.get.sex.and.loc(nspop.by.age, 'variable')
+        nspop.by.age <- .stan.get.sex.and.loc(nspop.by.age, 'variable', codes=group_codes)
 
         plots <- .plot.stan.fit(
             nspop.by.age, 
+            DT2=ppDT,
             ylims = c(0,.4),
             ylab = "population with unsuppressed viral load\n(95% credibility interval)\n")
 
@@ -1091,10 +1096,10 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
         draws <- subset(re, select=names(re) %like% '^p_predict|\\.draw')
         draws <- melt( draws,  id.vars='.draw', value.name='P')
         draws[ , `:=` (
-            AGE_LABEL = .stan.brackets.to.age(variable),
+            AGE_LABEL = .stan.brackets.to.age(variable, .stan.data=stan.data),
             variable = .stan.remove.brackets(variable)
         ) ]
-        draws <- .stan.get.sex.and.loc(draws, 'variable')
+        draws <- .stan.get.sex.and.loc(draws, 'variable', codes=group_codes)
         draws[, variable := NULL ]
 
         rp <- merge(
