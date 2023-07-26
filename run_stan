@@ -160,25 +160,24 @@ set -euo pipefail
 
 INDIR=$INDIR
 OUTDIR=$OUTDIR
-STAN_MODEL=$STAN_MODEL
 JOBNAME=$JOBNAME
   
 # main directory
 # CWD=\$PWD\$JOBNAME
 
 # write code to check there are 4 files ending by rda in $CWD
-# if not, exit
-# if yes, run postprocessing 
-if [ find \$PWD\$JOBNAME -mindepth 1 -maxdepth 1 -type f -name "*rda" | wc -l == 4 ]
-
-# directories for figure and table
-#mkdir \$CWD
-#mkdir \$CWD/figures
-#mkdir \$CWD/tables
+if [ find \$OUTDIR/\$JOBNAME -mindepth 1 -maxdepth 1 -type f -name "*rda" | wc -l == 4 ]
+then
+    echo "All models have finished running. Submitting postprocessing."
+else
+    echo "Not all models have finished running. Not submitting postprocessing."
+    exit 1
+fi
 
 # would need to check that all the models are done running before VL_postprocessing.R
 Rscript \$INDIR/scripts/VL_postprocessing.R \\
     --viremic-viral-load $VL \\
+    --jobname \$JOBNAME \\
     --outdir \$OUTDIR \\
     --indir \$OUTDIR
 
