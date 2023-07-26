@@ -66,16 +66,19 @@ savefile <- function(data, filename, overwrite=FALSE)
 }
 
 
-list.files.from.output.directory <- function(pattern, args=args, indir=args$indir, vl=args$viremic.viral.load, jobname=args$jobname, rounds=NULL )
+list.files.from.output.directory <- function(pattern, args=args, dir=NA_character_, rounds=NA_integer_ )
 {
     # extracts files from the output directory specified by args$vl and args$jobname
 
-    dir <- file.path(indir, make.suffix(args) )
+    if(is.na(dir)){
+        dir <- file.path(indir, make.suffix(args) )
+    }
+
     # dir <- file.path(indir, paste0('vl_', vl))
     files <- list.files( dir, pattern=pattern, full.names = TRUE, recursive = TRUE)
     
     # subset to file containing roundnames in their basename 
-    if(! is.null(rounds) )
+    if(! is.na(rounds) )
     {
         labels <- paste0('round', rounds) |> paste(collapse = '|')
         files <- files[ basename(files) %like% labels ]
