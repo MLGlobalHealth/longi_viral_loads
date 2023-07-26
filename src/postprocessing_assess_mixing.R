@@ -81,7 +81,7 @@ path.stan.output <- list.files(
     paste0('round', args$round, '.rds'), 
     full.names =TRUE)
 outfile.prefix <- gsub( '.rds$', '-', path.stan.output)
-outfile.figures <- file.path(outdir, 'figures'
+outfile.figures <- file.path(outdir, 'figures')
 if(!dir.exists(outfile.figures)) dir.create(outfile.figures)
 
 
