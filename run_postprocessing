@@ -26,9 +26,26 @@ done
 # default options
 VL="${VL:-1000}" 
 FTP="${FTP:-FALSE}"
-STANWAY="${STAN_MODEL:-stan}"
+STANWAY="${STANWAY:-stan}"
 INDIR="${INDIR:-/rds/general/user/ab1820/home/git/longi_viral_loads}"
 OUTDIR="${OUTDIR:-/rds/general/user/ab1820/home/projects/2022/longvl}"
+
+
+#################
+# OPTION CHECKS #
+#################
+
+# stop if STANWAY is not stan or cmdstan
+if [[ ! "$STANWAY" =~ ^(stan|cmdstan)$ ]]; then
+    echo "STANWAY must be either stan (rstan) or cmdstan (cmdstanr)."
+    exit 1
+fi
+
+echo "Selected options:"
+echo "  VL = $VL"
+echo "  STANWAY = $STANWAY"
+echo "  INDIR = $INDIR"
+echo "  OUTDIR = $OUTDIR"
 
 # "build" jobname and envname
 ENVNAME="longivl"
@@ -37,21 +54,19 @@ if [[ "$STANWAY" == "cmdstan" ]]; then
 	JOBNAME="${STANWAY}_${JOBNAME}"
 	ENVNAME="${ENVNAME}_cmdstan"
 fi
-echo "JOBNAME = $JOBNAME"
+echo "  JOBNAME = $JOBNAME"
 
 
 cat > $OUTDIR/bash-$JOBNAME-joint_postprocessing.pbs <<EOF
-  
 #!/bin/sh
 #PBS -l walltime=24:00:00
 #PBS -l select=1:ncpus=10:ompthreads=1:mem=480gb
 #PBS -j oe
 module load anaconda3/personal
-source activate longivl
+source activate $ENVNAME
 
 INDIR=$INDIR
 OUTDIR=$OUTDIR
-STAN_MODEL=$STAN_MODEL
 JOBNAME=$JOBNAME
   
 Rscript \$INDIR/scripts/VL_jointpostprocessing.R \\
@@ -69,4 +84,4 @@ Rscript \$INDIR/src/make_paper_figures.R \\
 EOF
 
 cd $OUTDIR
-qsub bash-$JOBNAME-postprocessing.pbs
+qsub bash-$JOBNAME-joint_postprocessing.pbs

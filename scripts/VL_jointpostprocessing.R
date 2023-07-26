@@ -40,39 +40,57 @@ file.exists(
 
 # command line options, stored in args. Then subset
 opts_vec <- c(
-    "viremic.viral.load", "detectable.viral.load",
-    "out.dir.prefix", "indir",
-    "round", "jobname",
+    "viremic.viral.load",
+    "detectable.viral.load",
+    "out.dir.prefix",
+    "out.dir.exact",
+    "indir",
+    "round",
+    "jobname",
     "only.firstparticipants"
 )
 args <- args[names(args) %in% opts_vec]
+print(args)
+# testing
+if(interactive()){
+    args$jobname <- 'cmdstan_vl_1000_firstpart'
+}
 
-source(file.path(gitdir.functions, "plotting_main_figures.R"))
-source(file.path(gitdir.functions, "postprocessing_helpers.R"))
-source(file.path(gitdir.functions, "postprocessing_tables.R"))
-source(file.path(gitdir.functions, "phsc_vl_helpers.R"))
-source(file.path(gitdir.functions, "paper_statements.R"))
+.sfp <- function(x){
+    source(file.path(gitdir.functions, x))
+}
+.sfp("plotting_main_figures.R")
+.sfp("postprocessing_helpers.R")
+.sfp("postprocessing_tables.R")
+.sfp("phsc_vl_helpers.R")
+.sfp("paper_statements.R")
 naturemed_reqs()
 
+# Set global variables
 overwrite <- !interactive()
 make_plots <- TRUE
 make_tables <- TRUE
 
-make_paper_numbers <- TRUE
-if (make_paper_numbers) {
-    ppr_numbers <- list()
-}
-
-VL_DETECTABLE <- args$vl.detectable
-VIREMIC_VIRAL_LOAD <- args$viremic.viral.load
-
-# output directories
-out.dir <- args$out.dir.prefix
-out.dir <- file.path(out.dir, paste0("vl_", VIREMIC_VIRAL_LOAD, "_joint"))
+with(args, {
+    VL_DETECTABLE <<- detectable.viral.load
+    VIREMIC_VIRAL_LOAD <<- viremic.viral.load
+    # need to check that we have both samples for "" and "_firstpart"
+    out.dir <<- gsub(out.dir.exact, "_firstpart$", "_joint")
+    if(is.na(out.dir.exact)){
+        out.dir <<- file.path(
+            out.dir.prefix, 
+            gsub('_firstpart$','_joint',jobname))
+    }
+})
+stopifnot("out.dir must end in _joint"= out.dir %like% '_joint$')
+indir.ftp <- gsub( '_joint', "_firstpart", out.dir)
+indir.all <- gsub( '_joint', "", out.dir)
+stopifnot("did not find 2 directories necessary to run joint analysis"=all(dir.exists(c(indir.ftp, indir.all))))
 out.dir.figures <- file.path(out.dir, "figures")
 out.dir.tables <- file.path(out.dir, "tables")
 dir.create(out.dir.tables) |> suppressWarnings()
 dir.create(out.dir.figures) |> suppressWarnings()
+
 
 ####################
 catn("=== MAIN ===")
@@ -98,10 +116,8 @@ dpartrates <- readRDS(path.participation.rates) |>
 catn("=== Compare model fits among FTP and ALL ===")
 ####################################################
 
-args2 <- copy(args)
-args2$only.firstparticipants <- !args$only.firstparticipants
-files1 <- list.files.from.output.directory(".rda", args = args, rounds = 16:19)
-files2 <- list.files.from.output.directory(".rda", args = args2, rounds = 16:19)
+files1 <- list.files.from.output.directory(".rda", dir=indir.ftp, rounds = 16:19)
+files2 <- list.files.from.output.directory(".rda", dir=indir.all,  rounds = 16:19)
 
 # get paths of models
 dfiles_rda <- data.table(F = c(files1, files2))
@@ -213,10 +229,8 @@ if (0) {
 catn("=== Get posterior draws from rds files ===")
 ##################################################
 
-args2 <- copy(args)
-args2$only.firstparticipants <- !args$only.firstparticipants
-files1 <- list.files.from.output.directory("round1[0-9].rds|220729.rds", args = args, rounds = 16:19)
-files2 <- list.files.from.output.directory("round1[0-9].rds|220729.rds", args = args2, rounds = 16:19)
+files1 <- list.files.from.output.directory("round1[0-9].rds|220729.rds", dir = indir.ftp, rounds = 16:19)
+files2 <- list.files.from.output.directory("round1[0-9].rds|220729.rds", dir = indir.all, rounds = 16:19)
 
 dfiles_rds <- data.table(F = c(files1, files2))
 dfiles_rds[, `:=`(

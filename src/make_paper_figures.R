@@ -42,13 +42,13 @@ opts_vec <- c(
     "viremic.viral.load", 
     "detectable.viral.load",
     "out.dir.prefix",
+    "out.dir.exact",
     "indir",
     "round",
     "jobname",
     "only.firstparticipants"
 )
 args <- args[names(args) %in% opts_vec]
-
 {
     source(file.path(gitdir.functions, "plotting_main_figures.R"))
     source(file.path(gitdir.functions, "plotting_functions.R"))
@@ -68,14 +68,24 @@ if (make_paper_numbers) {
     ppr_numbers <- list()
 }
 
-VL_DETECTABLE <- args$vl.detectable
-VIREMIC_VIRAL_LOAD <- args$viremic.viral.load
-
-## output directories (maybe pass as args?)
-out.dir <- args$out.dir.prefix
-out.dir <- file.path(out.dir, paste0("vl_", VIREMIC_VIRAL_LOAD, "_joint"))
+with(args, {
+    VL_DETECTABLE <<- detectable.viral.load
+    VIREMIC_VIRAL_LOAD <<- viremic.viral.load
+    # need to check that we have both samples for "" and "_firstpart"
+    out.dir <<- gsub(out.dir.exact, "_firstpart$", "_joint")
+    if(is.na(out.dir.exact)){
+        out.dir <<- file.path(
+            out.dir.prefix, 
+            gsub('_firstpart$','_joint',jobname))
+    }
+})
+stopifnot("out.dir must end in _joint"= out.dir %like% '_joint$')
+indir.ftp <- gsub( '_joint', "_firstpart", out.dir)
+indir.all <- gsub( '_joint', "", out.dir)
+stopifnot("did not find 2 directories necessary to run joint analysis"=all(dir.exists(c(indir.ftp, indir.all))))
 out.dir.figures <- file.path(out.dir, "figures")
 out.dir.tables <- file.path(out.dir, "tables")
+
 
 # Census eligible, participants, and smooth
 ncen <- fread(path.census.eligible, select = c( "ROUND", "TYPE", "SEX", "AGEYRS", "ELIGIBLE", "ELIGIBLE_SMOOTH")) |>
