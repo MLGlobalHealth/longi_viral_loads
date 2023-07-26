@@ -80,9 +80,13 @@ path.stan.output <- list.files(
     outdir, 
     paste0('round', args$round, '.rds'), 
     full.names =TRUE)
-outfile.prefix <- gsub( '.rds$', '-', path.stan.output)
-outfile.figures <- file.path(outdir, 'figures')
-if(!dir.exists(outfile.figures)) dir.create(outfile.figures)
+# outfile.prefix <- gsub( '.rds$', '-', path.stan.output)
+outfile.diagnostics <- file.path(outdir, paste0('diagnostics/asses_round', args$round)) 
+outfile.figures <- file.path(outdir, paste0('figures/assess_round', args$round))
+sapply(c(outfile.figures, outfile.diagnostics), function(x){
+    d <- dirname(x)
+    if(! dir.exists(d)) dir.create(d)
+})
 
 
 catn("Loading model fit and samples")
@@ -102,7 +106,7 @@ make_convergence_diagnostics_stats(
     fit=fit,
     re=samples,
     exclude_rgx = 'L_cov|rho_hyper_par|_rep',
-    outfile.prefix)
+    outfile.diagnostics)
 
 catn("Merge fit to diagnostics")
 # ________________________________
@@ -155,5 +159,6 @@ p <- lapply(c('00', '01', '10', '11'), function(group){
 })  |> ggpubr::ggarrange(plotlist=_, ncol=2, nrow=2)
 ggsave(p, file = paste0(outfile.figures, '-mcmc-pairs_plot_gphyperparams.png'), w  = 10, h = 10)
 
-
-
+#####################
+catn("End of script")
+#####################

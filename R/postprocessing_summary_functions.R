@@ -120,17 +120,17 @@ make_convergence_diagnostics_stats = function(fit, re, outfile.prefix, exclude_r
     saveRDS2 <- function(x, suffix){
         x <- enexpr(x)
         tryCatch( 
-            expr = saveRDS(object=eval(x), file=paste0(outfile.prefix, suffix)),
+            expr = saveRDS(object=eval(x), file=paste0(outfile.diagnostics, suffix)),
             error = function(e) return(FALSE))
     }
 
     # save
-    saveRDS2(n_eff$all, suffix = "eff_sample_size_cum.rds")
-    saveRDS2(R_hat$all, suffix =  "Rhat_cum.rds")
-    saveRDS2(.WAIC, suffix = "WAIC.rds")
-    saveRDS2(.LOO, suffix = "LOO.rds")
-    saveRDS2(sampler_diagnostics, suffix = "sampler_diagnostics.rds")
-    saveRDS2(time, suffix = "time_elapsed.rds")
+    saveRDS2(n_eff$all, suffix = "-eff_sample_size_cum.rds")
+    saveRDS2(R_hat$all, suffix =  "-Rhat_cum.rds")
+    saveRDS2(.WAIC, suffix = "-WAIC.rds")
+    saveRDS2(.LOO, suffix = "-LOO.rds")
+    saveRDS2(sampler_diagnostics, suffix = "-sampler_diagnostics.rds")
+    saveRDS2(time, suffix = "-time_elapsed.rds")
 
     # return(summary)
 }
