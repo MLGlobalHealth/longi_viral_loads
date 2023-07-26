@@ -4,6 +4,12 @@
 
 # Load a STAN model and assess diagnostics + mixing of chains
 
+# --- Merge fit to diagnostics ---
+# Error in dim(x) <- length(x) : 
+#   invalid first argument, must be vector (list or atomic) 
+# Calls: plot.group.mcmc.parcoord ... mcmc_parcoord_data -> prepare_mcmc_array -> as.array -> as.array.default
+# 
+
 #################
 #   Libraries   #
 #################
@@ -75,7 +81,7 @@ path.stan.output <- list.files(
     paste0('round', args$round, '.rds'), 
     full.names =TRUE)
 outfile.prefix <- gsub( '.rds$', '-', path.stan.output)
-outfile.figures <- file.path(outdir, 'figures')
+outfile.figures <- file.path(outdir, 'figures'
 if(!dir.exists(outfile.figures)) dir.create(outfile.figures)
 
 
@@ -83,16 +89,9 @@ catn("Loading model fit and samples")
 # __________________________________
 
 fit <- readRDS(path.stan.output)
-
 fit.type <- get.fit.type(fit)
-
-if(fit.type == "rstan"){
-    samples <- rstan::extract(fit, permuted = FALSE, inc_warmup = FALSE)
-} else if (fit.type == "cmdstanr"){
-    samples <- fit$draws()
-} else {
-    stop("Unknown fit type")
-}
+samples <- posterior::as_draws_df(fit)
+n_iter <- nrow(samples)
 
 catn("Extracting samples")
 # ________________________
@@ -102,20 +101,20 @@ catn("Extracting samples")
 make_convergence_diagnostics_stats(
     fit=fit,
     re=samples,
-    exclude_rgx = 'L_cov|rho_hyper_par',
+    exclude_rgx = 'L_cov|rho_hyper_par|_rep',
     outfile.prefix)
 
 catn("Merge fit to diagnostics")
 # ________________________________
 
-p <- plot.group.mcmc.parcoord('p_predict')
+p <- plot.group.mcmc.parcoord(fit=fit, re=samples,'logit_p_predict')
 ggsave(p, file=file.path(outfile.figures, '-mcmc-parcoord-p_predict.png'), w=8, h=8)
 
 catn("Traceplots")
 # ________________
 
-p <- bayesplot::mcmc_trace(fit, regex_pars = c('rho_', 'alpha_')) + 
-    theme_default() +
+p <- bayesplot::mcmc_trace(samples, regex_pars = c('rho_', 'alpha_')) + 
+    theme_default() 
 ggsave(p, file = file.path(outfile.figures, '-mcmc-trace_plots.png'), w  = 8, h = 8)
 
 
@@ -128,7 +127,7 @@ inverse_logit <- function(x){
 }
 
 p <- bayesplot::mcmc_intervals(
-    fit, 
+    samples, 
     transformations = inverse_logit,
     regex_pars = c('sex[0-1]_loc[0-1]')
 ) + 
@@ -139,7 +138,7 @@ ggsave(p, file = paste0(outfile.figures, '-mcmc-intervals_baseline'), w  = 8, h 
 
 # hyperparameters
 p <- bayesplot::mcmc_intervals(
-    fit, 
+    samples, 
     regex_pars = c('rho_[0-1]', 'alpha_[0-1]')
 ) + 
     scale_y_discrete(labels = dict_stan_params2) + 
@@ -154,6 +153,9 @@ ggsave(p, file = paste0(outfile.figures, '-mcmc-intervals_hyper.png'), w  = 8, h
 
 # hyperparameters
 p <- lapply(c('00', '01', '10', '11'), function(group){
-    bayesplot::mcmc_pairs(fit, regex_pars = paste0(c('rho_', 'alpha_'), group)) + theme_bw()
-}) |> ggpubr::ggarrange(plotlist=_, ncol=2, nrow=2)
+    p <- bayesplot::mcmc_pairs(samples, regex_pars = paste0(c('rho_', 'alpha_'), group) ) 
+})  |> ggpubr::ggarrange(plotlist=_, ncol=2, nrow=2)
 ggsave(p, file = paste0(outfile.figures, '-mcmc-pairs_plot_gphyperparams.png'), w  = 10, h = 10)
+
+
+

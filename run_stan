@@ -101,7 +101,7 @@ cd \$JOB_TEMP
 PWD=\$(pwd)
 
 INDIR=$INDIR
-# OUTDIR=$OUTDIR
+OUTDIR=$OUTDIR
 JOBNAME=$JOBNAME
 ROUND=\$PBS_ARRAY_INDEX
 
@@ -127,12 +127,12 @@ echo "ASSESS MIXING"
 echo "-------------"
 
 Rscript \$INDIR/src/postprocessing_assess_mixing.R \\
+    --outdir-prefix $OUTDIR \\
     --jobname $JOBNAME  \\
     --$MODEL TRUE \\
-    --round \$ROUND \\
-    --outdir $OUTDIR
+    --round \$ROUND
 
-cp -R --no-preserve=mode,ownership \$PWD/\$JOBNAME/. \$OUTDIR/\$JOBNAME
+# cp -R --no-preserve=mode,ownership \$PWD/\$JOBNAME/. \$OUTDIR/\$JOBNAME
 
 # submit the postprocessing once done.
 cd \$OUTDIR

@@ -102,14 +102,18 @@ make_convergence_diagnostics_stats = function(fit, re, outfile.prefix, exclude_r
 
     # compute WAIC and LOO
     tryCatch({
-        if('log_lik' %in% names(re)){
-            log_lik <- loo::extract_log_lik(fit)
+        lls <- paste0('log_lik_', c('00', '01', '10', '01'))
+
+        if(fit.type == 'rstan'){
+            log_lik <- loo::extract_log_lik(fit, parameter_name = lls)
             log_lik = log_lik[!is.na(log_lik[,1]),]
             .WAIC = loo::waic(log_lik)
             .LOO = loo::loo(log_lik)
             print(.WAIC); print(.LOO)
             WAIC = .WAIC$pointwise
             LOO = .LOO$pointwise
+        }else{
+            LOO = fit$loo(variables == lls)$pointwise
         }} , error = function(e) e
     )
 
@@ -236,19 +240,26 @@ check_energy <- function(fit) {
 }
 
 
-plot.group.mcmc.parcoord <- function(varname){
-    lp <- lapply( c('00', '01', '10', '11'), \(group){
+plot.group.mcmc.parcoord <- function(fit, re, varname){
+
+    .groups <- c('00', '01', '10', '11')
+    .transformation <- rep(list(log), 8)
+    names(.transformation) <- c( paste0('rho_', .groups), paste0('alpha_', .groups))
+
+    lp <- lapply( .groups , \(group){
+        .alpha <- paste0("alpha_", group)
+        .rho <- paste0("rho_", group)
         bayesplot::mcmc_parcoord(
-            fit,
+            re,
             regex_pars=c(
                 paste0("^", varname, "_",group,".*[13579]\\]$"),
-                paste0("rho_", group),
-                paste0("alpha_", group)
+                .alpha, .rho
             ),
+            transform = .transformation[c(.alpha, .rho)],
             np = bayesplot::nuts_params(fit)
         ) + 
             theme_default(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-        scale_x_discrete( labels = .inside.brackets) +
+        scale_x_discrete( labels = rm.brackets) +
         labs(title = stan.number.to.code(group))
     }) |> 
         ggpubr::ggarrange(plotlist=_, ncol=2, nrow=2)
