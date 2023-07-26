@@ -134,7 +134,7 @@ p <- bayesplot::mcmc_intervals(
     theme_default() + 
     scale_y_discrete(labels = dict_stan_params_t) +
     labs(title="Baseline parameters (under inverse logit transform)") 
-ggsave(p, file = paste0(outfile.figures, '-mcmc-intervals_baseline'), w  = 8, h = 8)
+ggsave(p, file = paste0(outfile.figures, '-mcmc-intervals_baseline.png'), w  = 8, h = 8)
 
 # hyperparameters
 p <- bayesplot::mcmc_intervals(
@@ -146,10 +146,8 @@ p <- bayesplot::mcmc_intervals(
 ggsave(p, file = paste0(outfile.figures, '-mcmc-intervals_hyper.png'), w  = 8, h = 8)
 
 
-
-#
-# Pairs plot
-#
+catn("Pairs plot") 
+# _________________
 
 # hyperparameters
 p <- lapply(c('00', '01', '10', '11'), function(group){
