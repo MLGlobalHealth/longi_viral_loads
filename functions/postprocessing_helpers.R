@@ -205,66 +205,43 @@ get.weighted.average.p_predict <- function(fit1, fit2, round, expression_preretu
     eval(expression_prereturn)
 }
 
-get.weighted.average.p_predict.deprecated <- function(fit1, fit2, round) {
-    round <- unique(round)
-    stopifnot(length(round) == 1)
-    warning("Need to check which is FTP. prefertably fit2")
+get.posterior.diff.ftp <- function(fit1, fit2, expression_prereturn=NULL){
 
-    params <- fit1@model_pars %which.like% "^p_predict_[0-9]{2}"
-    re1 <- rstan::extract(fit1, pars = params)
-    re2 <- rstan::extract(fit2, pars = params)
-    n_ages <- re1[[1]] |> ncol()
-    n_iters <- with(fit2@stan_args[[1]], iter - warmup)
-    n_iters <- min(n_iters, with(fit1@stan_args[[1]], iter - warmup))
+    dot.cols <- c(".chain", ".iteration", ".draw")
+    demo.cols <- c("SEX", "LOC", "AGEYRS")
+    demo.cols2 <- paste0(demo.cols, "_LAB")
 
-    # check colnames are identical (probably useless)
-    (names(re1) == names(re2)) |>
-        all() |>
-        stopifnot()
-
-    # now, get age-sex-loc dependented weighted averages...
-    get.quantiles.joint <- function(par) {
-        sex.idx <- gsub("^.*([0-1])[0-1]$", "\\1", par) |> as.integer()
-        loc.idx <- gsub("^.*[0-1]([0-1])$", "\\1", par) |> as.integer()
-
-        # get weights for age group
-        dweights <- dfirst_prop |>
-            subset(
-                stan_dicts$SEXtoINT[SEX] == sex.idx &
-                    stan_dicts$LOCtoINT[FC] == loc.idx &
-                    ROUND == round,
-                select = c("AGEYRS", "P")
-            )
-        n_weights <- nrow(dweights)
-        weights_ftp <- dweights$P
-
-        # account for 'half-ages' in gp
-        if (n_weights == (n_ages - 1) / 2) {
-            tmp <- rep(NA, n_ages)
-            tmp[2 * (1:n_weights)] <- weights_ftp
-            weights_ftp <- tmp
-        }
-
-        # get weighted average (to check: which is FTP) and quantiles
-        re_out <- `+`(
-            apply(re1[[par]], 1, `*`, 1 - weights_ftp) |> t(),
-            apply(re2[[par]], 1, `*`, weights_ftp) |> t()
-        )
-        re_out <- re_out[, !is.na(weights_ftp)]
-        colnames(re_out) <- paste0("A_", dweights$AGEYRS)
-        re_out <- apply(re_out, 2, quantile2) |>
-            t() |>
-            as.data.table(keep.rownames = "AGE_LABEL")
-        re_out[, `:=`(
-            AGE_LABEL = sub("A_", "", AGE_LABEL) |> as.integer(),
-            SEX = sex.idx,
-            LOC = loc.idx
-        )]
-        re_out
+    .extract.p_predict <- function(fit, lab){
+        out <- posterior::as_draws_df(fit) |>
+            posterior::subset_draws(variable = "^p_predict", regex=TRUE)
+        names(out) <- gsub("p_predict", lab, names(out))
+        return(out)
     }
 
-    lapply(params, get.quantiles.joint) |> rbindlist()
+    draws_all <- posterior::bind_draws( 
+        .extract.p_predict(fit1, lab="parts"),
+        .extract.p_predict(fit2, lab="ftp")
+    ) |> 
+        setDT() |>
+        melt( 
+            id.vars = dot.cols,
+            variable.name = "participation",
+            value.name = "value"
+        )
+    draws_all[, (demo.cols) := stanindices2vars(participation)]
+    draws_all[, participation := fifelse(participation %like% 'ftp', yes='ftp',no='parts' )]
+    draws_all <- dcast.data.table(draws_all,  ... ~ participation, value.var='value' )
+    draws_all <- draws_all[ , diff :=parts - ftp ]
+    draws_all <- subset(draws_all, !is.na(diff))
+
+    #
+    expression_prereturn <- enexpr(expression_prereturn)
+
+    if (is.null(eval(expression_prereturn))) {
+        return(draws_all[, quantile2(diff), by = c("SEX", "LOC", "AGEYRS")])
+    }
 }
+
 
 plot.fit.weighted.by.ftpstatus <- function(DT, label, include_baseline = FALSE) {
     dplot <- subset(DT, MODEL == label) |>
@@ -408,8 +385,10 @@ find_summary_output <- function(samples, output, vars, transform = NULL, standar
 
 plot.agesex.contributions.by.roundcomm <- function(DT, label, include_baseline = FALSE) {
     # DT <- copy(dcontrib); label = 'run-gp-supp-pop'; include_baseline = TRUE
-    dplot <- subset(DT, MODEL == label) |>
-        prettify_labels()
+    if(is.na(label)){
+        dplot <- copy(DT)
+    }
+    prettify_labels(dplot)
 
     if (include_baseline) {
         baseline <- subset(dplot, ROUND_LAB == "Round 16")
@@ -476,23 +455,51 @@ plot.agesex.contributions.by.roundcomm2 <- function(DT, label, include_baseline 
         NULL
 }
 
-plot.logratio.ftpvsnon <- function(DT, label) {
+plot.logratio.ftpvsnon <- function(DT, label, log=TRUE) {
     dplot <- subset(DT, MODEL == label) |>
         prettify_labels()
 
     .makelab <- function(lab) {
-        paste(
+        .prefix <- c(
             "Log ratio of posterior estimates for",
-            gsub("^P", "p", model_dict[lab]),
-            "in all participants vs first-time-participants"
-        )
+            "Ratio of posterior estimates for"
+        )[log==TRUE+1]
+        paste( .prefix, gsub("^P", "p", model_dict[lab]),
+            "\nin all participants vs first-time-participants")
     }
 
     ggplot(dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = SEX_LAB, color = SEX_LAB)) +
-        geom_hline(aes(yintercept = 0), linetype = "dashed") +
+        geom_hline(yintercept = c(1,0)[log+1], linetype = "dashed") +
         geom_ribbon(alpha = .2, color = NA) +
         geom_line() +
-        facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
+        facet_grid(ROUND_LAB ~ LOC_LAB, 
+            scales='free_y',
+            labeller = labeller(ROUND_LAB = round_labs)) +
+        scale_color_manual(values = palettes$sex) +
+        scale_fill_manual(values = palettes$sex) +
+        scale_x_continuous(expand = c(0, 0)) +
+        theme_default() +
+        my_labs(y = .makelab(label), x = "") +
+        NULL
+}
+
+plot.diff.ftpvsnon <- function(DT, label) {
+
+    dplot <- subset(DT, MODEL == label) |>
+        prettify_labels()
+
+    .makelab <- function(lab) {
+        paste("Posterior difference in", gsub("^P", "p", model_dict[lab]),
+            "\nin all participants vs first-time-participants")
+    }
+
+    ggplot(dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = SEX_LAB, color = SEX_LAB)) +
+        geom_hline(yintercept = 0, linetype = "dashed") +
+        geom_ribbon(alpha = .2, color = NA) +
+        geom_line() +
+        facet_grid(ROUND_LAB ~ LOC_LAB, 
+            scales='free_y',
+            labeller = labeller(ROUND_LAB = round_labs)) +
         scale_color_manual(values = palettes$sex) +
         scale_fill_manual(values = palettes$sex) +
         scale_x_continuous(expand = c(0, 0)) +

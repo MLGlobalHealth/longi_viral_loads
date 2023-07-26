@@ -115,7 +115,6 @@ dfiles_rda[, c("VL", "FTP", "JOB") := fetch.args.from.suffix(.BY), by = IDX]
 dfiles_rda[, IDX := NULL]
 stopifnot(dfiles_rda[, .N, by = "F"][, all(N == 2)])
 
-
 # by round and participant type
 env_list <- store.rda.environments.in.list.by.round.ftpstatus(dfiles_rda)
 
@@ -146,14 +145,55 @@ if (make_plots) {
     rm(round)
 }
 
+# particular focus on suppression among HIV positivss
+if(0)   # To delte?
+{
+    x <- as.character(16:19)
+    tmp <- lapply(x, rbind.ftpstatus.datatables.by.round, DTname='nsinf.by.age') 
+    names(tmp) <- x
+    dplot <- rbindlist(tmp, idcol = "ROUND", use.names = TRUE) |>
+        set(j = c("SEX", "LOC", "Var2", "IL", "IU", "STAT"), value=NULL)
+    prettify_labels(dplot)
+
+    raw <- lapply(x, rbind.ftpstatus.datatables.by.round, DTname='DT') |>
+        rbindlist() |>
+        prettify_labels()
+
+    p1 <- ggplot(dplot, aes(x=AGE_LABEL, y=M, ymin=CL, ymax=CU, fill=FTP_LAB) ) + 
+        geom_line() +
+        geom_ribbon(alpha=.3) +
+        theme_default() +
+        scale_x_continuous(expand=c(0,0)) + 
+        scale_y_percentage +  
+        scale_color_manual(values=palettes$ftp) +
+        scale_fill_manual(values=palettes$ftp) +
+        facet_grid(LOC_LAB + SEX_LAB ~ ROUND_LAB) +
+        my_labs(y="Prevalence of suppression among HIV positives") +
+        NULL
+
+    raw$FTP_LAB |> unique()
+
+    p2 <- raw |>
+        subset(ROUND == 19 & LOC_LABEL == 'fishing' & SEX_LABEL == "M") |>
+        ggplot(aes(x=AGE_LABEL, y=1 - VLNS_N/HIV_N, color=FTP_LAB, size=HIV_N)) + 
+            # geom_point() +
+            geom_label(aes(label=HIV_N)) +
+            scale_color_manual(values=palettes$ftp) +
+            my_labs() +
+            theme_default() + 
+            NULL
+    require(patchwork) 
+    p1 + p2
+}
+
 ##################################################
 catn("=== Get posterior draws from rds files ===")
 ##################################################
 
 args2 <- copy(args)
 args2$only.firstparticipants <- !args$only.firstparticipants
-files1 <- list.files.from.output.directory(".rds", args = args, rounds = 16:19)
-files2 <- list.files.from.output.directory(".rds", args = args2, rounds = 16:19)
+files1 <- list.files.from.output.directory("round1[0-9].rds|220729.rds", args = args, rounds = 16:19)
+files2 <- list.files.from.output.directory("round1[0-9].rds|220729.rds", args = args2, rounds = 16:19)
 
 dfiles_rds <- data.table(F = c(files1, files2))
 dfiles_rds[, `:=`(
@@ -166,6 +206,7 @@ dfiles_rds[, `:=`(
 dfiles_rds[, c("VL", "FTP", "JOB") := fetch.args.from.suffix(.BY), by = IDX]
 dfiles_rds[, IDX := NULL]
 stopifnot(dfiles_rds[, .N, by = "F"][, all(N == 2)])
+stopifnot(dfiles_rds[, .N, by = "MODEL"][, all(N == 8)])
 
 catn("Load all previous results and plot") 
 #_________________________________________ 
@@ -650,6 +691,7 @@ catn("Get log-ratio for suppression among FTP and non-FTP")
 # Report the ratio (or log-ratio) by 5 years age group, and whether any significantly > 1 (or > 0).
 
 filename_rds <- file.path(out.dir.tables, "posterior_ftp_logratio_quantiles.rds")
+filename_rds2 <- file.path(out.dir.tables, "posterior_ftp_difference_quantiles.rds")
 
 # lo(parts) - log(ftp)
 if( file.exists(filename_rds) & !overwrite ){
@@ -673,19 +715,57 @@ if( file.exists(filename_rds) & !overwrite ){
     saveRDS(object= dlogratio, filename_rds)
 }
 
+if( file.exists(filename_rds2) & !overwrite ){
+    d_diff <- readRDS(filename_rds2)
+} else {
+    d_diff <- dfiles_rds[,
+        {
+            stopifnot(.N == 2)
+            paths <- file.path(D, F)
+            idx.all <- which(FTP == FALSE)
+            idx.ftp <- which(FTP == TRUE)
+            cat(paths[idx.all], "\n")
+            get.posterior.diff.ftp(
+                readRDS(paths[idx.all]),
+                readRDS(paths[idx.ftp])
+            )
+        },
+        by = c("MODEL", "ROUND")
+    ]
+    saveRDS(object= d_diff, filename_rds2)
+}
+
+
 if(make_plots){
     # only need to change sligtly, nice! 
-    .w <- 10; .h <- 12
+    .w <- 10; .h <- 12; .out <- out.dir.figures
 
     MODELS <- c("run-gp-prevl", "run-gp-supp-hiv", "run-gp-supp-pop")
-    p_logp <- lapply(MODELS, plot.logratio.ftpvsnon, DT=dlogratio)
+    cols <- c("M", "CL", "CU", "IL", 'IU')
+    dratio <- copy(dlogratio)
+    dratio[, (cols) := lapply(.SD, exp), .SDcols=cols]
+
+    p_diff <- lapply(MODELS, plot.diff.ftpvsnon, DT=d_diff)
+    p_logp <- lapply(MODELS, plot.logratio.ftpvsnon, DT=dlogratio, log=TRUE)
+    names(p_logp) <- names(p_diff) <- MODELS
 
     .fnm <- function(lab)
         paste("logratio", lab, "ftpvsnnon_byroundcomm.pdf", sep = "_")
+    with(p_logp, {
+        ggsave2(p=`run-gp-prevl`, file=.fnm("prevl"), LALA=.out, .w, .h )
+        ggsave2(p=`run-gp-supp-hiv`, file=.fnm("suppofhiv"), LALA=.out, .w, .h )
+        ggsave2(p= `run-gp-supp-hiv`, file=.fnm("suppofpop"), LALA=.out, .w, .h )
+    })
 
-    ggsave2( p = p_logp[[1]], file = .fnm("prevl"), LALA = out.dir.figures, .w, .h )
-    ggsave2( p = p_logp[[2]], file = .fnm("suppofhiv"), LALA = out.dir.figures, .w, .h )
-    ggsave2( p = p_logp[[3]], file = .fnm("suppofpop"), LALA = out.dir.figures, .w, .h )
+    .fnm2 <- function(lab)
+        paste("diff", lab, "ftpvsnnon_byroundcomm.pdf", sep = "_")
+    with(p_diff, {
+        ggsave2(p=`run-gp-prevl`, file=.fnm2("prevl"), LALA=.out, .w, .h )
+        ggsave2(p=`run-gp-supp-hiv`, file=.fnm2("suppofhiv"), LALA=.out, .w, .h )
+        ggsave2(p=`run-gp-supp-hiv`, file=.fnm2("suppofpop"), LALA=.out, .w, .h )
+    })
+
+    rm(.out, .w, .h)
 }
 
 if(make_tables & 0){ # age groups for which CrI does not include 0 
