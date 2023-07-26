@@ -176,6 +176,7 @@ check_rhat <- function(summ) {
     tmp <- subset(summ, select=c("rn", "Rhat"))
 
     tmp[, warning := is.infinite(Rhat) | is.na(Rhat) | is.nan(Rhat)]
+    anywarnings <- FALSE
     tmp[ warning == TRUE, if(.N == 0){
         cat("Rhat looks reasonable for all parameters\n")
     }else{
