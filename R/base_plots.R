@@ -248,6 +248,12 @@ palettes <- list(
     # minimal3 = c("#FAE48BFF","#FB6467FF"),
     minimal3 = c("purple","darkgreen"),
 
+
+    ftp = c(
+        `All participants`="darkred",
+        `First-time participants`="orange"
+    ),
+
     NULL
 )
 

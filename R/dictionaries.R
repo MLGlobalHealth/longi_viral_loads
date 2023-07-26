@@ -131,16 +131,18 @@ round_dictionary <- c(
 
 drounds <- data.table(
     ROUND = 16:19,
-    LABS = paste0("Round ", 16:19, ":\n"),
+    LABS = paste0("Round ", 16:19, "\n"),
     START = c("07/2013", "02/2015", "10/2016", "06/2018"),
-    END = c("01/2015", "09/2016", "05/2018", "05/2019")
+    END = c("01/2015", "09/2016", "05/2018", "05/2019"),
+    START2 = c("Jul 2013", "Feb 2015", "Oct 2016", "Jun 2018"),
+    END2 = c("Jan 2015", "Sep 2016", "May 2018", "May 2019")
 )
-drounds[, LABS := paste0(LABS, START, " to ", END)]
-
-round_labs <- rep(drounds$LABS, 2)
-names(round_labs) <- with(drounds, c(ROUND, paste("Round", ROUND)))
-
-round_labs2 <- gsub("\n", " ", round_labs)
+drounds[, LABS := paste0(LABS, START2, " to ", END2)]
+with(drounds, {
+    round_labs <<- rep(LABS, 2)
+    names(round_labs) <<- c(ROUND, paste("Round", ROUND))
+    round_labs2 <<- gsub("\n", ":  ", round_labs)
+})
 
 dall_dictionaries <- list(
     TEST_YEAR_AGO = c(
