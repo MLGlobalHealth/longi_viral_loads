@@ -1,7 +1,9 @@
 #!/bin/Rscript
 
+self_relative_path <- "scripts/VL_jointpostprocessing.R"
+
 ########################
-cat("\nStart of: VL_jointpostprocessing.R\n")
+cat("\nStart of:", self_relative_path,"\n")
 ########################
 
 
@@ -28,7 +30,6 @@ cat("\nStart of: VL_jointpostprocessing.R\n")
 # NOTE: contributions by age/group do not make sense in the "among hiv", if we merge by dcens.
 # instead, we should be merging by the N of hiv+
 
-self_relative_path <- "scripts/VL_jointpostprocessing.R"
 if( interactive() ){
     gitdir <- here::here()
 }else{
@@ -51,10 +52,8 @@ opts_vec <- c(
     "detectable.viral.load",
     "out.dir.prefix",
     "out.dir.exact",
-    "indir",
     "round",
-    "jobname",
-    "only.firstparticipants"
+    "jobname"
 )
 args <- args[names(args) %in% opts_vec]
 print(args)
@@ -92,7 +91,9 @@ with(args, {
 stopifnot("out.dir must end in _joint"= out.dir %like% '_joint$')
 indir.ftp <- gsub( '_joint', "_firstpart", out.dir)
 indir.all <- gsub( '_joint', "", out.dir)
-stopifnot("did not find 2 directories necessary to run joint analysis"=all(dir.exists(c(indir.ftp, indir.all))))
+stopifnot(
+    "did not find 2 directories necessary to run joint analysis"=all(dir.exists(c(indir.ftp, indir.all)))
+)
 out.dir.figures <- file.path(out.dir, "figures")
 out.dir.tables <- file.path(out.dir, "tables")
 dir.create(out.dir.tables) |> suppressWarnings()

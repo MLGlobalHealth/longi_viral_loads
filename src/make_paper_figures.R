@@ -1,9 +1,10 @@
 #!/bin/Rscript
 
-########################
-cat("\nStart of: VL_jointpostprocessing.R\n")
-########################
+self_relative_path <- "src/make_paper_figures.R"
 
+########################
+cat("\nStart of: ",self_relative_path,"\n")
+########################
 
 ################
 # DEPENDENCIES #
@@ -27,7 +28,6 @@ cat("\nStart of: VL_jointpostprocessing.R\n")
 #    PATHS     #
 ################
 
-self_relative_path <- "src/make_paper_figures.R"
 if(interactive()){
     gitdir <- here::here()
 }else{
@@ -55,6 +55,7 @@ opts_vec <- c(
     "only.firstparticipants"
 )
 args <- args[names(args) %in% opts_vec]
+print(args)
 {
     source(file.path(gitdir.functions, "plotting_main_figures.R"))
     source(file.path(gitdir.functions, "plotting_functions.R"))
