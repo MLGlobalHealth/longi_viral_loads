@@ -795,7 +795,7 @@ plot.empirical.prob.of.suppression.with.age <- function(DT=dcens)
     )
 }
 
-plot.rakai.map <- function(.size=3){
+plot.rakai.map <- function(.size=3, labs=FALSE){
 
     require(ggmap)
     require(maps)
@@ -841,6 +841,10 @@ plot.rakai.map <- function(.size=3){
         zoom = 11
     ) -> map
 
+    .breaks <- list(NULL, waiver)[[labs + 1]]
+    .xlab <- list(NULL, "Longitude (°E)")[[labs + 1]]
+    .ylab <- list(NULL, "Latitude (°N)")[[labs + 1]]
+
     prettify_labels(comms)
     p <- ggmap(map) + 
         geom_point(data=comms, 
@@ -850,8 +854,10 @@ plot.rakai.map <- function(.size=3){
             ), size=.size) +
         scale_shape_manual(values=c('inland'=21, 'fishing'=25, "Inland"=21, "Fishing"=25)) +
         scale_color_manual(values=c('black', 'black')) +
-        scale_fill_manual(values=palettes$comm) + 
-        my_labs(color=NULL, fill=NULL, shape=NULL, x="Longitude (°E)", y="Latitude(°N)") +
+        scale_fill_manual(values=palettes$comm) +
+        scale_y_continuous(breaks = .breaks, expand=c(0,0)) +
+        scale_x_continuous(breaks = .breaks, expand=c(0,0)) +
+        my_labs(color=NULL, fill=NULL, shape=NULL, x=.xlab, y=.ylab) +
         theme(
             legend.position = c(1,1),
             legend.justification = c(1,1),
@@ -1198,7 +1204,7 @@ plot_suppandcontrib <- function(
     return(p)
 }
 
-plot.uganda.map <- function(zoom="medium"){
+plot.uganda.map <- function(zoom="medium", maptype='toner-lite'){
 
     require(ggmap)
 
@@ -1208,7 +1214,7 @@ plot.uganda.map <- function(zoom="medium"){
     box_uganda <- if( zoom == "far" ){
         c(top=6.158199, left=24.681059, bottom=- 6.314563, right=42.125359)
     }else if( zoom == "medium" ){
-        c(top=5, left=28, bottom= -5, right=39)
+        c(top=1.5, left=29, bottom= -8, right=40)
     }else if( zoom == "close" ){
         c(top=NA_real_, left=NA_real_, bottom=NA_real_, right=NA_real_)
     }
@@ -1223,7 +1229,7 @@ plot.uganda.map <- function(zoom="medium"){
     # plot
     uganda <- get_stamenmap( 
         bbox=box_uganda, 
-        maptype = "toner-hybrid",
+        maptype = maptype,
         source = "stamen",
         zoom = 6,
     )
@@ -1231,7 +1237,7 @@ plot.uganda.map <- function(zoom="medium"){
         geom_polygon(data = map_data("lakes"), aes(x = long, y = lat, group = group), fill = "blue", alpha = 0.2) +
         # geom_polygon(data=comms, aes(x=longitude, y=latitude), color='red') +
         geom_rect(xmin=box$left, xmax=box$right, ymin=box$bottom, ymax=box$top, fill=NA, color='red') + 
-        theme_void()
+        theme_classic()
 }
 
 plot.comparison.ftp.nonftp.and.all <- function(env=env_list, DT=djoint, model="run-gp-supp-hiv", round=19, y_upper_limit=NA){

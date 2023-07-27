@@ -22,11 +22,13 @@ theme_debug <- function(...) {
     theme(
         legend.background = element_rect(fill =  "deepskyblue2"),
         plot.background = element_rect(fill = "lemonchiffon", colour = "black", size = 2),
-        legend.key = element_rect(fill = "purple"),
+        panel.background = element_rect(fill = "purple", colour = "red", size = 2),
+        legend.key = element_rect(fill = "orange"),
         panel.border = element_rect(colour = "black", fill = NA),
         ...
     )
 }
+t_nomargin <- theme(plot.margin = unit(c(0,0,0,0), "cm"))
 
 
 theme_set( theme_default() )
