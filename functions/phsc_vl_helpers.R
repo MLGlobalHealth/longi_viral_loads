@@ -559,7 +559,7 @@ vl.vlprops.by.comm.gender.loc <- function(DT, write.csv = FALSE) {
     DT[COMM_NUM == 22, COMM_NUM := 1]
 
     # get.community types
-    dcomm <- .get.dcomm()
+    dcomm <- get.dcomm()
 
     # calculate HIV prevalence and proportion not suppressed of HIV+ by community and gender
     .f <- function(x, y) {

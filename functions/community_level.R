@@ -97,7 +97,7 @@ get.glm.data <- function(DT)
 {
 
     # get community data
-    dcomm <- .get.dcomm()
+    dcomm <- get.dcomm()
 
     DT <- copy(dall)
     DT <- .preprocess.ds.oli(DT)
