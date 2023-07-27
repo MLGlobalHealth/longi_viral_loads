@@ -62,6 +62,7 @@ cat > $OUTDIR/bash-$JOBNAME-joint_postprocessing.pbs <<EOF
 #PBS -l walltime=24:00:00
 #PBS -l select=1:ncpus=10:ompthreads=1:mem=480gb
 #PBS -j oe
+#PBS -N p-$JOBNAME
 module load anaconda3/personal
 source activate $ENVNAME
 
