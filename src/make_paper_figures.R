@@ -20,14 +20,21 @@ cat("\nStart of: VL_jointpostprocessing.R\n")
     library(here)
     library(optparse)
     library(patchwork)
-}
+} |> suppressPackageStartupMessages()
 
 
 ################
 #    PATHS     #
 ################
 
-gitdir <- here::here()
+self_relative_path <- "src/make_paper_figures.R"
+if(interactive()){
+    gitdir <- here::here()
+}else{
+    cmd <- commandArgs()
+    cmd <- cmd[cmd %like% "file"]
+    gitdir <- gsub(paste0("--file=(.*)/", self_relative_path), "\\1", cmd)
+}
 source(file.path(gitdir, "R/paths.R"))
 
 file.exists(
@@ -43,7 +50,6 @@ opts_vec <- c(
     "detectable.viral.load",
     "out.dir.prefix",
     "out.dir.exact",
-    "indir",
     "round",
     "jobname",
     "only.firstparticipants"

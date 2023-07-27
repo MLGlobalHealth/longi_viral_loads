@@ -19,7 +19,7 @@ cat("\nStart of: VL_jointpostprocessing.R\n")
     library(here)
     library(optparse)
     library(posterior)
-}
+} |> suppressPackageStartupMessages()
 
 ################
 #    PATHS     #
@@ -28,7 +28,14 @@ cat("\nStart of: VL_jointpostprocessing.R\n")
 # NOTE: contributions by age/group do not make sense in the "among hiv", if we merge by dcens.
 # instead, we should be merging by the N of hiv+
 
-gitdir <- here::here()
+self_relative_path <- "scripts/VL_jointpostprocessing.R"
+if( interactive() ){
+    gitdir <- here::here()
+}else{
+    cmd <- commandArgs()
+    cmd <- cmd[cmd %like% "file"]
+    gitdir <- gsub(paste0(".*--file=(.*)/", self_relative_path, "$"), "\\1", cmd)
+}
 source(file.path(gitdir, "R/paths.R"))
 
 file.exists(
