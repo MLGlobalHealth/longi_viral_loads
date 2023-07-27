@@ -66,10 +66,14 @@ print(args)
     naturemed_reqs()
 }
 
+# testing
+if(interactive()){
+    args$out.dir.exact <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/vl_1000_joint"
+}
+
 overwrite <- !interactive()
 make_plots <- TRUE
 make_tables <- TRUE
-
 make_paper_numbers <- TRUE
 if (make_paper_numbers) {
     ppr_numbers <- list()
@@ -79,7 +83,7 @@ with(args, {
     VL_DETECTABLE <<- detectable.viral.load
     VIREMIC_VIRAL_LOAD <<- viremic.viral.load
     # need to check that we have both samples for "" and "_firstpart"
-    out.dir <<- gsub(out.dir.exact, "_firstpart$", "_joint")
+    out.dir <<- gsub("_firstpart$", "_joint", out.dir.exact)
     if(is.na(out.dir.exact)){
         out.dir <<- file.path(
             out.dir.prefix, 

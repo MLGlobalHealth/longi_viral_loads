@@ -59,20 +59,15 @@ args <- args[names(args) %in% opts_vec]
 print(args)
 # testing
 if(interactive()){
-    args$jobname <- 'cmdstan_vl_1000_firstpart'
+    args$jobname <- 'vl_1000_firstpart'
 }
-
-.sfp <- function(x){
-    source(file.path(gitdir.functions, x))
-}
-.sfp("plotting_main_figures.R")
-.sfp("postprocessing_helpers.R")
-.sfp("postprocessing_tables.R")
-.sfp("phsc_vl_helpers.R")
-.sfp("paper_statements.R")
+source(file.path(gitdir.functions, "plotting_main_figures.R"))
+source(file.path(gitdir.functions, "postprocessing_helpers.R"))
+source(file.path(gitdir.functions, "postprocessing_tables.R"))
+source(file.path(gitdir.functions, "phsc_vl_helpers.R"))
+source(file.path(gitdir.functions, "paper_statements.R"))
 naturemed_reqs()
 
-# Set global variables
 overwrite <- !interactive()
 make_plots <- TRUE
 make_tables <- TRUE
@@ -81,7 +76,7 @@ with(args, {
     VL_DETECTABLE <<- detectable.viral.load
     VIREMIC_VIRAL_LOAD <<- viremic.viral.load
     # need to check that we have both samples for "" and "_firstpart"
-    out.dir <<- gsub(out.dir.exact, "_firstpart$", "_joint")
+    out.dir <<- gsub("_firstpart$", "_joint", out.dir.exact)
     if(is.na(out.dir.exact)){
         out.dir <<- file.path(
             out.dir.prefix, 
@@ -98,7 +93,6 @@ out.dir.figures <- file.path(out.dir, "figures")
 out.dir.tables <- file.path(out.dir, "tables")
 dir.create(out.dir.tables) |> suppressWarnings()
 dir.create(out.dir.figures) |> suppressWarnings()
-
 
 ####################
 catn("=== MAIN ===")
@@ -126,7 +120,6 @@ catn("=== Compare model fits among FTP and ALL ===")
 
 files1 <- list.files.from.output.directory(".rda", dir=indir.ftp, rounds = 16:19)
 files2 <- list.files.from.output.directory(".rda", dir=indir.all,  rounds = 16:19)
-
 # get paths of models
 dfiles_rda <- data.table(F = c(files1, files2))
 dfiles_rda[, `:=`(
@@ -171,7 +164,7 @@ if (make_plots) {
 }
 
 # particular focus on suppression among HIV positivss
-if (0) {
+if (make_plots) {
     x <- as.character(c(16, 19))
     tmp <- lapply(x, rbind.ftpstatus.datatables.by.round, DTname = "nsinf.by.age")
     names(tmp) <- x
@@ -207,6 +200,12 @@ if (0) {
 
     require(patchwork)
     p1 + p2
+
+    # if(MODEL == 'run-gp-supp-hiv'){
+    #     geom_texthline(
+    #         yintercept=.95^3, color='red', linetype='dashed', 
+    #         label="UNAIDS 95-95-95", vjust=0.5, hjust=1) 
+    # }
 
     p <- ggplot(dplot, aes(x = AGE_LABEL, y = M, linetype = FTP_LAB, color = SEX_LAB)) +
         geom_line() +
