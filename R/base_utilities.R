@@ -66,7 +66,7 @@ savefile <- function(data, filename, overwrite=FALSE)
 }
 
 
-list.files.from.output.directory <- function(pattern, args=args, dir=NA_character_, rounds=NA_integer_ )
+list.files.from.output.directory <- function(pattern, args=args, dir=NA_character_, rounds=NULL )
 {
     # extracts files from the output directory specified by args$vl and args$jobname
 
@@ -78,7 +78,7 @@ list.files.from.output.directory <- function(pattern, args=args, dir=NA_characte
     files <- list.files( dir, pattern=pattern, full.names = TRUE, recursive = TRUE)
     
     # subset to file containing roundnames in their basename 
-    if(! is.na(rounds) )
+    if(! is.null(rounds) )
     {
         labels <- paste0('round', rounds) |> paste(collapse = '|')
         files <- files[ basename(files) %like% labels ]
