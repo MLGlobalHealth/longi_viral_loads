@@ -17,6 +17,18 @@ theme_default <- function(...) {
         ...
     )
 }
+
+theme_debug <- function(...) {
+    theme(
+        legend.background = element_rect(fill =  "deepskyblue2"),
+        plot.background = element_rect(fill = "lemonchiffon", colour = "black", size = 2),
+        legend.key = element_rect(fill = "purple"),
+        panel.border = element_rect(colour = "black", fill = NA),
+        ...
+    )
+}
+
+
 theme_set( theme_default() )
 
 
