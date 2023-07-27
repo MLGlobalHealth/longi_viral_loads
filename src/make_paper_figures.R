@@ -206,19 +206,26 @@ catn("=== FIGURE 2 ===")
 
 # don't really like it atm 
 
-filename_rds <- file.path(out.dir.tables, "fullpop_posteriorquantiles_by_agesexround.rds")
-djoint <- readRDS(filename_rds)
+djoint <- {
+    file.path(out.dir.tables, "fullpop_posteriorquantiles_by_agesexround.rds") |>
+    readRDS()
+}
 fig2a <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-hiv")
 tmp <- paper_statements_suppression_above_959595(djoint)
 
-filename_rds  <- file.path(out.dir.figures, "posterior_suppressionincrease_vsround16.rds")
-tmp <- readRDS(filename_rds)
-fig2b <- plot.relative.suppression.vs.round16.ratio(tmp) 
+fig2b <- {
+    file.path(out.dir.figures, "posterior_suppressionincrease_vsround16.rds") |>
+    readRDS()
+} |> plot.relative.suppression.vs.round16.ratio() 
 
 filename <- paste0('main_figure_changesinsuppression.pdf')
 ggsave_nature(p=fig1, filename=filename, LALA=out.dir.figures, w=21, h=16)
 
 # fig2b
+
+fig2 <- plot.main.suppression.among.plhiv(hist=TRUE, unaids=TRUE, rev=TRUE)
+filename <- paste0('main_figure_suppression_plhiv_r1619.pdf')
+ggsave_nature(p=fig2, filename=filename, LALA=out.dir.figures, w=16, h=14)
 
 ########################
 catn(" FIGURE for KATE")

@@ -960,14 +960,14 @@ plot_2yaxis_hist_lines <- function(DThist, DTline, sec_name="Contribution to HIV
 plot_prevalenceandcontrid <- function(
     DTprev,
     DTcontrib,
-    sec_name="Contribution to HIV prevalence",
+    sec_name="Contribution to HIV prevalence in age group",
     legend.key.size=unit(0.5, 'cm'),
     sec_axis_scale = NA_real_,
     extra_fig = NULL,
     CrI=TRUE,
     slides=FALSE){
 
-    ALPHA = .5; DODGE = 1
+    ALPHA = .5; DODGE = .5
 
     n_loc <- DTprev[, uniqueN(LOC)]
     n_sex <- DTprev[, uniqueN(SEX)]
@@ -980,60 +980,82 @@ plot_prevalenceandcontrid <- function(
 
     .plot.facet <- function(DT){
 
+        naturemed_reqs()
+
         # if empty data table do not plot:
         if(nrow(DT) == 0) return(NULL)
 
-        naturemed_reqs()
-
+        # plot settings
+        .loc_lab <- unique(DT$LOC_LAB)
+        .sex_lab <- unique(DT$SEX_LAB)
+        .ymax <- c(.38, .65)[.loc_lab %like% "Fishing" + 1]
         .sec_axis_scale <- fcoalesce( 
             sec_axis_scale,
-            DT[, max(CU[LABEL == 'Contribution to HIV prevalence']) / max(CU[LABEL == 'HIV prevalence'])] 
+            0.035 /.ymax
         )
+        .M.intcode <- as.integer(.sex_lab == "Male") + 1
 
-        cat(.sec_axis_scale, "\n")
-
+        # rescale 2nd y-axis
         DT[ LABEL == "Contribution to HIV prevalence", c("M", "CL", "CU") := {
             stopifnot("probably wrong label"=.N > 0)
              .(M / .sec_axis_scale, CL / .sec_axis_scale, CU / .sec_axis_scale )
         }]
 
+        # relabel
         tmp_labs <- c(
-            `HIV prevalence`="HIV prevalence",
+            `HIV prevalence`="HIV prevalence in age group",
             `Contribution to HIV prevalence`= sec_name
         )
         DT[, LABEL2 := tmp_labs[ LABEL ] ]
         DT[, LABEL2 := factor(LABEL2, levels=tmp_labs, ordered=TRUE)]
+        DTline <- subset(DT, LABEL == "Contribution to HIV prevalence")
+        DThist <- subset(DT, LABEL == "HIV prevalence")
+        .breaks <- c(unique(DThist$LABEL2), unique(DTline$LABEL2))
+        # return(DThist[,range(M)])
 
-        # I would probably try "Fishing communities with high HIV prevalence", "Inland communities with typical/more moderate HIV prevalence"
 
-        facet_formula <- if(n_loc == 1){
+        .facet_formula <- if(n_loc == 1){
             as.formula(LOC_LAB ~ SEX_LAB)
         }else{
-            as.formula(SEX_LAB ~ LOC_LAB)
+            as.formula(LOC_LAB ~ SEX_LAB)
         }
         
         # rescale 2nd data frame for the secondary axis
-        ggplot(DT, aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=LABEL2)) +
-            geom_col(alpha=ALPHA, color='grey80', linewidth=.2 , position=position_dodge(width = DODGE))+
-        { if(CrI){ geom_linerange(position=position_dodge(width = DODGE), linewidth=.2) } else {NULL} } +
+        ggplot(DT, aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=LABEL2, color=LABEL2)) +
+            geom_line( data=DTline) + 
+            geom_col(
+                data=DThist, 
+                alpha=ALPHA, color=NA,
+                position=position_dodge(width = DODGE)
+            ) + { 
+                if(CrI){ geom_linerange(position=position_dodge(width=DODGE), linewidth = .2) } else {NULL}
+            } +
             scale_y_continuous(
                 labels = scales::label_percent(), 
-                limits=c(0, .3),
+                limits=c(0, c(.38, .68)[.loc_lab %like% 'Fishing' + 1] ),
                 expand = expansion(mult = c(0, 0)),
                 sec.axis = sec_axis(
                     trans= ~ .*.sec_axis_scale,
                     labels = scales::label_percent(),
-                    name=sec_name) 
+                    name=list(NULL, sec_name)[[.M.intcode]] )
             ) +
             scale_x_continuous(expand = c(0,0), breaks= c(seq(15, 45, 5), 50)) + 
-            scale_fill_manual(values=palettes$minimal2)  +
-            scale_color_manual(values=palettes$minimal2)  +
-            facet_grid( facet_formula, labeller=labeller(LOC_LAB=community_dictionary$longest, SEX_LAB=sex_dictionary2) )  +
-            my_labs(y = "HIV prevalence by age", x="", color="", fill="") +
+            scale_fill_manual(values=rev(palettes$minimal2), breaks = .breaks)  +
+            scale_color_manual(values=rev(palettes$minimal2), breaks= .breaks)  +
+            facet_wrap( .facet_formula, 
+                labeller=labeller(LOC_LAB=community_dictionary$longest, SEX_LAB=sex_dictionary2, .multi_line=FALSE)
+            )  +
+            my_labs(
+                y = list("HIV prevalence by age", NULL)[[.M.intcode]], 
+                x=NULL, 
+                color="",
+                fill=""
+            ) +
             theme_default(
                 strip.placement = "outside",
                 legend.key.size=legend.key.size, 
-                legend.spacing.x = legend.key.size 
+                legend.spacing.x = legend.key.size,
+                plot.margin=margin(t=0,b=0,l=0,r=0, unit="cm")
             ) +
             REQS
     }
@@ -1052,6 +1074,7 @@ plot_prevalenceandcontrid <- function(
     )
     # remove facets in case they are not needed
     ps <- lapply(facets_dts, .plot.facet)
+
     ps <- ps[! sapply(ps, is.null)]
 
     if(length(ps) == 4){
@@ -1059,6 +1082,7 @@ plot_prevalenceandcontrid <- function(
             ps[[1]], ps[[2]],
             ps[[3]], ps[[4]],
             ncol=2, nrow=2, common.legend = TRUE, legend="bottom")
+        p
     }else{
         p <- ggarrange(
             ps[[2]] + theme(strip.text.y = element_blank(), axis.title.y.right = element_blank()),
@@ -1127,13 +1151,13 @@ plot_suppandcontrib <- function(
         facet_formula <- if(n_loc == 1){
             as.formula(LOC_LAB ~ SEX_LAB)
         }else{
-            as.formula(SEX_LAB ~ LOC_LAB)
+            as.formula(SEX_LAB + LOC_LAB ~ .)
         }
 
         # rescale 2nd data frame for the secondary axis
         ggplot(DT, aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=LABEL2)) +
-            geom_col(alpha=ALPHA, color='grey80', linewidth=.2 , position=position_dodge(width = DODGE))+
-            { if(CrI){ geom_linerange(position=position_dodge(width = DODGE), linewidth=.2) } else {NULL} } +
+            geom_col(alpha=ALPHA, color='grey80', position=position_dodge(width = DODGE))+
+            { if(CrI){ geom_linerange(position=position_dodge(width = DODGE)) } else {NULL} } +
             scale_y_continuous(
                 labels = scales::label_percent(), 
                 limits = c(0, c(.55, .77)[as.integer(CrI == TRUE) + 1] ),
@@ -1188,6 +1212,7 @@ plot_suppandcontrib <- function(
             ps[[1]], ps[[2]],
             ps[[3]], ps[[4]],
             ncol=2, nrow=2, common.legend = TRUE, legend="bottom")
+        p
     }else{
         .theme <- function(x){
             theme(
@@ -1204,13 +1229,15 @@ plot_suppandcontrib <- function(
     return(p)
 }
 
-plot.uganda.map <- function(zoom="medium", maptype='toner-lite'){
+plot.uganda.map <- function(zoom="medium", maptype='toner-lite', labs=TRUE){
 
     require(ggmap)
 
     stopifnot(zoom %in% c("far", "medium","close"))
 
-    # decide zoomed in we want the pic to be
+    .xlab <- list(NULL, "Longitude (°E)")[[labs + 1]]
+    .ylab <- list(NULL, "Latitude (°N)")[[labs + 1]]
+
     box_uganda <- if( zoom == "far" ){
         c(top=6.158199, left=24.681059, bottom=- 6.314563, right=42.125359)
     }else if( zoom == "medium" ){
@@ -1219,14 +1246,12 @@ plot.uganda.map <- function(zoom="medium", maptype='toner-lite'){
         c(top=NA_real_, left=NA_real_, bottom=NA_real_, right=NA_real_)
     }
 
-    # get bounding box for Rakai region
     env_gps <- new.env()
     load(path.community.gps, envir=env_gps)
     box <- with(env_gps$comgps, {
         data.table(top=max(latitude), left=min(longitude), bottom=min(latitude), right=max(longitude))
     }) 
     
-    # plot
     uganda <- get_stamenmap( 
         bbox=box_uganda, 
         maptype = maptype,
@@ -1234,10 +1259,11 @@ plot.uganda.map <- function(zoom="medium", maptype='toner-lite'){
         zoom = 6,
     )
     ggmap(uganda)  +
-        geom_polygon(data = map_data("lakes"), aes(x = long, y = lat, group = group), fill = "blue", alpha = 0.2) +
-        # geom_polygon(data=comms, aes(x=longitude, y=latitude), color='red') +
+        geom_polygon(data = map_data("lakes"), aes(x = long, y = lat, group = group), fill = "blue", alpha 
+= 0.2) +
         geom_rect(xmin=box$left, xmax=box$right, ymin=box$bottom, ymax=box$top, fill=NA, color='red') + 
-        theme_classic()
+        theme_classic() +
+        labs( x=.xlab ,y=.ylab)
 }
 
 plot.comparison.ftp.nonftp.and.all <- function(env=env_list, DT=djoint, model="run-gp-supp-hiv", round=19, y_upper_limit=NA){
@@ -1309,4 +1335,54 @@ plot.comparison.prevalence.fishinginland.oneround <- function(DT, model, round, 
         scale_y_continuous(labels=scales::label_percent(), limits=c(0,ylim), expand=c(0,0)) + 
         theme_default() +
         my_labs(y=model_dictionary[model])
+}
+
+plot.main.suppression.among.plhiv <- function(DT=djoint, hist=TRUE, unaids=FALSE, rev){
+
+    .ALPHA=.3; .HIST=TRUE; .LINEWIDTH=.2
+    dplot <- subset(DT, ROUND %in% c(16,19) & MODEL == 'run-gp-supp-hiv')
+    dplot <- prettify_labels(dplot)
+    if(rev){
+        dplot[, `:=` (M = 1-M, CL=1-CU, CU=1-CL)]
+    }
+
+    .main <- function(.hist=hist, .unaids=unaids){
+        .pd <- position_dodge(width=1)
+        .yint <- fifelse(rev, yes=1-.95^3, no=.95^3)
+        out <- list(
+            if(!hist){ geom_ribbon(alpha=.ALPHA, color=NA) },
+            if(!hist){ geom_line(linewidth = .LINEWIDTH) },
+            if(hist){ geom_col(position=.pd) },
+            if(hist){ geom_linerange(position=.pd, color='grey40') },
+            if(unaids) {
+                geomtextpath::geom_texthline(
+                    yintercept = .yint,
+                    color = 'purple', 
+                    linetype='dashed', 
+                    label = 'UNAIDS 95-95-95', 
+                    vjust=.5, hjust=fifelse(rev, yes=1, no=0),
+                    linewidth=.LINEWIDTH,   
+                    size=2.5
+                )
+            },
+            NULL
+        )
+        out[! sapply(out, is.null)]
+    }
+    out <- .main(TRUE)
+
+    ggplot(dplot, 
+        aes( x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=SEX_LAB, color=SEX_LAB)
+    ) + 
+        .main() +
+        facet_grid( 
+            LOC_LAB ~ ROUND_LAB, 
+            labeller=labeller(ROUND_LAB=round_labs, LOC_LAB=community_dictionary$longest),
+        ) +
+        scale_y_percentagef(.02) + 
+        scale_x_continuous(breaks=seq(15, 60, 5), expand=c(0,0)) + 
+        scale_color_manual(values=palettes$sex, breaks = sex_dictionary2) +
+        scale_fill_manual(values=palettes$sex, breaks= sex_dictionary2) +
+        theme_default() +
+        my_labs(y="Prevalence of viral suppression in PLHIV by age group") 
 }
