@@ -73,13 +73,13 @@ JOBNAME=$JOBNAME
 Rscript \$INDIR/scripts/VL_jointpostprocessing.R \\
     --viremic-viral-load $VL \\
     --jobname \$JOBNAME \\
-    --outdir \$OUTDIR\$JOBNAME-joint \\
+    --outdir \$OUTDIR/$JOBNAME_joint \\
     --indir \$OUTDIR
 
 Rscript \$INDIR/src/make_paper_figures.R \\
     --viremic-viral-load $VL \\
     --jobname \$JOBNAME \\
-    --outdir \$OUTDIR\$JOBNAME-joint \\
+    --outdir \$OUTDIR/\$JOBNAME_joint \\
     --indir \$OUTDIR
 
 EOF
