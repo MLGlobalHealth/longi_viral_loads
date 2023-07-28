@@ -153,8 +153,8 @@ plot.comparison.ftptype.colsex <- function(DT, ylab) {
         facet_grid(LOC_LAB ~ FTP_LAB, scales = "free_y") +
         scale_y_continuous(labels = scales::label_percent(), limits = c(0, NA), expand = c(0, 0)) +
         scale_x_continuous(limits = c(15, 50), expand = c(0, 0)) +
-        scale_color_manual(values = palettes$sex) +
-        scale_fill_manual(values = palettes$sex) +
+        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
         theme_default() +
         my_labs(y = ylab) +
         NULL
@@ -273,8 +273,8 @@ plot.fit.weighted.by.ftpstatus <- function(DT, label, include_baseline = FALSE) 
         } +
         geom_line() +
         facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
-        scale_color_manual(values = palettes$sex) +
-        scale_fill_manual(values = palettes$sex) +
+        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
         scale_y_percentage +
         scale_x_continuous(expand = c(0, 0), breaks = age_breaks) +
         theme_default() +
@@ -288,8 +288,8 @@ plot.estimated.number.viraemic.among.census.eligible <- function(DT) {
         facet_grid(ROUND_LAB ~ LOC_LAB, scales = "free_y") +
         theme_default() +
         scale_x_continuous(expand = c(0, 0), breaks = age_breaks) +
-        scale_color_manual(values = palettes$sex) +
-        scale_fill_manual(values = palettes$sex) +
+        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
         scale_y_continuous(expand = expansion(mult = c(0, .1))) +
         my_labs(y = "Estimated number of viraemic individuals among census eligible") +
         NULL
@@ -309,8 +309,8 @@ plot.estimated.contribution.viraemic.among.census.eligible <- function(DT) {
         facet_grid(ROUND_LAB ~ LOC_LAB) +
         scale_x_continuous(expand = c(0, 0), breaks = age_breaks) +
         theme_default() +
-        scale_color_manual(values = palettes$sex) +
-        scale_fill_manual(values = palettes$sex) +
+        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
         scale_y_percentage +
         my_labs(y = "Estimated proportion of viraemic individuals among census eligible") +
         NULL
@@ -412,8 +412,8 @@ plot.agesex.contributions.by.roundcomm <- function(DT, label, include_baseline =
         } +
         geom_line() +
         facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
-        scale_color_manual(values = palettes$sex) +
-        scale_fill_manual(values = palettes$sex) +
+        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
         scale_y_percentage +
         scale_x_continuous(expand = c(0, 0), breaks = age_breaks) +
         theme_default() +
@@ -447,8 +447,8 @@ plot.agesex.contributions.by.roundcomm2 <- function(DT, label, include_baseline 
         geom_col(position = position_dodge(width = .9)) +
         geom_errorbar(position = position_dodge(width = .9), width = .3) +
         facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
-        scale_color_manual(values = palettes$sex) +
-        scale_fill_manual(values = palettes$sex) +
+        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
         scale_y_continuous(expand = expansion(mult = c(0, 0.1)), labels = scales::percent) +
         theme_default() +
         my_labs(y = .makelab(label), x = "") +
@@ -475,8 +475,8 @@ plot.logratio.ftpvsnon <- function(DT, label, log=TRUE) {
         facet_grid(ROUND_LAB ~ LOC_LAB, 
             scales='free_y',
             labeller = labeller(ROUND_LAB = round_labs)) +
-        scale_color_manual(values = palettes$sex) +
-        scale_fill_manual(values = palettes$sex) +
+        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
         scale_x_continuous(expand = c(0, 0)) +
         theme_default() +
         my_labs(y = .makelab(label), x = "") +
@@ -500,8 +500,8 @@ plot.diff.ftpvsnon <- function(DT, label) {
         facet_grid(ROUND_LAB ~ LOC_LAB, 
             scales='free_y',
             labeller = labeller(ROUND_LAB = round_labs)) +
-        scale_color_manual(values = palettes$sex) +
-        scale_fill_manual(values = palettes$sex) +
+        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
         scale_x_continuous(expand = c(0, 0)) +
         theme_default() +
         my_labs(y = .makelab(label), x = "") +

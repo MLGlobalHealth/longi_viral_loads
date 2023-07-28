@@ -194,7 +194,7 @@ if(make.plots)
             geom_col(position=position_stack(reverse=FALSE), aes(group=interaction(SEX_LAB,FIRST_VISIT)), color='black') +
             facet_grid(ROUND_LAB ~ SEX_LAB) + 
             theme_default() + 
-            scale_fill_manual(values=palettes$sex) +
+            scale_fill_manual(values=palettes$sex, labels=sex_dictionary2) +
             scale_y_expand_lower0 +
             scale_alpha_continuous(breaks=c(0,1)) +
             guides(alpha=guide_legend(order=1)) + 
@@ -295,7 +295,7 @@ if(make.plots)
                 geom_linerange(position=position_dodge(width=.4)) +
                 facet_grid(ROUND_LAB ~ SEX_LAB*COMM) +
                 scale_y_percentage +
-                scale_color_manual(values=palettes$sex) +
+                scale_color_manual(values=palettes$sex, labels=sex_dictionary2) +
                 theme_default() +
                 theme(axis.text.x = element_text(angle=45, vjust = .5, hjust=.5) ) +
                 my_labs(y="Prevalence of suppression among HIV positive") +

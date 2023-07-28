@@ -147,7 +147,7 @@ plot_classes_by_sex_age <- function(DCLASS, DVL, filename = NULL) {
         coord_flip() +
         facet_wrap(~ .dict.class(class), scales = "free_x") +
         theme_bw() +
-        scale_fill_manual(values = palettes$sex) +
+        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
         theme(legend.position = "bottom") +
         labs(
             y = "count", x = "age at last measurement",
@@ -373,8 +373,8 @@ plot.pyramid.eligible.participants <- function(DT) {
         geom_text(data = dlabs[SEX == "M"], aes(x = XPOS, y = YPOS, hjust = -0.2, vjust = 2, label = P_LAB)) +
         coord_flip() +
         facet_grid(ROUND_LAB ~ FC_LAB, scales = "free_x", labeller = labeller(ROUND_LAB = round_labs)) +
-        scale_fill_manual(values = palettes$sex) +
-        scale_color_manual(values = palettes$sex) +
+        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
+        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
         scale_y_continuous(labels = abs, expand = c(0.05, 0)) +
         scale_x_continuous(expand = c(0, 0)) +
         theme_default() +
@@ -458,8 +458,8 @@ plot.agecontribution.fromN.stratby <- function(DT, var, by_cols = c('ROUND', 'FC
             }
         } +
         facet_grid(ROUND_LAB ~ FC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
-        scale_fill_manual(values=palettes$sex)+ 
-        scale_color_manual(values=palettes$sex)+ 
+        scale_fill_manual(values=palettes$sex, labels=sex_dictionary2)+ 
+        scale_color_manual(values=palettes$sex, labels=sex_dictionary2)+ 
         scale_y_continuous(labels=scales::label_percent(), expand=expansion(mult=c(0,.05))) +
         theme_default() +
         my_labs(y=.ylab, x=.xlab)
@@ -479,7 +479,7 @@ plot.smoothed.participation.rates <- function(DT)
     ggplot(dplot[LOESS_SPAN!=""], aes(x=AGEYRS, y=PARTRATE, linetype=LOESS_SPAN, color=SEX_LAB)) +
         geom_line() +
         geom_point(data=dplot[LOESS_SPAN==""], aes(linetype=NULL)) + 
-        scale_color_manual(values=palettes$sex) + 
+        scale_color_manual(values=palettes$sex, labels=sex_dictionary2) + 
         facet_grid(ROUND_LAB ~ FC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
         scale_y_percentage +
         theme_default() +
@@ -506,7 +506,7 @@ plot.contribution.to.census.eligible.population <- function(DT=ncen, var=ELIGIBL
         geom_line() +
         facet_grid( facet_formula , labeller=labeller(ROUND_LAB = round_labs)) + 
         scale_y_percentage + 
-        scale_color_manual(values = palettes$sex) +  
+        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +  
         theme_default() + 
         my_labs(
             y = "Contribution to census eligible population"

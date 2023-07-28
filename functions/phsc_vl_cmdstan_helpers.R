@@ -218,8 +218,8 @@ extract.stan.hyperparams.rho <- function(re, encoding){
         geom_line() +
         scale_x_continuous(expand = c(0, 0)) +
         scale_y_continuous(labels = scales:::percent, expand = c(0, 0)) +
-        scale_colour_manual(values = palettes$sex ) + 
-        scale_fill_manual(values = palettes$sex ) +
+        scale_colour_manual(values = palettes$sex, labels=sex_dictionary2 ) + 
+        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2 ) +
         # coord_cartesian(ylim = ylims, expand = FALSE) +
         facet_wrap(~LOC_LAB, ncol = 2) +
         theme_default() +

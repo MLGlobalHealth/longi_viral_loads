@@ -218,8 +218,8 @@ if (make_plots) {
         ) +
         scale_x_continuous(expand = c(0, 0), limits = c(15, 49), breaks = seq(15, 50, by = 5)) +
         scale_y_percentage +
-        scale_color_manual(values = palettes$sex) +
-        scale_fill_manual(values = palettes$sex) +
+        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
         my_labs(y = "Prevalence of suppression among HIV positives", fill = "Gender", linetype="") +
         NULL
     p2 <- p + geom_ribbon(alpha = .1, aes(ymin = CL, ymax = CU, fill = SEX_LAB), color = NA)

@@ -707,7 +707,7 @@ plot.empirical.prob.of.suppression.with.age <- function(DT=dcens)
                 geom_linerange() +
                 facet_grid( SEX_LAB + LOC_LABEL ~ ROUND, labeller = labeller(ROUND=round_labs, LOC_LABEL=community_dictionary[['short']])) + 
                 theme_default() +
-                scale_color_manual(values=palettes$sex) + 
+                scale_color_manual(values=palettes$sex, labels=sex_dictionary2) + 
                 scale_y_continuous(expand=c(0,0), labels=scales::percent ) +
                 labs(
                     x='Age', 
@@ -897,8 +897,8 @@ plot.relative.suppression.vs.round16.ratio <- function(DT= dincreasessupp)
             breaks = scales::trans_breaks(paste0("log2"), function(x) 2^x),
             labels = scales::trans_format(paste0("log2"), scales::label_math(expr = 2^.x))
         ) +
-        scale_color_manual(values=palettes$sex) + 
-        scale_fill_manual(values=palettes$sex) + 
+        scale_color_manual(values=palettes$sex, labels=sex_dictionary2) + 
+        scale_fill_manual(values=palettes$sex, labels=sex_dictionary2) + 
         theme_default() +
         my_labs(x='', y='Posterior ratio of viral suppression among PLHIV relative to Round 16') +
         NULL
@@ -919,8 +919,8 @@ plot.relative.suppression.vs.round16.diff <- function(DT = dincreasessupp_diff)
         scale_y_log10(
             breaks = scales::trans_breaks("log10", function(x) 10^x),
             labels = scales::trans_format("log10", scales::math_format(10^.x))) +
-        scale_color_manual(values=palettes$sex) + 
-        scale_fill_manual(values=palettes$sex) + 
+        scale_color_manual(values=palettes$sex, labels=sex_dictionary2) + 
+        scale_fill_manual(values=palettes$sex, labels=sex_dictionary2) + 
         theme_default() +
         my_labs(x='', y='Posterior ratio of viral suppression among PLHIV relative to Round 16') +
         NULL
@@ -949,8 +949,8 @@ plot_2yaxis_hist_lines <- function(DThist, DTline, sec_name="Contribution to HIV
                 name=sec_name) 
         ) +
         scale_x_continuous(expand = c(0,0), breaks= c(seq(15, 45, 5), 50)) + 
-        scale_fill_manual(values=palettes$sex) +  
-        scale_color_manual(values=palettes$sex) +  
+        scale_fill_manual(values=palettes$sex, labels=sex_dictionary2) +  
+        scale_color_manual(values=palettes$sex, labels=sex_dictionary2) +  
         facet_grid( . ~ LOC_LAB )  +
         my_labs(y = "HIV prevalence by age") +
         theme_default() +
