@@ -66,6 +66,8 @@ cat > $OUTDIR/bash-$JOBNAME-joint_postprocessing.pbs <<EOF
 module load anaconda3/personal
 source activate $ENVNAME
 
+set -euo pipefail
+
 INDIR=$INDIR
 OUTDIR=$OUTDIR
 JOBNAME=$JOBNAME
