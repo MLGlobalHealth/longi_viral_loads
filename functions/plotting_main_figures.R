@@ -852,7 +852,7 @@ plot.rakai.map <- function(.size=3, labs=FALSE){
                 shape=LOC_LAB, # size=POP_SIZE,
                 color=LOC_LAB, fill=LOC_LAB
             ), size=.size) +
-        scale_shape_manual(values=c('inland'=21, 'fishing'=25, "Inland"=21, "Fishing"=25)) +
+        scale_shape_manual(values=shapes$comm) +
         scale_color_manual(values=c('black', 'black')) +
         scale_fill_manual(values=palettes$comm) +
         scale_y_continuous(breaks = .breaks, expand=c(0,0)) +
@@ -927,7 +927,7 @@ plot.relative.suppression.vs.round16.diff <- function(DT = dincreasessupp_diff)
 }
 
 
-plot_2yaxis_hist_lines <- function(DThist, DTline, sec_name="Contribution to HIV prevalence"){
+plot_2yaxis_hist_lines <- function(DThist, DTline, sec_name="Contribution of each age group to PLHIV"){
 
     ALPHA = .5; DODGE = 1
     
@@ -960,7 +960,7 @@ plot_2yaxis_hist_lines <- function(DThist, DTline, sec_name="Contribution to HIV
 plot_prevalenceandcontrid <- function(
     DTprev,
     DTcontrib,
-    sec_name="Contribution to HIV prevalence in age group",
+    sec_name="Contribution of each age group to PLHIV",
     legend.key.size=unit(0.5, 'cm'),
     sec_axis_scale = NA_real_,
     extra_fig = NULL,
@@ -1337,9 +1337,10 @@ plot.comparison.prevalence.fishinginland.oneround <- function(DT, model, round, 
         my_labs(y=model_dictionary[model])
 }
 
-plot.main.suppression.among.plhiv <- function(DT=djoint, hist=TRUE, unaids=FALSE, rev){
+plot.main.suppression.among.plhiv <- function(DT=djoint, type='hist', unaids=FALSE, rev){
 
     .ALPHA=.3; .HIST=TRUE; .LINEWIDTH=.2
+    type <- match.arg(type, c("hist", "line", "point"))
     .ylab <- fifelse(rev, 
         yes= "Prevalence of viraemia in PLHIV by age group",
         no= "Prevalence of viral suppression in PLHIV by age group",
@@ -1354,10 +1355,12 @@ plot.main.suppression.among.plhiv <- function(DT=djoint, hist=TRUE, unaids=FALSE
         .pd <- position_dodge(width=1)
         .yint <- fifelse(rev, yes=1-.95^3, no=.95^3)
         out <- list(
-            if(!hist){ geom_ribbon(alpha=.ALPHA, color=NA) },
-            if(!hist){ geom_line(linewidth = .LINEWIDTH) },
-            if(hist){ geom_col(position=.pd) },
-            if(hist){ geom_linerange(position=.pd, color='grey40') },
+            if(type=='line'){ geom_ribbon(alpha=.ALPHA, color=NA) },
+            if(type=='line'){ geom_line(linewidth = .LINEWIDTH) },
+            if(type=='hist'){ geom_col(position=.pd) },
+            if(type %in% c('hist', 'point')){ geom_linerange(position=.pd, color='grey40') },
+            if(type=='point'){ geom_point() },
+            if(type=='point'){ scale_shape_manual(values=shapes$sex) },
             if(unaids) {
                 geomtextpath::geom_texthline(
                     yintercept = .yint,
@@ -1376,7 +1379,7 @@ plot.main.suppression.among.plhiv <- function(DT=djoint, hist=TRUE, unaids=FALSE
     out <- .main(TRUE)
 
     ggplot(dplot, 
-        aes( x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=SEX_LAB, color=SEX_LAB)
+        aes( x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=SEX_LAB, color=SEX_LAB, pch=SEX_LAB)
     ) + 
         .main() +
         facet_grid( 

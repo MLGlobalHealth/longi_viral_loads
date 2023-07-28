@@ -277,6 +277,23 @@ palettes <- list(
     NULL
 )
 
+shapes <- list(
+
+    sex = c(
+        `M` = 15, `Male` = 15, `Men` = 15,
+        `F` = 17, `Female` = 17, `Women` = 17
+    ),
+
+    comm = c(
+        `inland`=21, `Inland`=21,
+        `fishing`=25, `Fishing`=25
+    ),
+
+    NULL
+)
+
+
+
 
 ###################
 # prettify labels #
