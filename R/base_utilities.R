@@ -66,11 +66,14 @@ savefile <- function(data, filename, overwrite=FALSE)
 }
 
 
-list.files.from.output.directory <- function(pattern, args=args, indir=args$indir, vl=args$viremic.viral.load, jobname=args$jobname, rounds=NULL )
+list.files.from.output.directory <- function(pattern, args=args, dir=NA_character_, rounds=NULL )
 {
     # extracts files from the output directory specified by args$vl and args$jobname
 
-    dir <- file.path(indir, make.suffix(args) )
+    if(is.na(dir)){
+        dir <- file.path(indir, make.suffix(args) )
+    }
+
     # dir <- file.path(indir, paste0('vl_', vl))
     files <- list.files( dir, pattern=pattern, full.names = TRUE, recursive = TRUE)
     
@@ -236,12 +239,4 @@ fetch.args.from.suffix <- function(suffix, asDT=FALSE)
         outargs <- as.data.table(outargs)
 
     return(outargs)
-}
-
-zathura2gthumb <- function(x){
-    # helper function to translate cmds to open pdfs in zathura to png's in gthumb
-    # useful cause ggsave2 return such cmds
-    x <- sub('zathura', 'gthumb', x) 
-    x <- sub('.pdf', '.png', x)
-    x
 }
