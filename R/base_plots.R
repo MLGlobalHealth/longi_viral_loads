@@ -161,6 +161,12 @@ ggsave_nature <- function(filename, p, LALA=vl.out.dir, w=18,h=24, add_reqs=TRUE
 scale_y_expand_lower0 <- scale_y_continuous(expand = expansion(mult = c(0, .1)))
 scale_y_percentage <- scale_y_continuous(labels=scales::label_percent(), expand=expansion(mult=0)) 
 scale_y_percentage2 <- scale_y_continuous(labels=scales::label_percent(), expand=expansion(mult=0.05)) 
+scale_y_percentagef <- function(x)
+    scale_y_continuous(
+        labels=scales::label_percent(),
+        expand=expansion(mult=c(0,x)),
+        breaks = c(0,0.25,0.5,0.75,1)
+)
 
 ####################
 # specify palettes #

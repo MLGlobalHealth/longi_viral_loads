@@ -1340,6 +1340,10 @@ plot.comparison.prevalence.fishinginland.oneround <- function(DT, model, round, 
 plot.main.suppression.among.plhiv <- function(DT=djoint, hist=TRUE, unaids=FALSE, rev){
 
     .ALPHA=.3; .HIST=TRUE; .LINEWIDTH=.2
+    .ylab <- fifelse(rev, 
+        yes= "Prevalence of viraemia in PLHIV by age group",
+        no= "Prevalence of viral suppression in PLHIV by age group",
+    )
     dplot <- subset(DT, ROUND %in% c(16,19) & MODEL == 'run-gp-supp-hiv')
     dplot <- prettify_labels(dplot)
     if(rev){
@@ -1384,5 +1388,5 @@ plot.main.suppression.among.plhiv <- function(DT=djoint, hist=TRUE, unaids=FALSE
         scale_color_manual(values=palettes$sex, breaks = sex_dictionary2) +
         scale_fill_manual(values=palettes$sex, breaks= sex_dictionary2) +
         theme_default() +
-        my_labs(y="Prevalence of viral suppression in PLHIV by age group") 
+        my_labs(y=.ylab) 
 }
