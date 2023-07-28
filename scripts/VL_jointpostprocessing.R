@@ -223,7 +223,6 @@ if (make_plots) {
         my_labs(y = "Prevalence of suppression among HIV positives", fill = "Gender", linetype="") +
         NULL
     p2 <- p + geom_ribbon(alpha = .1, aes(ymin = CL, ymax = CU, fill = SEX_LAB), color = NA)
-    p2
 
     filenames <- paste0("fit_suppofhiv_compare_ftpvsall", c("", "CrIs"), "_r1619.pdf")
 

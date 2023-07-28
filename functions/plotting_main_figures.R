@@ -1312,6 +1312,7 @@ plot.comparison.ftp.nonftp.and.all <- function(env=env_list, DT=djoint, model="r
 
 plot.comparison.prevalence.fishinginland.oneround <- function(DT, model, round, ylim=NA){
 
+    ALPHA = .3
     require(geomtextpath)
     stopifnot(model %in% names(model_dictionary) )
 
