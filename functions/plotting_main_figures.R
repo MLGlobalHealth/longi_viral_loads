@@ -1450,12 +1450,55 @@ plot_propofpop_of_viraemic_byagesex_stratbycommround <- function(DT, colorby="RO
                 LOC_LAB=community_dictionary$longest
         ) ) + 
         .scales() +
-        scale_linetype_manual(values=linetypes$round) +
+        scale_linetype_manual(values=c(4,3,2,1))+
         my_labs(
             y="Viraemic individuals in age group as a proportion of the census-eligible population",
             color=my_labs_dictionary[colorby],
             fill=my_labs_dictionary[colorby],
             linetype=my_labs_dictionary["ROUND_LAB"]
-        ) + nm_reqs
+        ) + 
+        nm_reqs
+}
 
+plot.proposed.metric <- function(){
+
+    # consider goals such as the following:
+    # (# unsuppressed_{sex, age}) / (# N population_{sex, age}) <= population prevalence * k
+    # group-specific prevalence of viraemia among PLHIV must be lower than prevalnce * k
+    hiv_prevalence_pop <- subset(djoint_agegroup, {
+        MODEL == 'run-gp-prevl' & SEX == "Total" & AGEGROUP == "Total"
+    }) |> set(j=c("MODEL","IU", "IL", "SEX", "AGEGROUP"), value=NULL)
+    tmp <- subset(djoint, MODEL =='run-gp-supp-pop') |> 
+        set(j=c("MODEL","IU", "IL"), value=NULL) |>
+        merge(hiv_prevalence_pop, by=c("ROUND", "LOC")) |>
+        prettify_labels() 
+    
+    tmp[, `:=` (
+        CL = CL.x/M.y, CU = CU.x/M.y, M = M.x/M.y, 
+        CL.x=NULL, CU.x=NULL, M.x=NULL,
+        CL.y=NULL, CU.y=NULL, M.y=NULL
+    )]
+
+    ggplot(tmp, aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=SEX_LAB, color=SEX_LAB )) + 
+        geom_ribbon(alpha=.2, color=NA) +
+        geom_line() +
+        geomtextpath::geom_texthline( 
+            yintercept=1-.95^3,
+            color='black',
+            linetype='dashed',
+            label="Proposed measure",
+            size=3.5,
+            vjust=0.5,
+            hjust=0.02) + 
+        facet_grid(ROUND_LAB ~ LOC_LAB, 
+            labeller=labeller(ROUND_LAB=round_labs, LOC_LAB=community_dictionary$longest),
+            scales = 'free_y'
+        ) + 
+        scale_color_manual(values=palettes$sex, labels=sex_dictionary2) + 
+        scale_fill_manual(values=palettes$sex, labels=sex_dictionary2) + 
+        scale_x_continuous(expand=expansion(mult=c(0,0))) +
+        scale_y_percentagef(.1) +
+        theme_default() +
+        my_labs(y="Gender- and age- specific prevalence of viraemia over population HIV prevalence") +
+        nm_reqs
 }

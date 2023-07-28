@@ -1,4 +1,6 @@
-module load anaconda3/personal
+#!/bin/sh
+
+# load Anaconda
 if [ -d $HOME/anaconda3 ]; then
     echo -e "\nanaconda3/personal already installed\n\n";
 else
@@ -43,11 +45,47 @@ options(unzip = "internal");
 install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
 install.packages(
 c(
-    "data.table", "dplyr", 
-    "lubridate", "haven", "Hmisc",
-    "DiagrammeR", "DiagrammeRsvg",
-    "loo", "tidybayes", "bayestestR", "bayesplot", 
-    "rsvg", "htmltools", "raster", "rnaturalearth", "osmdata", "sf", "foreach", "patchwork", "knitr", "foreign", "nnet", "stargazer", "tint", "scales", "geomtextpath","ggthemes", "gganimate", "ggtext", "ggpubr", "readxl", "rgdal", "rgeos", "RColorBrewer", "mvtnorm", "lme4", "optparse", "bh", "MCMCpack", "here", "yaml"
+    "DiagrammeR",
+    "DiagrammeRsvg",
+    "Hmisc",
+    "MCMCpack",
+    "RColorBrewer",
+    "bayesplot",
+    "bayestestR",
+    "bh",
+    "data.table",
+    "dplyr", 
+    "foreach",
+    "foreign",
+    "geomtextpath",
+    "gganimate",
+    "ggpubr",
+    "ggtext",
+    "ggthemes",
+    "haven",
+    "here",
+    "htmltools",
+    "knitr",
+    "lme4",
+    "loo",
+    "lubridate",
+    "mvtnorm",
+    "nnet",
+    "optparse",
+    "osmdata",
+    "patchwork",
+    "raster",
+    "readxl",
+    "rgdal",
+    "rgeos",
+    "rnaturalearth",
+    "rsvg",
+    "scales",
+    "sf",
+    "stargazer",
+    "tidybayes",
+    "tint",
+    "yaml"
 ))
 '
 
