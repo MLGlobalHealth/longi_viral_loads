@@ -282,8 +282,7 @@ if (file.exists(filename_rds) & !overwrite) {
 
 if (make_plots) {
     # set dimensions for all plots below
-    .w <- 10
-    .h <- 12
+    .w <- 10; .h <- 12
 
     p_hiv <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-prevl")
     p_supp <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-hiv")
@@ -298,12 +297,11 @@ if (make_plots) {
     ggsave2(p = p_vir, file = .fnm("suppofpop"), LALA = out.dir.figures, .w, .h)
 
     # need to compare suppression in Round 19 in Inland and fishing communities...
-    .w <- 10
-    .h <- 7
+    .w <- 10; .h <- 7
 
-    p1_vir <- plot.comparison.prevalence.fishinginland.oneround(DT = djoint, model = "run-gp-supp-pop", round = 19)
-    p1_supp <- plot.comparison.prevalence.fishinginland.oneround(DT = djoint, model = "run-gp-supp-hiv", round = 19, ylim = 1)
-    p1_hiv <- plot.comparison.prevalence.fishinginland.oneround(DT = djoint, model = "run-gp-prevl", round = 19)
+    p1_vir <- plot.comparison.prevalence.fishinginland.oneround(DT=djoint, model = "run-gp-supp-pop", round = 19)
+    p1_supp <- plot.comparison.prevalence.fishinginland.oneround(DT=djoint, model = "run-gp-supp-hiv", round = 19, ylim = 1)
+    p1_hiv <- plot.comparison.prevalence.fishinginland.oneround(DT=djoint, model = "run-gp-prevl", round = 19)
     .fnm <- function(lab) {
         paste("fit", lab, "comparefishinland_bygender_round19.pdf", sep = "_")
     }
@@ -316,6 +314,13 @@ if (make_plots) {
         filename <- "fit_suppofhiv_compare_ftpallandjoint.pdf"
         ggsave2(p = p, file = filename, LALA = out.dir.figures, w = 9, h = 8)
     }
+
+    .w <- 18; .h <- 16
+    p1 <- plot_propofpop_of_viraemic_byagesex_stratbycommround(djoint, colorby="ROUND", cri=TRUE)
+    p2 <- plot_propofpop_of_viraemic_byagesex_stratbycommround(djoint, colorby="ROUND", cri=FALSE)
+    filename <- paste0("propofpop_of_viraemic_byagesex_stratbycommround", c("", "_cri"), ".pdf")
+    cmd <- ggsave2(p = p1, file = filename[1], LALA = out.dir.figures, w=.w, h=.w, u="cm")
+    cmd <- ggsave2(p = p2, file = filename[2], LALA = out.dir.figures, w=.w, h=.w, u="cm")
 
     rm(.w, .h)
 }

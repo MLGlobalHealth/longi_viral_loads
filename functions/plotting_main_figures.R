@@ -1390,3 +1390,57 @@ plot.main.suppression.among.plhiv <- function(DT=djoint, hist=TRUE, unaids=FALSE
         theme_default() +
         my_labs(y=.ylab) 
 }
+
+plot_propofpop_of_viraemic_byagesex_stratbycommround <- function(DT, colorby="ROUND", cri=TRUE){
+
+    # helpers for plot flexibility
+    colorby <- match.arg(colorby, c("ROUND_LAB", "SEX_LAB")) |> invisible()
+    expr_col <- ifelse(colorby=="ROUND_LAB", expr(ROUND_LAB), expr(SEX_LAB))
+    .scales <- function(x={colorby=="ROUND_LAB"}){
+        out <- list( 
+            scale_y_continuous(expand=expansion(mult=c(0,.1)), labels=scales::label_percent()), 
+            scale_x_continuous(expand=c(0,0)), 
+            if(!x){ scale_color_manual(values=palettes$sex, labels=sex_dictionary2)}, 
+            if(!x){ scale_fill_manual(values=palettes$sex, labels=sex_dictionary2)}, 
+            if(x){ scale_fill_viridis_d(begin=0, end = .7, option = "magma" )}, 
+            if(x){ scale_color_viridis_d(begin=0, end = .7, option = "magma" )}, 
+            NULL
+        )
+        out[ ! sapply(out, is.null) ]
+    }
+
+    # data manipulation: 
+    dplot <- subset(DT, MODEL == 'run-gp-supp-pop') |>
+        set(j = c('IL', 'IU'), value = NULL) |> 
+        merge(dcens[, - c("ELIGIBLE", "AGEGROUP") ], by=c("ROUND", "LOC", 'SEX', "AGEYRS")) |> 
+        prettify_labels() 
+    cols <- c("M", "CL", "CU")
+    dplot[, 
+        (cols) := lapply(.SD, function(x, y) x*y, y=proportions(ELIGIBLE_SMOOTH)),
+        .SDcols = cols,
+        by=c("ROUND", "LOC_LAB")
+    ]
+
+    ggplot(dplot,   
+        aes(x=AGEYRS, y=M, ymin=CL, ymax=CU,
+            fill=eval(expr_col), color=eval(expr_col),
+            linetype=ROUND_LAB, group=ROUND_LAB)
+        ) + { if(cri){
+            geom_ribbon(linetype=0, alpha=.1)
+        }else{NULL} } +
+        geom_line() +
+        theme_default() + 
+        facet_grid(
+            LOC_LAB~SEX_LAB,
+            scales="free_y",
+            labeller=labeller(
+                SEX_LAB=sex_dictionary2,
+                LOC_LAB=community_dictionary$longest
+        ) ) + 
+        .scales() +
+        my_labs(
+            y="Viraemic individuals in age group as a proportion of the census-eligible population",
+            color=my_labs_dictionary[colorby], fill=my_labs_dictionary[colorby], linetype=my_labs_dictionary["ROUND_LAB"]
+        ) +
+        nm_reqs
+}
