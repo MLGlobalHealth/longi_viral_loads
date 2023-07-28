@@ -222,7 +222,7 @@ tmp <- paper_statements_suppression_above_959595(djoint)
 
 fig2 <- plot.main.suppression.among.plhiv(DT=djoint, type='point', unaids=TRUE, rev=TRUE, m=-9)
 filename <- paste0('main_figure_suppression_plhiv_r1619.pdf')
-cmd <- ggsave_nature(p=fig2, filename=filename, LALA=out.dir.figures, w=17, h=14)
+cmd <- ggsave_nature(p=fig2, filename=filename, LALA=out.dir.figures, w=17, h=16)
 
 ########################
 catn(" FIGURE for KATE")
@@ -315,3 +315,52 @@ fig1c <- readRDS(filename_rds) |>
     plot.agesex.contributions.by.roundcomm(label = "run-gp-prevl", include_baseline =TRUE) 
 
 
+################################
+catn("UNAIDS-95^3 alternatives")
+################################
+
+# consider goals such as the following:
+# (# unsuppressed_{sex, age}) / (# N population_{sex, age}) <= population prevalence * k
+
+# group-specific prevalence of viraemia among PLHIV must be lower than prevalnce * k
+hiv_prevalence_pop <- subset(djoint_agegroup, {
+    MODEL == 'run-gp-prevl' & SEX == "Total" & AGEGROUP == "Total"
+}) |> set(j=c("MODEL","IU", "IL", "SEX", "AGEGROUP"), value=NULL)
+tmp <- subset(djoint, MODEL =='run-gp-supp-pop') |> 
+    set(j=c("MODEL","IU", "IL"), value=NULL) |>
+    merge(hiv_prevalence_pop, by=c("ROUND", "LOC")) |>
+    prettify_labels() 
+tmp[, `:=` (
+    CL = CL.x/M.y,
+    CU = CU.x/M.y,
+    M = M.x/M.y, 
+    CL.x=NULL, CU.x=NULL, M.x=NULL,
+    CL.y=NULL, CU.y=NULL, M.y=NULL
+)]
+
+p <- ggplot(tmp, aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=SEX_LAB, color=SEX_LAB )) + 
+    geom_ribbon(alpha=.2, color=NA) +
+    geom_line() +
+    geomtextpath::geom_texthline( 
+        yintercept=1-.95^3,
+        color='black',
+        linetype='dashed',
+        label="Proposed measure",
+        size=3.5,
+        vjust=0.5,
+        hjust=0.02) + 
+    facet_grid(ROUND_LAB ~ LOC_LAB, 
+        labeller=labeller(ROUND_LAB=round_labs, LOC_LAB=community_dictionary$longest),
+        scales = 'free_y'
+    ) + 
+    scale_color_manual(values=palettes$sex, labels=sex_dictionary2) + 
+    scale_fill_manual(values=palettes$sex, labels=sex_dictionary2) + 
+    scale_x_continuous(expand=expansion(mult=c(0,0))) +
+    scale_y_percentagef(.1) +
+    theme_default() +
+    my_labs(y="Gender- and age- specific prevalence of viraemia over population HIV prevalence") +
+    nm_reqs
+
+filename <- paste0('main_figure_proposedmetric.pdf')
+cmd <- ggsave_nature(p=p, filename=filename, LALA=out.dir.figures, w=17, h=22)
+system(zathura2gthumb(cmd)) 

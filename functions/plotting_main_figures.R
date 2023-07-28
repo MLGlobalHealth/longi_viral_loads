@@ -1337,15 +1337,19 @@ plot.comparison.prevalence.fishinginland.oneround <- function(DT, model, round, 
         my_labs(y=model_dictionary[model])
 }
 
-plot.main.suppression.among.plhiv <- function(DT=djoint, type='hist', unaids=FALSE, rev){
+plot.main.suppression.among.plhiv <- function(DT=djoint, type='hist', unaids=FALSE, rev, m=0){
 
-    .ALPHA=.3; .HIST=TRUE; .LINEWIDTH=.2
+    .ALPHA=.3; .HIST=TRUE; .LINEWIDTH=.2; .margin <- m
     type <- match.arg(type, c("hist", "line", "point"))
     .ylab <- fifelse(rev, 
         yes= "Prevalence of viraemia in PLHIV by age group",
         no= "Prevalence of viral suppression in PLHIV by age group",
     )
     dplot <- subset(DT, ROUND %in% c(16,19) & MODEL == 'run-gp-supp-hiv')
+    if("AGEGROUP" %in% names(dplot)){
+        dplot <- subset(dplot, AGEGROUP != "Total" & SEX != "Total") |>
+            setnames("AGEGROUP", "AGEYRS")
+    }
     dplot <- prettify_labels(dplot)
     if(rev){
         dplot[, `:=` (M = 1-M, CL=1-CU, CU=1-CL)]
@@ -1358,13 +1362,14 @@ plot.main.suppression.among.plhiv <- function(DT=djoint, type='hist', unaids=FAL
             if(type=='line'){ geom_ribbon(alpha=.ALPHA, color=NA) },
             if(type=='line'){ geom_line(linewidth = .LINEWIDTH) },
             if(type=='hist'){ geom_col(position=.pd) },
-            if(type %in% c('hist', 'point')){ geom_linerange(position=.pd, color='grey40') },
-            if(type=='point'){ geom_point() },
-            if(type=='point'){ scale_shape_manual(values=shapes$sex) },
+            if(type=='hist'){ geom_linerange(position=.pd, color='grey40') },
+            if(type=='point'){ geom_linerange(position=.pd) },
+            if(type=='point'){ geom_point(position=.pd) },
+            if(type=='point'){ scale_shape_manual(values=shapes$sex, labels= sex_dictionary2) },
             if(unaids) {
                 geomtextpath::geom_texthline(
                     yintercept = .yint,
-                    color = 'purple', 
+                    color = 'black', 
                     linetype='dashed', 
                     label = 'UNAIDS 95-95-95', 
                     vjust=.5, hjust=fifelse(rev, yes=1, no=0),
@@ -1388,10 +1393,15 @@ plot.main.suppression.among.plhiv <- function(DT=djoint, type='hist', unaids=FAL
         ) +
         scale_y_percentagef(.02) + 
         scale_x_continuous(breaks=seq(15, 60, 5), expand=c(0,0)) + 
-        scale_color_manual(values=palettes$sex, breaks = sex_dictionary2) +
-        scale_fill_manual(values=palettes$sex, breaks= sex_dictionary2) +
-        theme_default() +
-        my_labs(y=.ylab) 
+        scale_color_manual(values=palettes$sex, labels = sex_dictionary2) +
+        scale_fill_manual(values=palettes$sex, labels= sex_dictionary2) +
+        theme_default(legend.box.margin=margin(t=.margin, l=0, r=0, b=.margin))+
+        my_labs(
+            y=.ylab,
+            x="Age",
+            fill="Gender", color="Gender"
+        ) +
+        nm_reqs
 }
 
 plot_propofpop_of_viraemic_byagesex_stratbycommround <- function(DT, colorby="ROUND", cri=TRUE){
@@ -1401,12 +1411,14 @@ plot_propofpop_of_viraemic_byagesex_stratbycommround <- function(DT, colorby="RO
     expr_col <- ifelse(colorby=="ROUND_LAB", expr(ROUND_LAB), expr(SEX_LAB))
     .scales <- function(x={colorby=="ROUND_LAB"}){
         out <- list( 
+            if(cri){ geom_ribbon(linetype=0, alpha=.1)},
+            geom_line(),
             scale_y_continuous(expand=expansion(mult=c(0,.1)), labels=scales::label_percent()), 
             scale_x_continuous(expand=c(0,0)), 
             if(!x){ scale_color_manual(values=palettes$sex, labels=sex_dictionary2)}, 
             if(!x){ scale_fill_manual(values=palettes$sex, labels=sex_dictionary2)}, 
-            if(x){ scale_fill_viridis_d(begin=0, end = .7, option = "magma" )}, 
-            if(x){ scale_color_viridis_d(begin=0, end = .7, option = "magma" )}, 
+            if(x){ scale_fill_viridis_d(begin=0, end = .7, option = "magma" , direction = -1)}, 
+            if(x){ scale_color_viridis_d(begin=0, end = .7, option = "magma", direction = -1)}, 
             NULL
         )
         out[ ! sapply(out, is.null) ]
@@ -1428,10 +1440,7 @@ plot_propofpop_of_viraemic_byagesex_stratbycommround <- function(DT, colorby="RO
         aes(x=AGEYRS, y=M, ymin=CL, ymax=CU,
             fill=eval(expr_col), color=eval(expr_col),
             linetype=ROUND_LAB, group=ROUND_LAB)
-        ) + { if(cri){
-            geom_ribbon(linetype=0, alpha=.1)
-        }else{NULL} } +
-        geom_line() +
+        ) + 
         theme_default() + 
         facet_grid(
             LOC_LAB~SEX_LAB,
@@ -1441,9 +1450,12 @@ plot_propofpop_of_viraemic_byagesex_stratbycommround <- function(DT, colorby="RO
                 LOC_LAB=community_dictionary$longest
         ) ) + 
         .scales() +
+        scale_linetype_manual(values=linetypes$round) +
         my_labs(
             y="Viraemic individuals in age group as a proportion of the census-eligible population",
-            color=my_labs_dictionary[colorby], fill=my_labs_dictionary[colorby], linetype=my_labs_dictionary["ROUND_LAB"]
-        ) +
-        nm_reqs
+            color=my_labs_dictionary[colorby],
+            fill=my_labs_dictionary[colorby],
+            linetype=my_labs_dictionary["ROUND_LAB"]
+        ) + nm_reqs
+
 }

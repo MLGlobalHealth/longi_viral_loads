@@ -65,11 +65,12 @@ naturemed_reqs <- function()
 {
     # call this before doing your plots
     nm_reqs <<- theme(
-        axis.text = element_text(size=5, family='sans'),
-        text=element_text(size=7,family='sans'),
-        legend.text=element_text(size=7, family='sans'),
+        axis.text = element_text(size=6.5, family='sans'),
+        strip.text = element_text(size=7.5, family='sans'),
+        text=element_text(size=7.5,family='sans'),
+        legend.text=element_text(size=7.5, family='sans'),
         strip.background = element_rect(colour="white", fill="white"),
-        plot.tag = element_text(size=8, face='bold', color = "black"),
+        plot.tag = element_text(size=9, face='bold', color = "black"),
         plot.tag.position = c(0, 1),
         strip.placement = "outside"
     )
@@ -290,6 +291,17 @@ shapes <- list(
     ),
 
     NULL
+)
+
+linetypes <- list(
+    
+    round = c(
+        `Round 16` = 4,
+        `Round 17` = 3,
+        `Round 18` = 2,
+        `Round 19` = 1,
+        NULL
+    )
 )
 
 

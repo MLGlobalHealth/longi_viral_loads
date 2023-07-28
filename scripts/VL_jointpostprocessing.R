@@ -318,7 +318,7 @@ if (make_plots) {
     .w <- 18; .h <- 16
     p1 <- plot_propofpop_of_viraemic_byagesex_stratbycommround(djoint, colorby="ROUND", cri=TRUE)
     p2 <- plot_propofpop_of_viraemic_byagesex_stratbycommround(djoint, colorby="ROUND", cri=FALSE)
-    filename <- paste0("propofpop_of_viraemic_byagesex_stratbycommround", c("", "_cri"), ".pdf")
+    filename <- paste0("propofpop_of_viraemic_byagesex_stratbycommround", c("_cri", ""), ".pdf")
     cmd <- ggsave2(p = p1, file = filename[1], LALA = out.dir.figures, w=.w, h=.w, u="cm")
     cmd <- ggsave2(p = p2, file = filename[2], LALA = out.dir.figures, w=.w, h=.w, u="cm")
 
