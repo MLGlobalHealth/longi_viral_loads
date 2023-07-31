@@ -230,8 +230,9 @@ extract.stan.hyperparams.rho <- function(re, encoding){
     p_without
 
     p_with <- p_without + 
-        geom_point(data = DT2, aes(y = M, pch = SEX_LAB, size = N)) +
+        geom_point(data = DT2, aes(y = M, shape = SEX_LAB, size = N)) +
         scale_size(range = c(0, 3)) +
+        scale_shape_manual(labels=sex_dictionary2) + 
         labs(pch = "Gender", size = "Population size")
 
     return(list(p_without, p_with))
@@ -531,7 +532,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
             prev.hiv.by.age, 
             DT2=ppDT,
             ylims = c(0,.75),
-            ylab="HIV prevalence (95% credibility intervals)")
+            ylab="HIV prevalence (95% credible intervals)")
 
         filenames <- paste0("hivprevalence_vs_age_by_gender_fishinland_",c("", "data_"),"gp_round", round, ".pdf")
 
