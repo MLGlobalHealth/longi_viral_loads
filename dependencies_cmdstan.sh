@@ -62,6 +62,7 @@ c(
     "ggpubr",
     "ggtext",
     "ggthemes",
+    "ggsn",
     "haven",
     "here",
     "htmltools",
