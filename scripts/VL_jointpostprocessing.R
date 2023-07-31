@@ -226,8 +226,8 @@ if (make_plots) {
 
     filenames <- paste0("fit_suppofhiv_compare_ftpvsall", c("", "CrIs"), "_r1619.pdf")
 
-    cmd <- ggsave2(p = p, file = filename[1], LALA = out.dir.figures, w = 16, h = 14)
-    cmd <- ggsave2(p = p2, file = filename[2], LALA = out.dir.figures, w = 16, h = 14)
+    cmd <- ggsave2(p = p, file = filenames[1], LALA = out.dir.figures, w = 16, h = 14)
+    cmd <- ggsave2(p = p2, file = filenames[2], LALA = out.dir.figures, w = 16, h = 14)
 }
 
 
@@ -517,7 +517,7 @@ if (file.exists(filename_rds) & !overwrite) {
 
 check_median_contr_approx1(dcontrib)
 
-if (make_plots) {
+if (make_plots & FALSE) {   # needs bugfix
     .w <- 10
     .h <- 12
 

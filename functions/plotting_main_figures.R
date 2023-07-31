@@ -1323,7 +1323,7 @@ plot.comparison.prevalence.fishinginland.oneround <- function(DT, model, round, 
     ggplot(dplot, aes(x=AGEYRS, y=M, ymin=CL, ymax=CU, fill=LOC_LAB, color=LOC_LAB)) + 
         geom_line() +
         geom_ribbon(alpha=ALPHA, color=NA) + {
-            if(MODEL == 'run-gp-supp-hiv'){
+            if(model == 'run-gp-supp-hiv'){
                 geom_texthline(
                     yintercept=.95^3, color='red', linetype='dashed', 
                     label="UNAIDS 95-95-95", vjust=0.5, hjust=1) 

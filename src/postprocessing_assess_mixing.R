@@ -112,14 +112,14 @@ catn("Merge fit to diagnostics")
 # ________________________________
 
 p <- plot.group.mcmc.parcoord(fit=fit, re=samples,'logit_p_predict')
-ggsave(p, file=file.path(outfile.figures, '-mcmc-parcoord-p_predict.png'), w=8, h=8)
+ggsave(p, file=paste0(outfile.figures, '-mcmc-parcoord-p_predict.png'), w=8, h=8)
 
 catn("Traceplots")
 # ________________
 
 p <- bayesplot::mcmc_trace(samples, regex_pars = c('rho_', 'alpha_')) + 
     theme_default() 
-ggsave(p, file = file.path(outfile.figures, '-mcmc-trace_plots.png'), w  = 8, h = 8)
+ggsave(p, file = paste0(outfile.figures, '-mcmc-trace_plots.png'), w  = 8, h = 8)
 
 
 catn("Interval plot")
