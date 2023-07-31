@@ -28,7 +28,7 @@ fi
 # Install base R
 echo "\n\n=========================================\n\n
 Installing compilers and base R\n\n"
-conda install -c conda-forge compilers r r-base r-essentials r-devtools
+conda install -c conda-forge compilers r r-base r-essentials r-devtools # udunits2 libgdal
 
 
 # Install initial dependencies
@@ -62,7 +62,7 @@ c(
     "ggpubr",
     "ggtext",
     "ggthemes",
-    "ggsn",
+    # "ggsn",
     "haven",
     "here",
     "htmltools",
