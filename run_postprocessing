@@ -84,7 +84,13 @@ Rscript \$INDIR/src/make_paper_figures.R \\
     --outdir \$OUTDIR/\${JOBNAME}_joint \\
     --indir \$OUTDIR
 
-Rscript -e "rmarkdown::render(\$INDIR/src/run_postprocessing_make_report.Rmd, params=list(indir=\$OUTDIR, jobname=\$JOBNAME))"
+Rscript -e "
+rmarkdown::render(
+    \$INDIR/src/run_postprocessing_make_report.Rmd,
+    params=list(indir=\$OUTDIR, jobname=\$JOBNAME)
+    output_dir=\$OUTDIR/\${JOBNAME}_joint
+)
+"
 
 EOF
 
