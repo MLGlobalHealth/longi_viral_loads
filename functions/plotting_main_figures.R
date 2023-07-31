@@ -1329,7 +1329,7 @@ plot.comparison.prevalence.fishinginland.oneround <- function(DT, model, round, 
                     label="UNAIDS 95-95-95", vjust=0.5, hjust=1) 
             }else{ NULL }
         } +
-        facet_grid(~ SEX_LAB) +
+        facet_grid(~ SEX_LAB, labeller=labeller(SEX_LAB=sex_dictionary2)) +
         scale_color_manual(values=palettes$comm)  +
         scale_fill_manual(values=palettes$comm)  +
         scale_x_continuous(expand = c(0,0), breaks= c(seq(15, 45, 5))) + 

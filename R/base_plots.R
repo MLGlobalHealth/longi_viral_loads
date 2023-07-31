@@ -466,7 +466,7 @@ my_labs <- function (..., title = waiver(), subtitle = waiver(), caption = waive
 }
 
 dfacets <- list(
-    sex = setNames(c('Male', 'Female'), c('M', 'F')),
+    sex = setNames(c('Men', 'Women'), c('M', 'F')),
     comm = setNames(c('Fishing', 'Inland'), c('fishing', 'inland') )
 )
 
