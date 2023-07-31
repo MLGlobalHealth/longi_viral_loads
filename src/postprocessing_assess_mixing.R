@@ -81,7 +81,7 @@ path.stan.output <- list.files(
     paste0('round', args$round, '.rds'), 
     full.names =TRUE)
 # outfile.prefix <- gsub( '.rds$', '-', path.stan.output)
-outfile.diagnostics <- file.path(outdir, paste0('diagnostics/asses_round', args$round)) 
+outfile.diagnostics <- file.path(outdir, paste0('diagnostics/assess_round', args$round)) 
 outfile.figures <- file.path(outdir, paste0('figures/assess_round', args$round))
 sapply(c(outfile.figures, outfile.diagnostics), function(x){
     d <- dirname(x)

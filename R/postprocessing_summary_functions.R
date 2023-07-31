@@ -39,7 +39,7 @@ rm.brackets <- function(vec){
     return(vec)
 }
 
-make_convergence_diagnostics_stats = function(fit, re, outfile.prefix, exclude_rgx=NA)
+make_convergence_diagnostics_stats <- function(fit, re, outfile.prefix, exclude_rgx=NA)
 {
 
     stopifnot(!is.null(fit))
@@ -97,8 +97,8 @@ make_convergence_diagnostics_stats = function(fit, re, outfile.prefix, exclude_r
     if(fit_type == 'rstan'){
         rstan::check_hmc_diagnostics(fit)
     }else if (fit_type == 'cmdstan'){
-        fit$diagnostic_summary() |> print()
-    }
+        fit$diagnostic_summary()
+    } -> sampler_diagnostics
 
     # compute WAIC and LOO
     tryCatch({
