@@ -1,0 +1,203 @@
+---
+ title: "Summary"
+ author: "Andrea Brizzi"
+ date: "`r Sys.Date()`"
+ params:
+    indir: ""
+    jobid: ""
+ output: 
+    html_document:
+        theme: sandstone
+        highlight: monochrome
+        toc: true
+        toc_depth: 2
+        toc_float: false
+ 
+ # bibliography: references.bib
+---
+
+```{r read_args, include=FALSE}
+indir <- params$indir
+jobid <- params$jobid
+testing <- FALSE
+if(interactive() | testing == TRUE){
+    indir <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/"
+    jobid <- "cmdstan_vl_1000"
+}
+
+# check all input directories exists
+all.dir <- file.path(indir, jobid)
+ftp.dir <- paste0(all.dir, "_firstpart")
+joint.dir <- paste0(all.dir, "_joint")
+dir.exists(c(all.dir, ftp.dir, joint.dir)) |> all() |> stopifnot()
+```
+
+```{r, echo=FALSE, message=FALSE, results='hide'}
+# https://www.garrickadenbuie.com/blog/pandoc-syntax-highlighting-examples/
+# https://elastic-lovelace-155848.netlify.app/themes.html
+library(data.table)
+library(ggplot2)
+library(knitr)
+
+.find.files <- function(dir, part=NA, .pattern=".png$"){
+    out <- data.table(
+        DIR=dir,
+        F=list.files(dir, pattern=.pattern, full.names=TRUE, recursive = TRUE)
+    )
+    if(!is.na(part)){ out$PART <- part }
+    out[, BASE:=basename(F)]
+    out[, ROUND := as.numeric(gsub(".*round([0-9]+).*", "\\1", BASE))]
+    return(out)
+}
+dfigs_joint <- .find.files(joint.dir)
+dfigs_single <- rbind(.find.files(ftp.dir, part="ftp"), .find.files(all.dir, part="all"))
+dfigs_single[, MODEL := gsub("^.*run-gp-(.*?)/.*$", "\\1", F)]
+
+with(dfigs_single, stopifnot(
+    uniqueN(MODEL)==3,
+    uniqueN(ROUND)==4
+))
+```
+
+```{r helpers, include=FALSE, warning=FALSE}
+
+add_single_plot <- function(path, title="", width=100, heigth=NULL )
+{
+    stopifnot(length(path) == 1)
+    if(! is.null(heigth) )
+        heigth <- paste0("heigth=", heigth)
+    knit_expand( text="\n\n ![ {{title}} ]( {{path}} ){ width={{width}}% {{heigth}} } \n\n")
+}
+
+add_plots <- function(paths, ...)
+    sapply(paths, add_single_plot, ...) |> paste0(collapse='')
+```
+
+
+# Main Figures
+
+```{r main, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
+mainfigs <- c(
+    `Population compositionn` = "main_figure_populationcomposition.pdf",
+    `Proposed metric` = "main_figure_proposedmetric.pdf",
+    `Pepfar suppression` = "whopepfar_suppression.pdf",
+    `Pepfar prevalence` = "whopepfar_prevalence.pdf",
+    `Suppression` = "main_figure_suppression_plhiv_r1619.pdf"
+)
+mainfigs.png <- gsub(".pdf$", ".png", mainfigs)
+for ( fig in mainfigs.png ){
+    dfigs_joint[BASE == fig, {
+        if( .N == 1 ){
+            sprintf("## %s\n", names(mainfigs.png)[which(fig==mainfigs.png)]) |> cat()
+            add_plots(F, width=100) |> cat()
+        }}]
+}
+
+dfigs_joint <- subset(dfigs_joint,  ! BASE %in% mainfigs.png)
+```
+
+
+# Diagnostics {.tabset}
+
+```{r diagnostics_rds}
+rbind( 
+    .find.files(dir=all.dir, .pattern='asses.*rds$', part="all"),
+    .find.files(dir=ftp.dir, .pattern='asses.*rds$', part="ftp")
+)  -> fdiagn
+
+fdiagn$BASE %like% 'sampler_diagnostics'
+
+
+```
+
+
+
+```{r diagnostics, echo=FALSE, results='asis', message=FALSE}
+with(dfigs_single, {
+    MODELS <<- unique(MODEL)
+    ROUNDS <<- unique(ROUND)
+    PARTS <<- unique(PART)
+})
+relabel.models <- function(x){
+    dict <- c("hivprev", "suppofhiv", "suppofpop")
+    names(dict) <- c("prevl","supp-hiv","supp-pop")
+    dict[x]
+}
+
+for ( model in c("none", MODELS)){
+    sprintf("## Model %s {.tabset}\n", model) |> cat()
+
+    for ( round in ROUNDS ) {
+        sprintf("### Round %s {.tabset}\n", round) |> cat()
+
+        for ( part in PARTS ) {
+            sprintf("#### Part %s {.tabset}\n", part) |> cat()
+
+            dfigs_single[ MODEL==model & ROUND==round & PART==part & BASE %like% 'assess_round', add_plots(F, width=75) ] |>
+                cat()
+            dfigs_single[ MODEL==model & ROUND==round & PART==part & BASE %like% 'gppars', add_plots(F, width=75) ] |>
+                cat()
+        }
+    }
+}
+
+# remove png shown 
+dfigs_single <- subset(dfigs_single, ! BASE %like% 'assess_round' & ! BASE %like% 'gppars')
+```
+
+# Individual run results {.tabset}
+
+```{r summary_single, echo=FALSE, results='asis', message=FALSE}
+for ( model in c("none", MODELS)){
+
+    sprintf("## Model %s {.tabset}\n", model) |> cat()
+
+    for ( round in ROUNDS )
+    {
+        sprintf("### Round %s {.tabset}\n", round) |> cat()
+
+        for ( part in PARTS )
+        {
+            sprintf("#### Part %s {.tabset}\n", part) |> cat()
+
+            dfigs_single[ MODEL==model & ROUND==round & PART==part,  add_plots(F) ] |>
+                cat()
+
+        }
+        sprintf("#### Comparison type comparison\n") |> cat()
+        dfigs_joint[! BASE %like% 'comparefishinland' & BASE %like% relabel.models(model) & ROUND==round,  add_plots(F, width=100) ] |> cat()
+    }
+}
+
+dfigs_joint <- subset(dfigs_joint, 
+    BASE %like% 'comparefishinland' | ! BASE %in% relabel.models(MODELS) | is.na(ROUND))
+```
+
+
+# Joint runs results {.tabset}
+
+```{r summary_joint, echo=FALSE, results='asis', message=FALSE}
+for ( round in ROUNDS )
+{
+    sprintf("## Round %s {.tabset}\n", round) |> cat()
+
+    sprintf("### Whole pop extrapolation\n") |> cat()
+    dfigs_joint[  BASE %like% 'comparefishinland' & ROUND==round,  add_plots(F, width=100) ] |>
+        cat()
+}
+```
+
+
+# Other {.tabset}
+
+```{r other_joint, echo=FALSE, results='asis', message=FALSE}
+prefix <- dfigs_joint[is.na(ROUND) & ! BASE %like% 'table', gsub("_.*$","",BASE)]
+prefix <- paste0("^", unique(prefix))
+
+for ( p in prefix ){
+    sprintf("## Plot prefix: %s {.tabset}\n", p) |> cat()
+    dfigs_joint[ BASE %like% p, add_plots(F, width=100) ] |>
+        cat()
+}
+```
+
