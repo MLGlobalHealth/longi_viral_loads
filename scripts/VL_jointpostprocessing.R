@@ -472,6 +472,59 @@ if (make_tables) {
     ggsave2(p = p, file = filename, LALA = out.dir.tables, w = 8, h = 5.5)
 }
 
+catn("Get quantiles for suppression levels in agegroups")
+
+filename_rds <- file.path(out.dir.tables, "posterior_quantiles_suppression_agegroup.rds")
+
+if( file.exists(filename_rds) & ! overwrite){
+    dsupp_agegroup <- readRDS(filename_rds)
+}else{
+    dsupp_agegroup <- dfiles_rds[,{
+        paths <- file.path(D,F)
+        .check <- function(x) { stopifnot(length(x) == 1); return(x)}
+        idx.hivprev.all <- which(FTP==FALSE & MODEL=="run-gp-prevl") |> .check()
+        idx.hivprev.ftp <- which(FTP==TRUE & MODEL=="run-gp-prevl") |> .check()
+        idx.supphiv.all <- which(FTP==FALSE & MODEL=="run-gp-supp-hiv") |> .check()
+        idx.supphiv.ftp <- which(FTP==TRUE & MODEL=="run-gp-supp-hiv") |> .check()
+        cat("Round ", unique(ROUND), "\n")
+        draws_prev <- get.weighted.average.p_predict(
+            readRDS(paths[idx.hivprev.all]),
+            readRDS(paths[idx.hivprev.ftp]),
+            round = unique(ROUND),
+            expression_prereturn = {
+                # find composition of prevalnce by age group
+                by_cols <- c(dot.cols, "LOC", "SEX", "AGEGROUP")
+                tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
+                tmp[, N_HIV := joint * ELIGIBLE_SMOOTH]
+                tmp[,P_HIV:= proportions(N_HIV), by=c(dot.cols, 'LOC', "SEX", "AGEGROUP")]
+                tmp[, `:=` (joint=NULL, PARTRATE=NULL, ftp=NULL, parts=NULL)]
+                return(tmp)
+            }
+        )
+        cat("prevalence done\n")
+        draws_supp <- get.weighted.average.p_predict(
+            readRDS(paths[idx.supphiv.all]),
+            readRDS(paths[idx.supphiv.ftp]),
+            round = unique(ROUND),
+            expression_prereturn = {draws_all}
+        )
+        cat("suppression done\n")
+        tmp <- merge(draws_supp, draws_prev, by=c(dot.cols, "LOC", "SEX", "AGEYRS"))
+        q <- tmp[, list(S=sum(joint*P_HIV)) , by=c(dot.cols, "LOC", 'SEX', 'AGEGROUP')]
+        q[, quantile2(S), by=c("LOC", 'SEX', 'AGEGROUP')]
+    } , by=c("ROUND")]
+
+    saveRDS(object = dsupp_agegroup, filename_rds)
+}
+
+if(make_plots & FALSE){
+    .w <- 14; .h <- 14
+    p_list <- lapply(c(16:19), plot.prevalence.by.age.group, DT=dsupp_agegroup)
+    filenames <- paste0("plot_suppofhiv_by_agegroup_round", c(16:19), ".pdf")
+    for(i in 1:length(p_list)){
+        # ggsave2(p=p_list[[i]], file=filenames[i], LALA=out.dir.figures, .w, .h)
+    }
+}
 
 catn("Get quantiles for contributions by age")
 # _____________________________________________

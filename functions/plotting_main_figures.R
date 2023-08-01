@@ -1503,3 +1503,18 @@ plot.proposed.metric <- function(){
         my_labs(y="Gender- and age- specific prevalence of viraemia over population HIV prevalence") +
         nm_reqs
 }
+
+plot.prevalence.by.age.group <- function(DT, round=19){
+
+    subset(DT, ROUND == round) |> 
+        ggplot(aes(x=AGEGROUP, y=M, ymin=CL, ymax=CU, color=SEX)) + 
+        geom_hline(aes(yintercept=.95^3), linetype='dotted') +
+        geom_point() +
+        geom_linerange() +
+        facet_grid(LOC ~ SEX, labeller=labeller(SEX=sex_dictionary2, LOC=community_dictionary$longest)) +
+        scale_y_continuous(labels = scales::percent, limits=c(0,1), expand=expansion(0,0)) +
+        scale_color_manual(values=palettes$sex, labels=sex_dictionary2) +
+        theme_default()+ 
+        my_labs(y="Prevalence of viraemia among PLHIV by age group") +
+        NULL
+}
