@@ -132,10 +132,10 @@ extract.stan.hyperparams.rho <- function(re, encoding){
         total_observed_10 = DTsd[SEX == 1 & LOC == 0, ..den.var][[1]],
         total_observed_01 = DTsd[SEX == 0 & LOC == 1, ..den.var][[1]],
         total_observed_11 = DTsd[SEX == 1 & LOC == 1, ..den.var][[1]],
-        alpha_hyper_par_00 = 2,
-        alpha_hyper_par_10 = 2,
-        alpha_hyper_par_01 = 2,
-        alpha_hyper_par_11 = 2,
+        alpha_hyper_par_00 = 1,
+        alpha_hyper_par_10 = 1,
+        alpha_hyper_par_01 = 1,
+        alpha_hyper_par_11 = 1,
         rho_hyper_lower_bound = rho_hyper_lower_bound,
         rho_hyper_upper_bound = rho_hyper_upper_bound
     )
