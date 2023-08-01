@@ -241,3 +241,17 @@ fetch.args.from.suffix <- function(suffix, asDT=FALSE)
 
     return(outargs)
 }
+
+zathura2png <- function(cmd){
+    cmd <- sub("zathura", "gthumb", cmd)
+    cmd <- sub(".pdf", ".png", cmd)
+    return(cmd)
+}
+
+tex2png <- function(filename){
+    gsub(".tex$", ".png", filename)
+}
+
+tex2pdf <- function(filename){
+    gsub(".tex$", ".pdf", filename)
+}

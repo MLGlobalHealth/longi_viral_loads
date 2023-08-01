@@ -121,9 +121,11 @@ filename_rds_contrib <- file.path(out.dir.tables, "fullpop_allcontributions.rds"
 filename_rds_prevalence <- file.path(out.dir.tables, "fullpop_posteriorquantiles_by_agesexround.rds")
 filename_rds_prevalence_agegroup <- file.path(out.dir.tables, "posterior_quantiles_agegroups.rds")
 filename_rds_contrib_agegroup <- file.path(out.dir.tables, "fullpop_allcontributions_byagegroup.rds")
+filename_rds_supphiv_agegroup <- file.path(out.dir.tables, "posterior_quantiles_suppression_agegroup.rds")
 
 djoint_agegroup <- readRDS(filename_rds_prevalence_agegroup)
 dcontrib_agegroup <- readRDS(filename_rds_contrib_agegroup)
+dsupp_agegroup  <- readRDS(filename_rds_supphiv_agegroup)
 
 ###########
 # HELPERS #
@@ -140,6 +142,7 @@ catn("=== FIGURE 1 ===")
 
 # only make this figure if ggsn package is installed.
 if( system.file(package="ggsn") != "" ){
+
     # Map of the Rakai communities
     fig1a.outer <- plot.uganda.map(zoom="medium", maptype='toner-lines', labs=TRUE) 
     fig1a.inner <- plot.rakai.map(.size=1, labs = FALSE) + 
@@ -316,6 +319,7 @@ filename_rds <- file.path(out.dir.tables, "fullpop_allcontributions.rds")
 fig1c <- readRDS(filename_rds) |> 
     subset(ROUND==19 & LOC=='inland') |>
     plot.agesex.contributions.by.roundcomm(label = "run-gp-prevl", include_baseline =TRUE) 
+cat("not completed...")
 
 
 ################################
@@ -325,4 +329,15 @@ catn("UNAIDS-95^3 alternatives")
 p <- plot.proposed.metric()
 filename <- paste0('main_figure_proposedmetric.pdf')
 cmd <- ggsave_nature(p=p, filename=filename, LALA=out.dir.figures, w=17, h=22)
-system(zathura2gthumb(cmd)) 
+if(interactive()) system(zathura2gthumb(cmd))
+
+#####################
+catn("Main table 1")
+#####################
+
+dtable1 <- make.main.table.contributions(add_asterisks_unaids = TRUE) 
+filename_tex <- file.path(out.dir.tables, "main_table_contributions_hiv.tex")
+write.to.tex(dtable1, file = filename_tex)
+p <- table.to.plot(dtable1)
+cmd <- ggsave2(p = p, file = tex2pdf(filename_tex), LALA = out.dir.tables, w = 22, h = 8.5)
+if(interactive()) system(zathura2gthumb(cmd))
