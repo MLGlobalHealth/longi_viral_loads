@@ -98,7 +98,7 @@ community_dictionary <- list(
 
 sex_dictionary <- c(M = "Male", F = "Female", `0` = "Female", `1` = "Male")
 
-sex_dictionary2 <- c(M="Men", F="Women", Male="Men", Female="Women")
+sex_dictionary2 <- c(M="Men", F="Women", Male="Men", Female="Women", `0`="Women", `1`="Men")
 
 loc_dictionary <- c(
     inland = "Inland",

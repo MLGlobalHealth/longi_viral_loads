@@ -210,9 +210,10 @@ split.agegroup <- function(x, breaks=c(15, 20, 25, 30, 35, 40, 45, 50))
     cut(x, breaks=breaks, labels=labels, include.lowest = TRUE, right=FALSE)
 }
 
-make.suffix <- function(args)
+make.suffix <- function(args, cmdstan=FALSE)
 {
-    suffix <- paste0("vl_", VIREMIC_VIRAL_LOAD)
+    suffix <- c("", "cmdstan_")[as.integer(cmdstan) + 1]
+    suffix <- paste0(suffix, "vl_", VIREMIC_VIRAL_LOAD)
     suffix <- fifelse(args$only.firstparticipants==TRUE, 
         yes=paste0( suffix,'_firstpart'),
         no=suffix)

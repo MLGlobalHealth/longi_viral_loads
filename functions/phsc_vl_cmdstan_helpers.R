@@ -227,12 +227,11 @@ extract.stan.hyperparams.rho <- function(re, encoding){
             x = "age at visit (years)",
             y = ylab,
         )
-    p_without
 
     p_with <- p_without + 
         geom_point(data = DT2, aes(y = M, shape = SEX_LAB, size = N)) +
         scale_size(range = c(0, 3)) +
-        scale_shape_manual(labels=sex_dictionary2) + 
+        scale_shape_manual(values=shapes$sex, labels=sex_dictionary2) + 
         labs(pch = "Gender", size = "Population size")
 
     return(list(p_without, p_with))

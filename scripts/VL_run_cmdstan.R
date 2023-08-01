@@ -41,16 +41,14 @@ source(file.path(gitdir.functions, "phsc_vl_helpers.R"))
 source(file.path(gitdir.functions, "phsc_vl_cmdstan_helpers.R"))
 
 # options (automatically sourced in R/options.R)
-
 args_stan <- args[names(args) %like% "^iter.|chains"]
 args <- args[names(args) %like% '^run|viral.load|jobname|indir|out.dir|refit|round|^only.firstparticipants$']
 if(interactive()){ # testing
     args$only.firstparticipants <- TRUE 
     args$run.gp.prevl <- TRUE
+    args$out.dir.exact <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl//cmdstan_vl_1000/run-gp-prevl"
 } 
-print(args)
-print(args_stan)
-
+print(args); print(args_stan)
 
 # parallel backend (use multiple cores if local)
 parallelise <- FALSE
@@ -80,7 +78,7 @@ if(! is.na(args$out.dir.exact) ){
 }else{
     stopifnot(dir.exists(args$out.dir.prefix))
     out.dir <- file.path(args$out.dir.prefix)
-    suffix <- make.suffix(args)
+    suffix <- make.suffix(args, cmdstan=TRUE)
     vl.out.dir <- file.path( out.dir, suffix)
 }
 cat('vl.out.dir specified as:\n ', vl.out.dir, '\n')
