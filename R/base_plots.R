@@ -178,6 +178,8 @@ palettes <- list(
     sex=c(
         F="#F4B5BD",
         M="#9ac0cd",
+        Women="#F4B5BD",
+        Men="#9ac0cd",
         Female="#F4B5BD",
         Male="#9ac0cd"
         ),
