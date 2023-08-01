@@ -242,7 +242,7 @@ fetch.args.from.suffix <- function(suffix, asDT=FALSE)
     return(outargs)
 }
 
-zathura2png <- function(cmd){
+zathura2gthumb <- function(cmd){
     cmd <- sub("zathura", "gthumb", cmd)
     cmd <- sub(".pdf", ".png", cmd)
     return(cmd)

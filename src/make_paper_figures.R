@@ -315,10 +315,12 @@ ggsave_nature(p = plot_suppression, filename="whopepfar_suppression.pdf", LALA=o
 catn("Make table with study pop characteristics")
 #################################################
 
-filename_rds <- file.path(out.dir.tables, "fullpop_allcontributions.rds")
-fig1c <- readRDS(filename_rds) |> 
-    subset(ROUND==19 & LOC=='inland') |>
-    plot.agesex.contributions.by.roundcomm(label = "run-gp-prevl", include_baseline =TRUE) 
+if(0){
+    filename_rds <- file.path(out.dir.tables, "fullpop_allcontributions.rds")
+    fig1c <- readRDS(filename_rds) |> 
+        subset(ROUND==19 & LOC=='inland') |>
+        plot.agesex.contributions.by.roundcomm(label = "run-gp-prevl", include_baseline =TRUE) 
+}
 cat("not completed...")
 
 
