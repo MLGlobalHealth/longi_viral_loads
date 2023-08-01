@@ -191,7 +191,7 @@ if( system.file(package="ggsn") != "" ){
         ) + 
         nm_reqs + t_nomargin
     filename <- paste0('main_figure_populationcomposition.pdf')
-    ggsave_nature(p=fig1, filename=filename, LALA=out.dir.figures, w=17.5, h=19)
+    ggsave_nature(p=fig1, filename=filename, LALA=out.dir.figures, w=19.5, h=23)
 }
 
 
