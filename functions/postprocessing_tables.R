@@ -48,33 +48,58 @@ tablify.agecontributions <- function(DT, model= 'run-gp-supp-pop'){
     return(dtab)
 }
 
-make.main.table.contributions <- function(DTPOP=ncen, DJOINT=djoint_agegroup, DCONTRIB=dcontrib_agegroup, DSUPP=dsupp_agegroup, add_asterisks_unaids=TRUE){
+make.main.table.contributions <- function(DTPOP=ncen, DJOINT=djoint_agegroup, DCONTRIB=dcontrib_agegroup, DSUPP=dsupp_agegroup, add_asterisks_unaids=TRUE, include_totals=c("SEX", "AGEGROUP")){
+
+    include_totals <- intersect(include_totals, c("SEX", "AGEGROUP"))
+    if(all(include_totals == "SEX")){warning("SEX totals can only be included if AGEGROUP is")}
 
     # get info for census eligible pop size
     DTPOP[, AGEGROUP:=split.agegroup(AGEYRS)]
-    ncen_agegroup <- DTPOP[ ROUND == 19, list(ELIGIBLE=sum(ELIGIBLE)), by=c('ROUND', 'FC', 'SEX','AGEGROUP')] |>
-        setnames("FC", "LOC")
-    ncen_agegroup[, ELIGIBLE_CELL:= sprintf(
-            "%s (%.2f%%)",
-            ELIGIBLE,
-            100*proportions(ELIGIBLE)
-        ), by=c("ROUND", "LOC")]
+    ncen_agegroup <- DTPOP[ ROUND == 19, list(ELIGIBLE=sum(ELIGIBLE)), by=c('ROUND', 'FC', 'SEX','AGEGROUP')] |> setnames("FC", "LOC")
+    # get totals
+    ncen_totals <- groupingsets( ncen_agegroup, 
+        j = list(ELIGIBLE = sum(ELIGIBLE)),
+        sets = list("LOC", c("LOC", "SEX")),
+        by = c("LOC", "SEX", "AGEGROUP"),
+    )[, lapply(.SD,na2string, str="Total")]
+    ncen_totals[, ROUND := 19]
+    # compute nice cells N(P%)
+    expr_eligible_cell <- expr({ sprintf( "%s (%.2f%%)", ELIGIBLE, 100*proportions(ELIGIBLE)) })
+    cols <- c("ROUND", "LOC")
+    ncen_agegroup[ SEX != "Total" & AGEGROUP != "Total", ELIGIBLE_CELL := eval(expr_eligible_cell) , by=cols]
+    ncen_totals[ SEX != "Total" & AGEGROUP == "Total", ELIGIBLE_CELL := eval(expr_eligible_cell), by=c(cols)]
+    ncen_totals[ SEX == "Total" & AGEGROUP == "Total", ELIGIBLE_CELL := eval(expr_eligible_cell), by=c(cols)]
+    # merge together
+    ncen_agegroup <- rbind(ncen_agegroup, ncen_totals, use.names=TRUE)
 
+    e_sex <- expr(ROUND == 19 & SEX != "Total")
+    if("SEX" %in% include_totals){
+        e_sex <- expr(ROUND == 19)
+    }
+    e_age <- expr(AGEGROUP != "Total")
+    if("AGEGROUP" %in% include_totals){
+        e_age <- expr(TRUE)
+    }
+    
     # get info from gp fits
-    r19_hivprev <- DJOINT[ ROUND == 19 & MODEL == 'run-gp-prevl' & AGEGROUP != "Total"] 
-    r19_prop_unsupp <- DJOINT[ ROUND == 19 & MODEL == "run-gp-supp-pop" & AGEGROUP != "Total"]
-    r19_comp_usnupp <- DCONTRIB[ ROUND == 19 & MODEL=='run-gp-supp-pop' & AGEGROUP != "Total"]
-    r19_comp_hiv <- DCONTRIB[ ROUND == 19 & MODEL=='run-gp-prevl' & AGEGROUP != "Total"]
-    r19_supphiv <- DSUPP[ROUND == 19] 
+    r19_comp_usnupp <- DCONTRIB[  MODEL=='run-gp-supp-pop' & eval(e_sex) & eval(e_age)]
+    r19_comp_hiv <- DCONTRIB[  MODEL=='run-gp-prevl' & eval(e_sex) & eval(e_age)]
+    r19_hivprev <- DJOINT[  MODEL == 'run-gp-prevl' & eval(e_sex)& eval(e_age)] 
+    r19_prop_unsupp <- DJOINT[  MODEL == "run-gp-supp-pop" & eval(e_sex)& eval(e_age)]
+    r19_supphiv <- DSUPP[ eval(e_sex) & eval(e_age) ] 
+    ncen_agegroup <- ncen_agegroup[ eval(e_sex) & eval(e_age) ] 
+    
     if(add_asterisks_unaids){
         r19_supphiv[, `:=` ( UNAIDS_achieved = fifelse(M >  .95^3, yes=" * ", no=""), M=NULL, CL=NULL, CU=NULL, IL=NULL, IU=NULL)] 
     }else{NULL}
 
-    check <- lapply(
-        list(r19_comp_usnupp, r19_comp_hiv),
-        function(DT) {
-            DT[, sum(M) %between% c(.95, 1.05) |> stopifnot(), by=c("ROUND", "LOC")]
-        })
+    if(length(include_totals) == 0){
+        check <- lapply(
+            list(r19_comp_usnupp, r19_comp_hiv),
+            function(DT) {
+                DT[AGEGROUP != "Total" & SEX != "Total", sum(M) %between% c(.95, 1.05) |> stopifnot(), by=c("ROUND", "LOC")]
+            })
+    }
     null <- lapply(
         list(r19_hivprev, r19_prop_unsupp, r19_comp_usnupp, r19_comp_hiv),
         function(DT) {
@@ -83,16 +108,22 @@ make.main.table.contributions <- function(DTPOP=ncen, DJOINT=djoint_agegroup, DC
         }
     ); rm(null)
     # prettify all
+    names_comp <- c(
+        hiv = "Age composition of people with HIV",
+        unsupp = "Age composition of people with unsuppressed HIV"
+    )
     setnames(ncen_agegroup, "ELIGIBLE_CELL", "Population in age band")
     setnames(r19_hivprev, "CELL", "People with HIV in age band")
     setnames(r19_prop_unsupp, "CELL", "People with unsuppressed HIV in age  band")
-    setnames(r19_comp_hiv, "CELL", "Age composition of people with HIV")
-    setnames(r19_comp_usnupp, "CELL", "Age composition of people with unsuppressed HIV")
+    setnames(r19_comp_hiv, "CELL", names_comp['hiv'])
+    setnames(r19_comp_usnupp, "CELL", names_comp['unsupp'])
     dtable <- Reduce(
-        f=function(x,y) merge(x,y, by=c("ROUND", "LOC", "SEX", "AGEGROUP")),
+        f=function(x,y) merge(x,y, all=TRUE, by=c("ROUND", "LOC", "SEX", "AGEGROUP")),
         x=list(ncen_agegroup, r19_hivprev, r19_prop_unsupp, r19_comp_hiv, r19_comp_usnupp, r19_supphiv)
     )
-    dtable[, paste0()]
+    if('SEX' %in% include_totals ){
+        dtable[SEX == "Total", (names_comp) := lapply(.SD, function(x) "100.00%"), .SDcols=names_comp]
+    }
     prettify_labels(dtable)
     cols <- c("LOC_LAB","SEX_LAB", "AGEGROUP" )
     setcolorder(dtable, cols)

@@ -617,7 +617,7 @@ catn("Other contribution to PLHIV quantiles for text")
 filename_overleaf <- file.path(out.dir.tables, "overleaf_PLHIVcontribution_custom.rds")
 
 dcens_custom <- copy(dcens)
-dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, k, 50))]
+dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, 30, 50))]
 
 if (file.exists(filename_overleaf) & !overwrite) {
     contrib_plhiv_custom <- readRDS(filename_overleaf)
