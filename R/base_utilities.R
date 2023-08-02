@@ -132,6 +132,12 @@ na2zero <- function(x){
     x[is.na(x)] <-0; x
 }
 
+na2string <- function(x, str){
+    if(is.numeric(x)){return(x)}
+    if(is.factor(x)){ return(as.factor(str))}
+    x[is.na(x)] <- str; x
+}
+
 `%which.like%` <- function(x, rgx)
     x[x %like% rgx]
 
