@@ -326,13 +326,6 @@ if (file.exists(filename_rds) & !overwrite) {
                         sets = list(by_cols, setdiff(by_cols, "AGEGROUP"), setdiff(by_cols, c("AGEGROUP", "SEX")))
                     )
                     tmp[, quantile2(N / NE), by = c("LOC", "SEX", "AGEGROUP")]
-                    # tmp[, N := N/sum(NE)]
-                    # tmp <- tmp[, .(joint=sum(joint * ELIGIBLE_SMOOTH)), by =  by_cols ]
-                    # groupingsets(tmp,
-                    #     by = c('LOC', "SEX", "AGEGROUP"),
-                    #     j=quantile2(N/sum(NE)),
-                    #     sets=list(c("LOC", "SEX", "AGEGROUP"), c("LOC", "SEX"))
-                    # )
                 }
             )
         },
@@ -706,23 +699,17 @@ if (file.exists(filename_rds) & !overwrite) {
                 round = unique(ROUND),
                 expression_prereturn = {
                     tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
-                    tmp <- tmp[,
-                        {
-                            z <- joint * ELIGIBLE_SMOOTH
-                            list(z = sum(z))
-                        },
-                        by = c(dot.cols, "LOC", "SEX", "AGEGROUP")
-                    ]
+                    tmp <- tmp[, list(z = sum(joint * ELIGIBLE_SMOOTH)), by = c(dot.cols, "LOC", "SEX", "AGEGROUP") ]
                     tmp <- tmp[, list(
                         AGEGROUP = AGEGROUP,
                         SEX = SEX,
                         CONTRIBUTION = z / sum(z)
                     ), by = c(dot.cols, "LOC")]
-                    tmp1 <- tmp[, .(
-                        AGEGROUP = "Total",
-                        CONTRIBUTION = sum(CONTRIBUTION)
-                    ), by = c(dot.cols, "LOC", "SEX")]
-                    tmp <- rbind(tmp, tmp1)
+                    tmp_totals <- rbind(
+                        tmp[, .( AGEGROUP = "Total", CONTRIBUTION = sum(CONTRIBUTION)), by = c(dot.cols, "LOC", "SEX")],
+                        tmp[, .( AGEGROUP = "Total", SEX="Total", CONTRIBUTION = sum(CONTRIBUTION)), by = c(dot.cols, "LOC")]
+                    )
+                    tmp <- rbind(tmp, tmp_totals)
                     tmp[, quantile2(CONTRIBUTION), by = c("SEX", "LOC", "AGEGROUP")]
                 }
             )
