@@ -118,19 +118,7 @@ dpartrates <- readRDS(path.participation.rates) |>
 catn("=== Compare model fits among FTP and ALL ===")
 ####################################################
 
-files1 <- list.files.from.output.directory(".rda", dir=indir.ftp, rounds = 16:19)
-files2 <- list.files.from.output.directory(".rda", dir=indir.all,  rounds = 16:19)
-# get paths of models
-dfiles_rda <- data.table(F = c(files1, files2))
-dfiles_rda[, `:=`(
-    D = dirname(F),
-    F = basename(F),
-    MODEL = basename(dirname(F)),
-    ROUND = gsub("^.*round([0-9]+).*$", "\\1", F) |> as.integer(),
-    IDX = basename(dirname(dirname(F)))
-)]
-dfiles_rda[, c("VL", "FTP", "JOB") := fetch.args.from.suffix(.BY), by = IDX]
-dfiles_rda[, IDX := NULL]
+dfiles_rda <- get.output.paths.ftp.and.all(regex=".rda$")
 stopifnot(dfiles_rda[, .N, by = "F"][, all(N == 2)])
 
 # by round and participant type
@@ -235,19 +223,7 @@ if (make_plots) {
 catn("=== Get posterior draws from rds files ===")
 ##################################################
 
-files1 <- list.files.from.output.directory("round1[0-9].rds|220729.rds", dir = indir.ftp, rounds = 16:19)
-files2 <- list.files.from.output.directory("round1[0-9].rds|220729.rds", dir = indir.all, rounds = 16:19)
-
-dfiles_rds <- data.table(F = c(files1, files2))
-dfiles_rds[, `:=`(
-    D = dirname(F),
-    F = basename(F),
-    MODEL = basename(dirname(F)),
-    ROUND = gsub("^.*round([0-9]+).*$", "\\1", F) |> as.integer(),
-    IDX = basename(dirname(dirname(F)))
-)]
-dfiles_rds[, c("VL", "FTP", "JOB") := fetch.args.from.suffix(.BY), by = IDX]
-dfiles_rds[, IDX := NULL]
+dfiles_rds <- get.output.paths.ftp.and.all("round1[0-9].rds$|220729.rds$")
 stopifnot(dfiles_rds[, .N, by = "F"][, all(N == 2)])
 stopifnot(dfiles_rds[, .N, by = "MODEL"][, all(N == 8)])
 
@@ -282,22 +258,18 @@ if (file.exists(filename_rds) & !overwrite) {
 if (make_plots) {
     # set dimensions for all plots below
     .w <- 10; .h <- 12
-
     p_hiv <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-prevl")
     p_supp <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-hiv")
     p_vir <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-pop")
-
     .fnm <- function(lab) {
         paste("fit", lab, "byroundcommgender.pdf", sep = "_")
     }
-
     ggsave2(p = p_hiv, file = .fnm("hivprev"), LALA = out.dir.figures, .w, .h)
     ggsave2(p = p_supp, file = .fnm("suppofhiv"), LALA = out.dir.figures, .w, .h)
     ggsave2(p = p_vir, file = .fnm("suppofpop"), LALA = out.dir.figures, .w, .h)
 
     # need to compare suppression in Round 19 in Inland and fishing communities...
     .w <- 10; .h <- 7
-
     p1_vir <- plot.comparison.prevalence.fishinginland.oneround(DT=djoint, model = "run-gp-supp-pop", round = 19)
     p1_supp <- plot.comparison.prevalence.fishinginland.oneround(DT=djoint, model = "run-gp-supp-hiv", round = 19, ylim = 1)
     p1_hiv <- plot.comparison.prevalence.fishinginland.oneround(DT=djoint, model = "run-gp-prevl", round = 19)
@@ -495,9 +467,11 @@ if( file.exists(filename_rds) & ! overwrite){
                 # find composition of prevalnce by age group
                 by_cols <- c(dot.cols, "LOC", "SEX", "AGEGROUP")
                 tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
-                tmp[, N_HIV := joint * ELIGIBLE_SMOOTH]
-                tmp[,P_HIV:= proportions(N_HIV), by=c(dot.cols, 'LOC', "SEX", "AGEGROUP")]
-                tmp[, `:=` (joint=NULL, PARTRATE=NULL, ftp=NULL, parts=NULL)]
+                tmp <- tmp[, N_HIV := joint * ELIGIBLE_SMOOTH] |> 
+                    subset(select=c(dot.cols, "LOC", "SEX", "AGEGROUP", "AGEYRS", "N_HIV"))
+                # tmp[, P_HIV_AGE := proportions(N_HIV), by=c(dot.cols, 'LOC', "SEX", "AGEGROUP")]
+                # tmp[, P_HIV_SEX := proportions(N_HIV), by=c(dot.cols, 'LOC', "SEX")]
+                # tmp[, P_HIV_LOC := proportions(N_HIV), by=c(dot.cols, "LOC")]
                 return(tmp)
             }
         )
@@ -509,11 +483,17 @@ if( file.exists(filename_rds) & ! overwrite){
             expression_prereturn = {draws_all}
         )
         cat("suppression done\n")
+        dot.cols <- c(".chain", ".iteration", ".draw")
         tmp <- merge(draws_supp, draws_prev, by=c(dot.cols, "LOC", "SEX", "AGEYRS"))
-        q <- tmp[, list(S=sum(joint*P_HIV)) , by=c(dot.cols, "LOC", 'SEX', 'AGEGROUP')]
-        q[, quantile2(S), by=c("LOC", 'SEX', 'AGEGROUP')]
+        .aggr.hiv.prev <- function(DT, by_cols){
+            DT[, .(S=sum(joint*proportions(N_HIV))) , by=c(dot.cols, by_cols)][, quantile2(S), by=by_cols]
+        }
+        list(
+            .aggr.hiv.prev(tmp, by_cols=c("LOC", 'SEX', 'AGEGROUP')),
+            .aggr.hiv.prev(tmp, by_cols=c("LOC", 'SEX'))[, AGEGROUP := "Total"],
+            .aggr.hiv.prev(tmp, by_cols=c("LOC"))[, `:=` (SEX="Total",AGEGROUP="Total")]
+        ) |> rbindlist(use.names=TRUE)
     } , by=c("ROUND")]
-
     saveRDS(object = dsupp_agegroup, filename_rds)
 }
 

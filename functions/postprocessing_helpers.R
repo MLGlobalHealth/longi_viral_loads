@@ -28,6 +28,22 @@ stanindices2vars <- function(names) {
     out
 }
 
+get.output.paths.ftp.and.all <- function(regex, dir.ftp=indir.ftp, dir.all=indir.all){
+    files1 <- list.files.from.output.directory(regex, dir=dir.ftp, rounds = 16:19)
+    files2 <- list.files.from.output.directory(regex, dir=dir.all,  rounds = 16:19)
+    # get paths of models
+    dfiles <- data.table(F = c(files1, files2))
+    dfiles[, `:=`(
+        D = dirname(F),
+        F = basename(F),
+        MODEL = basename(dirname(F)),
+        ROUND = gsub("^.*round([0-9]+).*$", "\\1", F) |> as.integer(),
+        IDX = basename(dirname(dirname(F)))
+    )]
+    dfiles[, c("VL", "FTP", "JOB") := fetch.args.from.suffix(.BY), by = IDX]
+    dfiles[, IDX := NULL]
+    return(dfiles)
+}
 
 load.summarised.draws.from.rdafiles <- function(lab, files, include.raw) {
     # lab <- 'prevalence' ; files <- rda_files; include.raw <- FALSE;
