@@ -572,7 +572,7 @@ dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, 25, 40, 50))]
 if (file.exists(filename_overleaf) & !overwrite) {
     contrib_viraemia_custom <- readRDS(filename_overleaf)
 } else {
-    contrib_viraemia_custom <- dfiles_rds[MODEL == "run-gp-supp-pop" & ROUND == 19,
+    contrib_viraemia_custom <- dfiles_rds[MODEL == "run-gp-supp-pop",
         {
             dcens
             stopifnot(.N == 2)
@@ -606,9 +606,12 @@ if (file.exists(filename_overleaf) & !overwrite) {
         },
         by = c("MODEL", "ROUND")
     ]
+    # save 
     saveRDS(object = contrib_viraemia_custom, file = filename_overleaf)
+
     # print statements for paper
-    paper_statements_contributions_viraemia_round19()
+    paper_statements_contributions_viraemia_round(round=16)
+    paper_statements_contributions_viraemia_round(round=19)
 }
 
 catn("Other contribution to PLHIV quantiles for text")
