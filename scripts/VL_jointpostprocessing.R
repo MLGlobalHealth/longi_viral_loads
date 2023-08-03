@@ -503,7 +503,6 @@ catn("Get quantiles for contributions by age")
 # _____________________________________________
 
 filename_rds <- file.path(out.dir.tables, "fullpop_allcontributions.rds")
-
 if (file.exists(filename_rds) & !overwrite) {
     dcontrib <- readRDS(filename_rds)
 } else {
@@ -561,6 +560,42 @@ if ( make_plots ) {
     ggsave2(p = p_contrib_suppp, file = .fnm("suppofpop"), LALA = out.dir.figures, .w, .h)
 }
 
+
+catn("Get average age for PLHIV & viraemic population")
+# _____________________________________________________
+
+filename_rds <- file.path(out.dir.tables, "mean_ages_plhiv_viraemic.rds")
+
+if (file.exists(filename_rds) & !overwrite) {
+    dmeanage <- readRDS(filename_rds)
+} else {
+    dmeanage <- dfiles_rds[MODEL %in% c('run-gp-prevl', 'run-gp-supp-pop'), {
+        stopifnot(.N == 2)
+        paths <- file.path(D, F)
+        idx.all <- which(FTP == FALSE)
+        idx.ftp <- which(FTP == TRUE)
+        cat(paths[idx.all], "\n")
+        get.weighted.average.p_predict(
+            readRDS(paths[idx.all]),
+            readRDS(paths[idx.ftp]),
+            round = unique(ROUND),
+            expression_prereturn = {
+                tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
+                tmp1 <- tmp[j=.(AGEMEAN=sum(proportions(joint * ELIGIBLE_SMOOTH) * AGEYRS)),
+                by=c(dot.cols, 'LOC', "ROUND","SEX")]
+                tmp1[j = quantile2(AGEMEAN), by=c("SEX", "LOC") ]
+            }
+        )
+    },
+    by = c("MODEL", "ROUND")
+    ]
+    saveRDS(object = dmeanage, file = filename_rds)
+}
+
+if ( make_tables){
+    tmp <- paper_statements_meanage_population(DT=dmeanage, label='run-gp-supp-pop')
+
+}
 
 catn("Other contribution to viraemia quantiles for text")
 # ________________________________________________________
@@ -724,6 +759,9 @@ if (file.exists(filename_rds) & !overwrite) {
         by = c("MODEL", "ROUND")
     ]
     saveRDS(object = dcontrib_agegroup, file = filename_rds)
+
+    dcontrib_agegroup[
+        AGEGROUP == "Total" & ROUND %in% c(16, 19) & LOC == 'inland' & MODEL %like% 'supp-pop', prettify_cell(100*M, 100*CL, 100*CU), by=c('SEX', "ROUND")]
 }
 
 check_median_contr_approx1(dcontrib_agegroup)
