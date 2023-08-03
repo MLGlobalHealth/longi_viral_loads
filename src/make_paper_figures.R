@@ -140,7 +140,10 @@ dsupp_agegroup  <- readRDS(filename_rds_supphiv_agegroup)
 catn("=== FIGURE 1 ===")
 ########################
 
-# only make this figure if ggsn package is installed.
+# only make this figure if ggsn package is installed (but still load files for later) 
+dcontrib <- .load.model.subset( filename_rds_contrib, MODEL=="run-gp-prevl" & ROUND == 19) |> prettify_labels()
+dprev <- .load.model.subset( filename_rds_prevalence, MODEL=="run-gp-prevl" & ROUND == 19) |> prettify_labels()
+
 if( system.file(package="ggsn") != "" ){
 
     # Map of the Rakai communities
@@ -169,17 +172,8 @@ if( system.file(package="ggsn") != "" ){
         my_labs(color="Gender") +
         theme(legend.position="none") 
 
-
     # fig 1c
-    fig1c <- {
-        dcontrib <- .load.model.subset(
-            filename_rds_contrib,
-            MODEL=="run-gp-prevl" & ROUND == 19) |> prettify_labels()
-        dprev <- .load.model.subset(
-            filename_rds_prevalence,
-            MODEL=="run-gp-prevl" & ROUND == 19) |> prettify_labels()
-        plot_prevalenceandcontrid(dprev, dcontrib)  
-    }
+    fig1c <- plot_prevalenceandcontrid(dprev, dcontrib)  
 
     fig1 <- {
         { (fig1a |fig1b )  + plot_layout(widths = c(1, 1)) } /
@@ -341,5 +335,5 @@ dtable1 <- make.main.table.contributions(add_asterisks_unaids = TRUE)
 filename_tex <- file.path(out.dir.tables, "main_table_contributions_hiv.tex")
 write.to.tex(dtable1, file = filename_tex)
 p <- table.to.plot(dtable1)
-cmd <- ggsave2(p = p, file = tex2pdf(filename_tex), LALA = out.dir.tables, w = 22, h = 8.5)
+cmd <- ggsave2(p = p, file = tex2pdf(filename_tex), LALA = out.dir.tables, w = 20, h = 10)
 if(interactive()) system(zathura2gthumb(cmd))
