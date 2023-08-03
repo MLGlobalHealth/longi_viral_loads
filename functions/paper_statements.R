@@ -39,6 +39,20 @@ paper_statements_female_prevalence <- function(DT=djoint_agegroup){
     tmp
 }
 
+paper_statements_prevalence_viraemia <- function(DT=djoint_agegroup){
+
+    tmp <- subset(DT, ROUND %in% c(16, 19) & SEX=="Total" & AGEGROUP == 'Total' & MODEL == "run-gp-supp-pop")
+    tmp[, `:=` ( CELL = prettify_cell(M*100, CL*100, CU*100, percent=TRUE), M=NULL, CL=NULL, CU=NULL, IL=NULL, IU=NULL)]
+    tmp[, {
+        sprintf("in %s communities, the contribution of viraemic individuals to the census eligible population decreased from %s in round 16 to %s in round 19.\n", 
+            unique(LOC),
+            CELL[ ROUND == 16],
+            CELL[ ROUND == 19 ]
+        ) |> cat()
+    }, by=c("LOC", "SEX")]
+    tmp
+}
+
 paper_statements_contributions_PLHIV_custom <- function(DT=contrib_plhiv_custom){
 
     # DT <- copy(contrib_plhiv_custom)

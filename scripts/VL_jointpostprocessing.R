@@ -339,6 +339,8 @@ if (file.exists(filename_rds) & !overwrite) {
 
 if (make_tables) {
     tmp <- paper_statements_female_prevalence(djoint_agegroup)
+    tmp <- paper_statements_prevalence_viraemia(djoint_agegroup)
+
 }
 
 catn("Get quantiles for population prevalences aggregated over age")
@@ -861,8 +863,7 @@ if (file.exists(filename_rds2) & !overwrite) {
 
 if (make_plots) {
     # only need to change sligtly, nice!
-    .w <- 10
-    .h <- 12
+    .w <- 10; .h <- 12
     .out <- out.dir.figures
 
     MODELS <- c("run-gp-prevl", "run-gp-supp-hiv", "run-gp-supp-pop")
