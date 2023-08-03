@@ -401,8 +401,8 @@ find_summary_output <- function(samples, output, vars, transform = NULL, standar
 
 plot.agesex.contributions.by.roundcomm <- function(DT, label, include_baseline = FALSE) {
     # DT <- copy(dcontrib); label = 'run-gp-supp-pop'; include_baseline = TRUE
-    if(is.na(label)){
-        dplot <- copy(DT)
+    if(! is.na(label)){
+        dplot <- subset(DT, MODEL == label)
     }
     prettify_labels(dplot)
 

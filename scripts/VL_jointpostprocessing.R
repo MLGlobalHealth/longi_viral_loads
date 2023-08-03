@@ -543,9 +543,10 @@ if (file.exists(filename_rds) & !overwrite) {
 
 check_median_contr_approx1(dcontrib)
 
-if (make_plots & FALSE) {   # needs bugfix
-    .w <- 10
-    .h <- 12
+if ( make_plots ) {
+    .w <- 10; .h <- 12
+
+    dcontrib[, .N,by=c('LOC', 'MODEL', "SEX", "AGEYRS", "ROUND")]
 
     p_contrib_prevl <- plot.agesex.contributions.by.roundcomm(dcontrib, label = "run-gp-prevl", include_baseline = TRUE)
     p_contrib_supph <- plot.agesex.contributions.by.roundcomm(dcontrib, label = "run-gp-supp-hiv", include_baseline = TRUE)
@@ -612,6 +613,9 @@ if (file.exists(filename_overleaf) & !overwrite) {
     # print statements for paper
     paper_statements_contributions_viraemia_round(round=16)
     paper_statements_contributions_viraemia_round(round=19)
+
+    # paper_statements_contributions_viraemia_round(round=16, agegroup="15-24")
+    # paper_statements_contributions_viraemia_round(round=19, agegroup="15-24")
 }
 
 catn("Other contribution to PLHIV quantiles for text")

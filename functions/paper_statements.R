@@ -1,11 +1,11 @@
-paper_statements_contributions_viraemia_round <- function(DT= contrib_viraemia_custom, round=19){
+paper_statements_contributions_viraemia_round <- function(DT= contrib_viraemia_custom, round=19, agegroup="25-39"){
     tmp <- copy(DT)
     tmp[, CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE)]
     .round_lab <- drounds[ROUND == as.integer(round), END2]
-    tmp[ AGEGROUP == '25-39' & ROUND == round, {
-        sprintf("By %s, contributions to viraemia by %s aged 25-39 were:\n - %s in Fishing\n - %s in Inland\n", 
+    tmp[ AGEGROUP == agegroup & ROUND == round, {
+        sprintf("By %s, contributions to viraemia by %s aged %s were:\n - %s in Fishing\n - %s in Inland\n", 
             .round_lab,
-            unique(SEX),
+            unique(SEX), agegroup,
             CELL[which(LOC == 'fishing')],
             CELL[which(LOC == 'inland')] 
         ) |> cat()
