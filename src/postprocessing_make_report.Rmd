@@ -1,17 +1,17 @@
 ---
- title: "Summary"
- author: "Andrea Brizzi"
- date: "`r Sys.Date()`"
- params:
-    indir: ""
-    jobid: ""
- output: 
-    html_document:
-        theme: sandstone
-        highlight: monochrome
-        toc: true
-        toc_depth: 2
-        toc_float: false
+title: "Summary"
+author: "Andrea Brizzi"
+date: "`r Sys.Date()`"
+params:
+   indir: ""
+   jobid: ""
+output: 
+   html_document:
+       theme: sandstone
+       highlight: monochrome
+       toc: true
+       toc_depth: 2
+       toc_float: false
  
  # bibliography: references.bib
 ---
@@ -200,4 +200,3 @@ for ( p in prefix ){
         cat()
 }
 ```
-
