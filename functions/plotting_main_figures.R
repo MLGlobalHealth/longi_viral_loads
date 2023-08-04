@@ -1461,6 +1461,28 @@ plot_propofpop_of_viraemic_byagesex_stratbycommround <- function(DT, colorby="RO
         nm_reqs
 }
 
+labels_propofpop_of_viraemic_byagesex_stratbycommround <- function(DT=djoint_agegroup) {
+    dlabels <- subset(DT, SEX != "Total" & AGEGROUP == 'Total' & MODEL == 'run-gp-supp-pop' ) |> 
+        prettify_labels()
+    dlabels[, `:=` (
+        AGEYRS=Inf,
+        CELL=paste0( prettify_cell(M*100, CL*100, CU*100), "    ")
+    )]
+    dlabels2 <- dlabels[, .(
+        CELL = paste(c("\n",CELL), collapse='\n'), ROUND_LAB = NA, 
+        M=NA_real_, CL=NA_real_, CU=NA_real_
+    ), by=c("SEX_LAB", "LOC_LAB")]
+    dlabels[, `:=` (CU = min(CU), CL = NA_real_, M=NA_real_), by=c("SEX_LAB", "LOC_LAB")]
+    return(dlabels2)
+}
+
+point_propofpop_of_viraemic_byagesex_stratbycommround <- function(){
+    dmeanage <- file.path(out.dir.tables, "mean_ages_plhiv_viraemic.rds") |> readRDS() 
+    tmp <- subset(dmeanage, MODEL == 'run-gp-supp-pop') |> prettify_labels()
+    tmp[, `:=` (M2=M, CL=NA_real_, CU=NA_real_, IL=NA_real_, IU=NA_real_, M=NA_real_)]
+    tmp
+}
+
 plot.proposed.metric <- function(){
 
     # consider goals such as the following:
