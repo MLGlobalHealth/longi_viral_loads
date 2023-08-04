@@ -178,18 +178,27 @@ plot.comparison.ftptype.colsex <- function(DT, ylab) {
 }
 
 get.weighted.average.p_predict <- function(fit1, fit2, round, expression_prereturn = {}) {
+
+    .optional.thinning <- function(DT){
+        if(! interactive()) return(DT) 
+        posterior::thin_draws(DT, thin=5)
+    }
+
     # round <- 19
     dot.cols <- c(".chain", ".iteration", ".draw")
     demo.cols <- c("SEX", "LOC", "AGEYRS")
 
     # extract age-specific draws from both ftp and allparts
     draws_parts <- posterior::as_draws_df(fit1) |>
-        posterior::subset_draws(variable = "^p_predict", regex = TRUE)
+        posterior::subset_draws(variable = "^p_predict", regex = TRUE) |>
+        .optional.thinning()
     names(draws_parts) <- gsub("p_predict", "parts", names(draws_parts))
 
     draws_ftp <- posterior::as_draws_df(fit2) |>
-        posterior::subset_draws(variable = "^p_predict", regex = TRUE)
+        posterior::subset_draws(variable = "^p_predict", regex = TRUE) |> 
+        .optional.thinning()
     names(draws_ftp) <- gsub("p_predict", "ftp", names(draws_ftp))
+
 
     # merge together
     draws_all <- posterior::bind_draws(draws_parts, draws_ftp) |> setDT()
@@ -401,8 +410,7 @@ find_summary_output <- function(samples, output, vars, transform = NULL, standar
 
 plot.agesex.contributions.by.roundcomm <- function(DT, label, include_baseline = FALSE) {
     # DT <- copy(dcontrib); label = 'run-gp-supp-pop'; include_baseline = TRUE
-    if(! is.na(label)){
-        dplot <- subset(DT, MODEL == label)
+    if(! is.na(label)){ dplot <- subset(DT, MODEL == label)
     }
     prettify_labels(dplot)
 
