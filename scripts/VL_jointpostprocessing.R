@@ -1,7 +1,6 @@
 #!/bin/Rscript
 
 self_relative_path <- "scripts/VL_jointpostprocessing.R"
-
 ########################
 cat("\nStart of:", self_relative_path,"\n")
 ########################
@@ -111,9 +110,6 @@ dpartrates <- readRDS(path.participation.rates) |>
     subset(select = c("ROUND", "FC", "SEX", "AGEYRS", "PARTRATE_SMOOTH.25")) |>
     setnames(c("FC", "PARTRATE_SMOOTH.25"), c("LOC", "PARTRATE"))
 
-# get model fits for both scenarios: all participants and first participants
-
-
 ####################################################
 catn("=== Compare model fits among FTP and ALL ===")
 ####################################################
@@ -133,14 +129,12 @@ if (make_plots) {
         p1 <- prev.hiv.by.age |> plot.comparison.ftptype.colftp(ylab = "HIV prevalence")
         filename <- paste0("fit_hivprev_byftpstatus_round", round, ".pdf")
         ggsave2(p = p1, file = filename, LALA = out.dir.figures, w = 9, h = 8)
-
         # suppression among infected: again similar, no significant differences except for 'olde'
         nsinf.by.age <- rbind.ftpstatus.datatables.by.round("nsinf.by.age", round, envir_list = env_list)
         nsinf.by.age |> plot.comparison.ftptype.colsex(ylab = "Viral suppression among HIV positives")
         p2 <- nsinf.by.age |> plot.comparison.ftptype.colftp(ylab = "Viral suppression among HIV positives")
         filename <- paste0("fit_suppofhiv_byftpstatus_round", round, ".pdf")
         ggsave2(p = p2, file = filename, LALA = out.dir.figures, w = 9, h = 8)
-
         # viraemia among all
         nspop.by.age <- rbind.ftpstatus.datatables.by.round("nspop.by.age", round, envir_list = env_list)
         nspop.by.age |> plot.comparison.ftptype.colsex(ylab = "Prevalence of viraemia")
@@ -583,9 +577,17 @@ if (file.exists(filename_rds) & !overwrite) {
             round = unique(ROUND),
             expression_prereturn = {
                 tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
-                tmp1 <- tmp[j=.(AGEMEAN=sum(proportions(joint * ELIGIBLE_SMOOTH) * AGEYRS)),
-                by=c(dot.cols, 'LOC', "ROUND","SEX")]
-                tmp1[j = quantile2(AGEMEAN), by=c("SEX", "LOC") ]
+                tmp1 <- tmp[j=.(
+                    AGEMEAN=Hmisc::wtd.mean(AGEYRS, joint * ELIGIBLE_SMOOTH),
+                    AGESTD=Hmisc::wtd.var(AGEYRS, joint * ELIGIBLE_SMOOTH) |> sqrt()
+                ),
+                by=c(dot.cols, 'LOC', "ROUND","SEX")] |>
+                    melt.data.table(
+                        measure.vars = c("AGEMEAN", "AGESTD"),
+                        variable.name = "TYPE",
+                        value.name = "value"
+                    )
+                tmp1[j = quantile2(value), by=c("SEX", "LOC", "TYPE") ]
             }
         )
     },
@@ -595,8 +597,10 @@ if (file.exists(filename_rds) & !overwrite) {
 }
 
 if ( make_tables){
-    tmp <- paper_statements_meanage_population(DT=dmeanage, label='run-gp-supp-pop')
-
+    tmp <- rbind(
+        paper_statements_meanage_population(DT=dmeanage, label='run-gp-supp-pop', type="AGEMEAN"),
+        paper_statements_meanage_population(DT=dmeanage, label='run-gp-supp-pop', type="AGESTD")
+    )
 }
 
 catn("Other contribution to viraemia quantiles for text")

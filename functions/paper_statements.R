@@ -1,3 +1,7 @@
+remove_quantiles <- function(DT){   
+    set(DT, i=NULL, j=c("CL", "CU", "IL", "IU", "M"), value=NULL)
+}
+
 paper_statements_contributions_viraemia_round <- function(DT= contrib_viraemia_custom, round=19, agegroup="25-39"){
     tmp <- copy(DT)
     tmp[, CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE)]
@@ -93,13 +97,21 @@ paper_statements_female_contributions_prevalence <- function(DT=dcontrib_agegrou
     tmp
 }
 
-paper_statements_meanage_population <- function(DT=dmeanage, label="run-gp-supp-pop"){
-    dtable <- subset(DT, ROUND %in% c(16,19) & MODEL == label)
-    dtable[, `:=` (
-        CELL=prettify_cell( M, CL, CU, precision=1),
-        M=NULL, CL=NULL, CU=NULL, IL=NULL, IU=NULL), ]
+paper_statements_meanage_population <- function(DT=dmeanage, label="run-gp-supp-pop", type = "AGEMEAN"){
+
+    type <- match.arg(type, c("AGEMEAN", "AGESTD"))
+
+    dtable <- subset(DT, ROUND %in% c(16,19) & MODEL == label & TYPE == type)
+    dtable[, CELL:=prettify_cell( M, CL, CU, precision=1)] |>
+        remove_quantiles()
+
+    fmt <- fifelse(type == "AGEMEAN", 
+        yes= "In %s communities, the average age of %s with viraemia was %s in round 16 and %s in round 19.\n",
+        no =  "In %s communities, the standard deviation around the age of %s with viraemia was %s in round 16 and %s in round 19.\n",
+    )
+    
     dtable[, { sprintf(
-        "In %s communities, the average age of %s with viraemia was %s in round 16 and %s in round 19.\n",
+        fmt,
         LOC,
         sex_dictionary2[unique(SEX)],
         CELL[ROUND == 16],
