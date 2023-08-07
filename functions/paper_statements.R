@@ -2,6 +2,13 @@ remove_quantiles <- function(DT){
     set(DT, i=NULL, j=c("CL", "CU", "IL", "IU", "M"), value=NULL)
 }
 
+reverse_quantiles <- function(DT){
+    set(DT, i=NULL, j=c("CL", "CU", "IL", "IU"), value=DT[, .(CU, CL, IU, IL)])
+    cols <- c("CL", "CU", "M", "IL", "IU")
+    DT[, (cols) := lapply(.SD, function(x) 1-x), .SDcols=cols]
+    return(DT)
+}
+
 paper_statements_contributions_viraemia_round <- function(DT= contrib_viraemia_custom, round=19, agegroup="25-39"){
     tmp <- copy(DT)
     tmp[, CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE)]
@@ -119,4 +126,34 @@ paper_statements_meanage_population <- function(DT=dmeanage, label="run-gp-supp-
     ) |> cat()
     } , by=c('LOC','SEX')] 
     return(dtable)
+}
+
+paper_statements_viraemic_among_hiv <- function(DT=djoint, age=30, negate=FALSE){
+
+    word <- fifelse(negate, yes="unsuppressed decreased", no="suppressed increased")
+    dtable <- subset(DT, MODEL == 'run-gp-supp-hiv' & AGEYRS == age & ROUND %in% c(16, 19))
+    if(negate){ dtable <- reverse_quantiles(dtable) }
+    dtable[, CELL := prettify_cell(100*M, 100*CL, 100*CU) ]
+    remove_quantiles(dtable); prettify_labels(dtable)
+    dtable[ j= {
+        sprintf('In %s communities, the proportion of %s aged %s years old with HIV who were %s from %s in %s to %s in %s\n',
+        unique(LOC_LAB), unique(SEX_LAB), age, word, 
+        CELL[ROUND == 16], ROUND_LAB[ROUND == 16],
+        CELL[ROUND == 19], ROUND_LAB[ROUND == 19]
+    ) |> cat()
+        list(CELL=CELL)
+    }, by=c("LOC_LAB" ,"SEX_LAB")]
+}
+
+paper_statements_malefemaleratio_suppression <- function(DT=dmf_ratios,reverse=FALSE){
+    .type <- fifelse(reverse==TRUE, yes="VIR", no="SUP")
+    dtable <- subset(DT, ROUND %in% c(19) & AGEGROUP == "15-24" & TYPE == .type)
+    dtable[, CELL := prettify_cell( M*100, CL*100, CU*100, percent=TRUE)]
+    prettify_labels(dtable) |> remove_quantiles()
+    dtable[ j=sprintf(
+        "In %s communities, the prevalence of %s among 15-25 years old men was %s the one for HIV positive women\n",
+        LOC_LAB, 
+        fifelse(reverse==TRUE, yes="viraemia", no="suppression"),
+        CELL
+    ), by=c('ROUND_LAB', "LOC_LAB")]
 }

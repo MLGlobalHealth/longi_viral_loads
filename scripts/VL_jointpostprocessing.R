@@ -290,6 +290,12 @@ if (make_plots) {
     rm(.w, .h)
 }
 
+if ( make_tables ){
+
+    # .null <- paper_statements_viraemic_among_hiv(negate=FALSE)
+    .null <- paper_statements_viraemic_among_hiv(negate=TRUE)
+}
+
 
 catn("Get quantiles for population prevalences by agegroup")
 # ___________________________________________________________
@@ -458,9 +464,6 @@ if( file.exists(filename_rds) & ! overwrite){
                 tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
                 tmp <- tmp[, N_HIV := joint * ELIGIBLE_SMOOTH] |> 
                     subset(select=c(dot.cols, "LOC", "SEX", "AGEGROUP", "AGEYRS", "N_HIV"))
-                # tmp[, P_HIV_AGE := proportions(N_HIV), by=c(dot.cols, 'LOC', "SEX", "AGEGROUP")]
-                # tmp[, P_HIV_SEX := proportions(N_HIV), by=c(dot.cols, 'LOC', "SEX")]
-                # tmp[, P_HIV_LOC := proportions(N_HIV), by=c(dot.cols, "LOC")]
                 return(tmp)
             }
         )
@@ -612,11 +615,10 @@ dcens_custom <- copy(dcens)
 dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, 25, 40, 50))]
 
 if (file.exists(filename_overleaf) & !overwrite) {
-    contrib_viraemia_custom <- readRDS(filename_overleaf)
+    dmf_ratios <- readRDS(filename_overleaf)
 } else {
-    contrib_viraemia_custom <- dfiles_rds[MODEL == "run-gp-supp-pop",
+    dmf_ratios <- dfiles_rds[MODEL == "run-gp-supp-pop",
         {
-            dcens
             stopifnot(.N == 2)
             paths <- file.path(D, F)
             idx.all <- which(FTP == FALSE)
@@ -672,7 +674,6 @@ if (file.exists(filename_overleaf) & !overwrite) {
 } else {
     contrib_plhiv_custom <- dfiles_rds[MODEL == "run-gp-prevl" & ROUND %in% c(16, 19),
         {
-            dcens
             stopifnot(.N == 2)
             paths <- file.path(D, F)
             idx.all <- which(FTP == FALSE)
@@ -723,7 +724,9 @@ if (file.exists(filename_overleaf) & !overwrite) {
     # print statements for paper
 }
 
-tmp <- paper_statements_contributions_PLHIV_custom()
+if(make_tables){
+    tmp <- paper_statements_contributions_PLHIV_custom()
+}
 
 catn("Get quantiles for contributions by agegroup")
 # __________________________________________________
@@ -1031,6 +1034,76 @@ if (make_tables) {
 
     filename_overleaf <- file.path(out.dir.tables, "overleaf_")
     saveRDS(object = tab, file = filename_overleaf)
+}
+
+
+############################################################
+catn("=== M/F PLHIV suppression ratio custom agegroups ===")
+############################################################
+
+dcens_custom <- copy(dcens)
+dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, 25, 40, 50))]
+
+filename_rds <- file.path(out.dir.tables, "posterior_mf_ratios_custom.rds")
+
+if( file.exists(filename_rds) & ! overwrite){
+    dmf_ratios <- readRDS(filename_rds)
+}else{
+    dmf_ratios <- dfiles_rds[,{
+        paths <- file.path(D,F)
+        .check <- function(x) { stopifnot(length(x) == 1); return(x)}
+        idx.hivprev.all <- which(FTP==FALSE & MODEL=="run-gp-prevl") |> .check()
+        idx.hivprev.ftp <- which(FTP==TRUE & MODEL=="run-gp-prevl") |> .check()
+        idx.supphiv.all <- which(FTP==FALSE & MODEL=="run-gp-supp-hiv") |> .check()
+        idx.supphiv.ftp <- which(FTP==TRUE & MODEL=="run-gp-supp-hiv") |> .check()
+        cat("Round ", unique(ROUND), "\n")
+        # load hiv prevalences to compute N HIV positive in age groups
+        draws_prev <- get.weighted.average.p_predict(
+            readRDS(paths[idx.hivprev.all]),
+            readRDS(paths[idx.hivprev.ftp]),
+            round = unique(ROUND),
+            expression_prereturn = {
+                # find composition of prevalnce by age group
+                by_cols <- c(dot.cols, "LOC", "SEX", "AGEGROUP")
+                tmp <- merge(draws_all, dcens_custom, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
+                tmp <- tmp[, N_HIV := joint * ELIGIBLE_SMOOTH] |> 
+                    subset(select=c(dot.cols, "LOC", "SEX", "AGEGROUP", "AGEYRS", "N_HIV"))
+                return(tmp)
+            }
+        )
+        cat("prevalence done - ")
+        draws_supp <- get.weighted.average.p_predict(
+            readRDS(paths[idx.supphiv.all]),
+            readRDS(paths[idx.supphiv.ftp]),
+            round = unique(ROUND),
+            expression_prereturn = {draws_all}
+        )
+        cat("suppression done\n")
+        dot.cols <- c(".chain", ".iteration", ".draw")
+        tmp <- merge(draws_supp, draws_prev, by=c(dot.cols, "LOC", "SEX", "AGEYRS"))
+        .take.supp.ratio <- function(DT, by_cols){
+            by_cols_noage <- setdiff(by_cols, 'AGEGROUP')
+            by_cols_nosex <- setdiff(by_cols, "SEX")
+            .formula <- as.formula(paste0('.draw +',paste(by_cols_nosex, collapse=" + "), " ~ SEX"))
+            tmp1 <- tmp[, .(S=sum(joint*proportions(N_HIV))) , by=c(dot.cols, by_cols)] |>
+                dcast.data.table( .formula, value.var = "S", drop=TRUE)
+            tmp1[, `:=` (RATIO_MF_SUPP = M/F, RATIO_MF_VIR = (1-M)/(1-F) )]
+            rbind(
+                cbind(tmp1[, quantile2(RATIO_MF_SUPP) , by=by_cols_nosex], TYPE="SUP"),
+                cbind(tmp1[, quantile2(RATIO_MF_VIR) , by=by_cols_nosex], TYPE="VIR")
+            )
+        }
+        list(
+            .take.supp.ratio(tmp, by_cols=c("LOC", 'SEX', 'AGEGROUP')),
+            .take.supp.ratio(tmp, by_cols=c("LOC", 'SEX'))[, AGEGROUP := "Total"]
+        ) |> rbindlist(use.names=TRUE)
+    } , by=c("ROUND")]
+    saveRDS(object = dmf_ratios, filename_rds)
+}
+
+if(make_tables){
+    # aim: 
+    paper_statements_malefemaleratio_suppression(DT=dmf_ratios, reverse=FALSE)
 }
 
 
