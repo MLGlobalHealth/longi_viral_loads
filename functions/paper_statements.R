@@ -128,21 +128,37 @@ paper_statements_meanage_population <- function(DT=dmeanage, label="run-gp-supp-
     return(dtable)
 }
 
-paper_statements_viraemic_among_hiv <- function(DT=djoint, age=30, negate=FALSE){
+paper_statements_viraemic_among_hiv <- function(DT=djoint, age=30, negate=FALSE, rounds=c(16,19)){
 
-    word <- fifelse(negate, yes="unsuppressed decreased", no="suppressed increased")
-    dtable <- subset(DT, MODEL == 'run-gp-supp-hiv' & AGEYRS == age & ROUND %in% c(16, 19))
+    dtable <- subset(DT, MODEL == 'run-gp-supp-hiv' & AGEYRS == age & ROUND %in% rounds)
     if(negate){ dtable <- reverse_quantiles(dtable) }
-    dtable[, CELL := prettify_cell(100*M, 100*CL, 100*CU) ]
+    dtable[, CELL := prettify_cell(100*M, 100*CL, 100*CU, percent=TRUE) ]
     remove_quantiles(dtable); prettify_labels(dtable)
-    dtable[ j= {
-        sprintf('In %s communities, the proportion of %s aged %s years old with HIV who were %s from %s in %s to %s in %s\n',
-        unique(LOC_LAB), unique(SEX_LAB), age, word, 
-        CELL[ROUND == 16], ROUND_LAB[ROUND == 16],
-        CELL[ROUND == 19], ROUND_LAB[ROUND == 19]
-    ) |> cat()
-        list(CELL=CELL)
-    }, by=c("LOC_LAB" ,"SEX_LAB")]
+
+    out <- NULL
+    if( uniqueN(rounds) == 2){
+
+        word <- fifelse(negate, yes="unsuppressed decreased", no="suppressed increased")
+        out <- dtable[ j= {
+            sprintf('In %s communities, the proportion of HIV positive %s aged %s years old who were %s from %s in %s to %s in %s\n',
+            unique(LOC_LAB), sex_dictionary2[unique(SEX_LAB)], age, word, 
+            CELL[ROUND == 16], ROUND_LAB[ROUND == 16],
+            CELL[ROUND == 19], ROUND_LAB[ROUND == 19]
+        ) |> cat()
+            list(CELL=CELL)
+        }, by=c("LOC_LAB" ,"SEX_LAB")]
+
+    }else if( uniqueN(rounds) == 1){
+
+        word <- fifelse(negate, yes="unsuppressed was", no="suppressed was")
+        out <- dtable[ j= {
+            sprintf('In %s communities, the proportion of HIV positive %s aged %s years old who were %s %s\n',
+                unique(LOC_LAB), sex_dictionary2[unique(SEX_LAB)], age, word, CELL
+            ) |> cat()
+            list(CELL=CELL)
+        }, by=c("LOC_LAB" ,"SEX_LAB")]
+        
+    }
 }
 
 paper_statements_malefemaleratio_suppression <- function(DT=dmf_ratios,reverse=FALSE){
@@ -156,4 +172,18 @@ paper_statements_malefemaleratio_suppression <- function(DT=dmf_ratios,reverse=F
         fifelse(reverse==TRUE, yes="viraemia", no="suppression"),
         CELL
     ), by=c('ROUND_LAB', "LOC_LAB")]
+}
+
+paper_statements_suppression_PLHIV_aggregated <- function(DT=dsupp_agegroup, reverse=FALSE){
+    word <- fifelse(reverse==TRUE, yes="non-suppression", no="suppression")
+    dtable <- subset(DT, AGEGROUP == "Total" & SEX != "Total" & ROUND %in% c(16, 19))
+    if(negate){ dtable <- reverse_quantiles(dtable) }
+    dtable[, CELL := prettify_cell( M*100, CL * 100, CU * 100, percent=TRUE)]
+    remove_quantiles(dtable) |> prettify_labels()
+    dtable[ , sprintf("In %s communities, prevalence of %s in HIV positive %s was %s by 2013 and %s by 2019",
+        unique(LOC_LAB), unique(word), unique(SEX_LAB),
+        CELL[ROUND == 16], CELL[ROUND == 19]
+    )
+    , by = c("LOC_LAB", "SEX_LAB")]
+    dtable
 }

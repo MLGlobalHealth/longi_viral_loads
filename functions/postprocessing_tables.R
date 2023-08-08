@@ -128,7 +128,7 @@ make.main.table.contributions <- function(DTPOP=ncen, DJOINT=djoint_agegroup, DC
     cols <- c("LOC_LAB","SEX_LAB", "AGEGROUP" )
     setcolorder(dtable, cols)
     if(add_asterisks_unaids){
-        dtable[, `Age composition of people with unsuppressed HIV` := paste0(`Age composition of people with unsuppressed HIV`, UNAIDS_achieved)]
+        dtable[, (names_comp['unsupp']) := lapply(.SD, \(x) paste0(x, UNAIDS_achieved)), .SDcols=names_comp['unsupp']]
     }
     dtable[,`:=` (ROUND_LAB=NULL, LOC=NULL, SEX=NULL,ELIGIBLE = NULL, ROUND = NULL, UNAIDS_achieved=NULL)]  
 

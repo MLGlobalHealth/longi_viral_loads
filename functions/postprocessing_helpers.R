@@ -147,7 +147,7 @@ plot.comparison.ftptype.colftp <- function(DT, ylab) {
     p <- ggplot(dplot, aes(x = AGE_LABEL, y = M, ymin = CL, ymax = CU, color = FTP_LAB, fill = FTP_LAB)) +
         geom_ribbon(alpha = .2, color = NA) +
         geom_line() +
-        facet_grid(LOC_LAB ~ SEX_LAB, scales = "free_y") +
+        facet_grid(LOC_LAB ~ SEX_LAB, scales = "free_y", labeller=labeller(SEX_LAB = sex_dictionary2, LOC_LAB=community_dictionary$long)) +
         scale_y_continuous(labels = scales::label_percent(), limits = c(0, NA), expand = c(0, 0)) +
         scale_x_continuous(limits = c(15, 50), expand = c(0, 0)) +
         scale_color_manual(values = palettes$rakailogo) +
@@ -166,7 +166,7 @@ plot.comparison.ftptype.colsex <- function(DT, ylab) {
     p <- ggplot(dplot, aes(x = AGE_LABEL, y = M, ymin = CL, ymax = CU, color = SEX_LAB, fill = SEX_LAB)) +
         geom_ribbon(alpha = .2, color = NA) +
         geom_line() +
-        facet_grid(LOC_LAB ~ FTP_LAB, scales = "free_y") +
+        facet_grid(LOC_LAB ~ FTP_LAB, scales = "free_y", labeller=labeller(LOC_LAB=community_dictionary$long)) +
         scale_y_continuous(labels = scales::label_percent(), limits = c(0, NA), expand = c(0, 0)) +
         scale_x_continuous(limits = c(15, 50), expand = c(0, 0)) +
         scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
