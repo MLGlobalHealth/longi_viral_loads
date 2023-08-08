@@ -209,10 +209,10 @@ my_labs_dictionary <- c(
 
 dict_stan_params <- c(
 
-    `alpha_00` = expression(paste("variance:  ", alpha[0][0])),
-    `alpha_01` = expression(paste("variance:  ", alpha[0][1])),
-    `alpha_10` = expression(paste("variance:  ", alpha[1][0])),
-    `alpha_11` = expression(paste("variance:  ", alpha[1][1])),
+    `alpha_00` = expression(paste("s.deviation:  ", alpha[0][0])),
+    `alpha_01` = expression(paste("s.deviation:  ", alpha[0][1])),
+    `alpha_10` = expression(paste("s.deviation:  ", alpha[1][0])),
+    `alpha_11` = expression(paste("s.deviation:  ", alpha[1][1])),
     
     `rho_00` = expression(paste("lengthscale:  ", rho[0][0])),
     `rho_01` = expression(paste("lengthscale:  ", rho[0][1])),
