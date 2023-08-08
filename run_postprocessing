@@ -26,7 +26,7 @@ done
 # default options
 VL="${VL:-1000}" 
 FTP="${FTP:-FALSE}"
-STANWAY="${STANWAY:-stan}"
+STANWAY="${STANWAY:-cmdstan}"
 INDIR="${INDIR:-/rds/general/user/ab1820/home/git/longi_viral_loads}"
 OUTDIR="${OUTDIR:-/rds/general/user/ab1820/home/projects/2022/longvl}"
 

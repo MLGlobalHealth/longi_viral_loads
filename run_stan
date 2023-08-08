@@ -29,7 +29,7 @@ done
 VL="${VL:-1000}" 
 FTP="${FTP:-FALSE}"
 REFIT="${FTP:-TRUE}"
-STANWAY="${STANWAY:-stan}"
+STANWAY="${STANWAY:-cmdstan}"
 INDIR="${INDIR:-$ABSOLUTE_PATH}"
 OUTDIR="${OUTDIR:-/rds/general/user/ab1820/home/projects/2022/longvl}"
 
