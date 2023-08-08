@@ -42,12 +42,12 @@ source(file.path(gitdir, "R/paths.R"))
 
 # options:
 args <- args[names(args) %like% "jobname|run|out.dir|round"]
-print(args)
 if(interactive()){
-    args$jobname <- 'cmdstan_vl_1000_firstpart'
+    args$jobname <- 'OLD_cmdstan_vl_1000_firstpart'
     args$run.gp.prevl <- TRUE
     args$round <- 17
 }
+print(args)
 
 ##################
 #      Main      #
@@ -57,7 +57,6 @@ catn("Locate model fit and output directories")
 # _____________________________________________
 
 outdir <- args$out.dir.exact
-
 if(is.na(outdir)){
     outdir <- with(args, {
         model <- which( c( 

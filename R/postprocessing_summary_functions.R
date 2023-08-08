@@ -1771,3 +1771,22 @@ combine_counterfactual_tables <- function(counterfactuals_p_f,
         incidence_counterfactual = incidence_counterfactual, 
         incidence_factual = incidence_factual))
 }
+
+
+aggregate_diagnostics_over_all_rounds <- function(dir=dirname(outfile.diagnostics), diagn='num_divergent'){
+
+    diagn <- match.arg(diagn, c('num_divergent', 'num_max_treedepth', 'ebfmi'))
+    func <- sum
+    if( diagn == 'ebfmi') func <- max
+
+    .files <- list.files(dir , pattern="diagnostics.rds$", full.names = TRUE)
+    .tmp <- lapply(.files, readRDS) |>
+        lapply(`[[`, diagn) |>
+        sapply(func) |> 
+        func()
+    return(.tmp)
+    # aggregate_diagnostics_over_all_rounds(diagn = 'num_divergent')
+    # aggregate_diagnostics_over_all_rounds(diagn = 'num_max_treedepth')
+    # aggregate_diagnostics_over_all_rounds(diagn = 'ebfmi')
+}
+
