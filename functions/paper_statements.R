@@ -24,15 +24,16 @@ paper_statements_contributions_viraemia_round <- function(DT= contrib_viraemia_c
     }, by=c('SEX')]
 } 
 
-paper_statements_overall_prevalence <- function(DT=djoint_agegroup){
+paper_statements_overall_prevalence <- function(DT=djoint_agegroup, round=19){
 
     tmp <- subset(DT, MODEL == 'run-gp-prevl' & AGEGROUP == 'Total')
     tmp[, CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE)]
 
-    tmp[ROUND == 16 & SEX == "Total", {
+
+    tmp[ROUND == round & SEX == "Total", {
         sprintf(
-            "At baseline, HIV prevalence was estimated to be:\n - %s in inland\n - %s in fishing\n",
-            CELL[ LOC == 'fishing'], CELL[ LOC == 'inland' ]
+            "In round %s, HIV prevalence was estimated to be:\n - %s in inland\n - %s in fishing\n",
+            unique(ROUND), CELL[ LOC == 'inland'], CELL[ LOC == 'fishing']
         ) |> cat()
         NULL
     }]

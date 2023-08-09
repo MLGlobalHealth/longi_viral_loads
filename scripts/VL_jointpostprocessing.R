@@ -118,7 +118,6 @@ catn("=== Compare model fits among FTP and ALL ===")
 dfiles_rda <- get.output.paths.ftp.and.all(regex = ".rda$")
 stopifnot(dfiles_rda[, .N, by = "F"][, all(N == 2)])
 
-# by round and participant type
 env_list <- store.rda.environments.in.list.by.round.ftpstatus(dfiles_rda)
 
 if (make_plots) {
@@ -346,8 +345,10 @@ if (file.exists(filename_rds) & !overwrite) {
 }
 
 if (make_tables) {
-    tmp <- paper_statements_female_prevalence(djoint_agegroup)
-    tmp <- paper_statements_prevalence_viraemia(djoint_agegroup)
+    .null <- paper_statements_overall_prevalence(round=19)
+    .null <- paper_statements_female_prevalence(djoint_agegroup)
+    .null <- paper_statements_prevalence_viraemia(djoint_agegroup)
+    rm(.null)
 }
 
 catn("Get quantiles for population prevalences aggregated over age")
