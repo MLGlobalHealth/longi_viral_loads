@@ -24,12 +24,25 @@ if(interactive() | testing == TRUE){
     indir <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/"
     jobid <- "cmdstan_vl_1000"
 }
-
 # check all input directories exists
 all.dir <- file.path(indir, jobid)
 ftp.dir <- paste0(all.dir, "_firstpart")
 joint.dir <- paste0(all.dir, "_joint")
 dir.exists(c(all.dir, ftp.dir, joint.dir)) |> all() |> stopifnot()
+# helpers
+aggregate_diagnostics_over_all_rounds <- function(files=NULL, dir=dirname(outfile.diagnostics), diagn='num_divergent'){
+    diagn <- match.arg(diagn, c('num_divergent', 'num_max_treedepth', 'ebfmi'))
+    func <- sum
+    if( diagn == 'ebfmi') func <- max
+    if( is.null(files) ){
+        files <- list.files(dir , pattern="diagnostics.rds$", full.names = TRUE)
+    }
+    .tmp <- lapply(files, readRDS) |>
+        lapply(`[[`, diagn) |>
+        sapply(func) |> 
+        func()
+    return(.tmp)
+}
 ```
 
 ```{r, echo=FALSE, message=FALSE, results='hide'}
@@ -39,6 +52,10 @@ library(data.table)
 library(ggplot2)
 library(knitr)
 
+.get.round <- function(x){
+    as.numeric(gsub(".*round([0-9]+).*", "\\1", x))
+}
+
 .find.files <- function(dir, part=NA, .pattern=".png$"){
     out <- data.table(
         DIR=dir,
@@ -46,17 +63,32 @@ library(knitr)
     )
     if(!is.na(part)){ out$PART <- part }
     out[, BASE:=basename(F)]
-    out[, ROUND := as.numeric(gsub(".*round([0-9]+).*", "\\1", BASE))]
+    out[, ROUND := .get.round(BASE)]
     return(out)
 }
 dfigs_joint <- .find.files(joint.dir)
 dfigs_single <- rbind(.find.files(ftp.dir, part="ftp"), .find.files(all.dir, part="all"))
 dfigs_single[, MODEL := gsub("^.*run-gp-(.*?)/.*$", "\\1", F)]
-
+dfigs_single <- dfigs_single[! MODEL %like% 'png$' & ! is.na(ROUND)]
 with(dfigs_single, stopifnot(
     uniqueN(MODEL)==3,
     uniqueN(ROUND)==4
 ))
+# get diagnostics files
+nms <- list.dirs(c(all.dir, ftp.dir)) |>
+    grep(pattern="diagnostics", x=_, value=TRUE) 
+if(length(nms)){
+    ddiagn <- lapply(nms, function(x) data.table(FILE=list.files(x)) )
+    names(ddiagn) <- dirname(nms)
+    ddiagn <- rbindlist(ddiagn, idcol="DIR")
+    ddiagn[, `:=` (
+        MODEL = basename(DIR),
+        ROUND = .get.round(FILE),
+        PART = fifelse( DIR %like% "firstpart", "ftp", "all")
+    )]
+}else{
+    cat("no diagnostics directory found\n")
+}
 ```
 
 ```{r helpers, include=FALSE, warning=FALSE}
@@ -104,13 +136,19 @@ rbind(
     .find.files(dir=all.dir, .pattern='asses.*rds$', part="all"),
     .find.files(dir=ftp.dir, .pattern='asses.*rds$', part="ftp")
 )  -> fdiagn
-
-fdiagn$BASE %like% 'sampler_diagnostics'
-
-
+# compute divergences 
+if(exists('ddiagn')){
+    tab <- ddiagn[ FILE %like% "diagnostics", { 
+        tmp <- file.path(DIR,'diagnostics', FILE)
+        list(
+            div=aggregate_diagnostics_over_all_rounds(files=tmp, diagn='num_divergent'),
+            maxdepth=aggregate_diagnostics_over_all_rounds(files=tmp, diagn='num_max'),
+            ebfmi=aggregate_diagnostics_over_all_rounds(files=tmp, diagn='ebfmi')
+        )
+    }, by=.(MODEL, PART)] 
+    knitr::kable(tab, caption = "Summary of convergence diagnostics")
+}
 ```
-
-
 
 ```{r diagnostics, echo=FALSE, results='asis', message=FALSE}
 with(dfigs_single, {
