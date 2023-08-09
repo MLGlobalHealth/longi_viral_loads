@@ -48,10 +48,41 @@ tablify.agecontributions <- function(DT, model= 'run-gp-supp-pop'){
     return(dtab)
 }
 
+make.table.Nhivpositive <- function(DT=joint_ageagrr_list$round_totals, DC=dcens){
+
+    # aggregate number of census-eligible individuals by gender, loc, sex
+    dcens_aggr <- DC[ 
+        j=lapply(.SD, sum),
+        .SDcols = c("ELIGIBLE_SMOOTH", "ELIGIBLE"),
+        by = c("ROUND", "LOC", "SEX")
+    ]
+
+    tab <- merge(
+        DT[MODEL == "run-gp-prevl"],
+        dcens_aggr,
+        by = c("ROUND", "LOC", "SEX")
+    ) |> remove.ILIU()
+    cols <- c("CL", "M", "CU")
+    tab[, (cols) := lapply(.SD, function(x) x / ELIGIBLE), .SDcols = cols]
+    tab[, CELL := prettify_cell(M * 100, CL * 100, CU * 100, percent = TRUE)]
+    tab[ROUND == 19, {
+        sprintf(
+            "In round 19, %s of men and %s of women were estimated to be HIV positive in fishing communities, \n compared to %s and %s among men and women in inland, respectively.\n",
+            CELL[LOC == "fishing" & SEX == "M"], CELL[LOC == "fishing" & SEX == "F"],
+            CELL[LOC == "inland" & SEX == "M"], CELL[LOC == "inland" & SEX == "F"]
+        ) |> cat()
+    }]
+    tab <- subset(tab, select=c("ROUND", "LOC", "SEX", "CELL"))
+    return(tab)
+}
+
 make.main.table.contributions <- function(DTPOP=ncen, DJOINT=djoint_agegroup, DCONTRIB=dcontrib_agegroup, DSUPP=dsupp_agegroup, add_asterisks_unaids=TRUE, include_totals=c("SEX", "AGEGROUP")){
 
     include_totals <- intersect(include_totals, c("SEX", "AGEGROUP"))
-    if(all(include_totals == "SEX")){warning("SEX totals can only be included if AGEGROUP is")}
+    if(all(include_totals == "SEX")){
+        warning("SEX totals can only be included if AGEGROUP is. Including both...")
+        include_totals <- c("SEX", "AGEGROUP")
+    }
 
     # get info for census eligible pop size
     DTPOP[, AGEGROUP:=split.agegroup(AGEYRS)]
@@ -110,7 +141,7 @@ make.main.table.contributions <- function(DTPOP=ncen, DJOINT=djoint_agegroup, DC
     # prettify all
     names_comp <- c(
         hiv = "Age composition of people with HIV",
-        unsupp = "Age composition of people with unsuppressed HIV"
+        unsupp = "Age composition of people\nwith unsuppressed HIV"
     )
     setnames(ncen_agegroup, "ELIGIBLE_CELL", "Population in age band")
     setnames(r19_hivprev, "CELL", "People with HIV in age band")
