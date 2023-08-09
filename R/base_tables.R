@@ -36,7 +36,7 @@ table.to.plot <- function(DT){
     gridExtra::tableGrob(DT) |> gridExtra::grid.arrange()
 }
 
-prettify_cell <- function(..., parenthesis="(", precision=2, newline=FALSE, percent=FALSE, fmt_skeleton = NA_character_){
+prettify_cell <- function(..., parenthesis="(", precision=1, newline=FALSE, percent=FALSE, fmt_skeleton = NA_character_){
 
     # writes M and CI expression in nice format ready to be put in a table.
 
