@@ -1,5 +1,8 @@
 #!/bin/Rscript
 
+if( ! interactive() )
+    options(error=dump.frames)
+
 self_relative_path <- "scripts/VL_jointpostprocessing.R"
 ########################
 cat("\nStart of:", self_relative_path, "\n")
@@ -91,8 +94,8 @@ stopifnot(
 )
 out.dir.figures <- file.path(out.dir, "figures")
 out.dir.tables <- file.path(out.dir, "tables")
-dir.create(out.dir.tables) |> suppressWarnings()
-dir.create(out.dir.figures) |> suppressWarnings()
+dir.create(out.dir.tables) 
+dir.create(out.dir.figures) 
 
 ####################
 catn("=== MAIN ===")
@@ -134,7 +137,7 @@ if (make_plots) {
         ggtitle("Round 19")
     p1619 <- p16 + p19
     cmd <- ggsave2(p = p1619, file = "fit_nsinf_byftpstatus_round1619.pdf", LALA = out.dir.figures, w = 14, h = 10)
-    system(zathura2gthumb(cmd))
+    # system(zathura2gthumb(cmd))
 
     for (round in 16:19) {
         catn("Round:", round)
