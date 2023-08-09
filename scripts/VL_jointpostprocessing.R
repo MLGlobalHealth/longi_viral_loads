@@ -100,6 +100,9 @@ catn("=== MAIN ===")
 
 # load first participation rates
 dfirst_prop <- get.first.participant.rates()
+# plot.first.participant.rates(add_loess=FALSE)
+# plot.first.participant.rates(add_loess=TRUE)
+
 
 # get census eligible
 dcens <- get.census.eligible() |>

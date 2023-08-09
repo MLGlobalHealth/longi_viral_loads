@@ -101,6 +101,40 @@ get.first.participant.rates <- function(){
     return(dfirst_prop)
 }
 
+plot.first.participant.rates <- function(DT=dfirst_prop, add_loess=TRUE){
+
+    dplot <- copy(DT)
+    prettify_labels(dplot)
+
+    if(add_loess){
+        dloess <- dplot[j=list( 
+            AGEYRS=AGEYRS,
+            L25=loess(P ~ AGEYRS, span=.25)$fitted,
+            L50=loess(P ~ AGEYRS, span=.5)$fitted,
+            L70=loess(P ~ AGEYRS, span=.75)$fitted
+        ) , by = c("FC", "ROUND", "SEX")] |>
+            melt(id.vars = c("FC", "ROUND", "SEX", "AGEYRS"),
+                variable.name = "span",
+                value.name="loess_fit") |>
+            prettify_labels()
+    }
+    .line <- list(
+        if(add_loess) { geom_line(aes(y=P), color='black')} else {geom_line(aes(y=P, color=SEX_LAB))},
+        if(add_loess){ geom_line(data=dloess, aes(y=loess_fit, linetype=span, color=span), alpha=.5) }else{NULL},
+        if(add_loess){facet_grid(FC_LAB + SEX_LAB ~ ROUND)}else{facet_grid(FC_LAB ~ ROUND)},
+        if(!add_loess){scale_color_manual(values=palettes$sex, labels=sex_dictionary2)}
+    )
+    .line[!sapply(.line, is.null)]
+    
+    ggplot(dplot, aes( x=AGEYRS)) + 
+        .line +
+        theme_default() +
+        my_labs()
+
+}
+
+
+
 get.participants.positives.unsuppressed <- function(DALL) {
     # DALL <- copy(dall)
     dnppu <- DALL |>
