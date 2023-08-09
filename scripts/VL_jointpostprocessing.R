@@ -101,7 +101,6 @@ dir.create(out.dir.figures)
 catn("=== MAIN ===")
 ####################
 
-# load first participation rates
 dfirst_prop <- get.first.participant.rates()
 # plot.first.participant.rates(add_loess=FALSE)
 # plot.first.participant.rates(add_loess=TRUE)

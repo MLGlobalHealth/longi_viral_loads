@@ -1343,7 +1343,7 @@ plot.main.suppression.among.plhiv <- function(DT=djoint, type='hist', unaids=FAL
     .ALPHA=.3; .HIST=TRUE; .LINEWIDTH=.2; .margin <- m
     type <- match.arg(type, c("hist", "line", "point"))
     .ylab <- fifelse(rev, 
-        yes= "Prevalence of viraemia in PLHIV by age group",
+        yes="Proportion of PLHIV in each age group who have unsuppressed virus", 
         no= "Prevalence of viral suppression in PLHIV by age group",
     )
     dplot <- subset(DT, ROUND %in% c(16,19) & MODEL == 'run-gp-supp-hiv')

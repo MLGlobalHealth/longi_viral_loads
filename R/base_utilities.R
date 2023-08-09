@@ -261,3 +261,11 @@ tex2png <- function(filename){
 tex2pdf <- function(filename){
     gsub(".tex$", ".pdf", filename)
 }
+
+# copies data.frame to clipboard for easy copy-paste to google docs.
+clipboard <- function(x, sep="\t", row.names=FALSE, col.names=TRUE, quote=FALSE){
+     con <- pipe("xclip -selection clipboard -i", open="w")
+     write.table(x, con, sep=sep, row.names=row.names, col.names=col.names, quote=quote)
+     close(con)
+}
+

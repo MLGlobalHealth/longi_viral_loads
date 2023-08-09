@@ -90,3 +90,17 @@ write.to.tex <- function(DT, file){
     cat('\n', cmd, '\n')
     cmd
 }
+
+write.to.googlesheets <- function(DT, sheet=NA_character_){
+
+    LINK="https://docs.google.com/spreadsheets/d/1yDgS0tsdjJYgtGb5KgxbUI88EYT14biaPaB4ktbZmX8"
+    # check sheet is in the correct format:
+    stopifnot(sheet %like% "^Table[0-9]+$|^SuppTable[0-9]+$")
+
+    # write to google sheets
+    googlesheets4::sheet_write(
+        DT,
+        LINK,
+        sheet = sheet
+    )
+}
