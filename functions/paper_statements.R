@@ -178,7 +178,7 @@ paper_statements_malefemaleratio_suppression <- function(DT=dmf_ratios,reverse=F
 paper_statements_suppression_PLHIV_aggregated <- function(DT=dsupp_agegroup, reverse=FALSE){
     word <- fifelse(reverse==TRUE, yes="non-suppression", no="suppression")
     dtable <- subset(DT, AGEGROUP == "Total" & SEX != "Total" & ROUND %in% c(16, 19))
-    if(negate){ dtable <- reverse_quantiles(dtable) }
+    if(reverse){ dtable <- reverse_quantiles(dtable) }
     dtable[, CELL := prettify_cell( M*100, CL * 100, CU * 100, percent=TRUE)]
     remove_quantiles(dtable) |> prettify_labels()
     dtable[ , sprintf("In %s communities, prevalence of %s in HIV positive %s was %s by 2013 and %s by 2019",
