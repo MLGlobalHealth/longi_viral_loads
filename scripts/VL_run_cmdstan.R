@@ -87,30 +87,31 @@ stopifnot(dir.exists(vl.out.dir))
 
 # get data
 dall <- get.dall(path = path.hivstatusvl.r1520, only_firstpart = args$only.firstparticipants)
+dall <- subset(dall, ROUND %in% args$round)
 
 
 # Estimate HIV prevalence
 # ________________________
 
 if (args$run.gp.prevl) {
-    vl.prevalence.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit, stanargs=args_stan)
+    vl.prevalence.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit)
 }
 
 # Estimate mean viral load
 # ________________________
 
 if (args$run.icar.mean.vl) {
-    vl.meanviralload.by.gender.loc.age.icar.cmdstan(dall, refit = args$refit, stanargs=args_stan)
+    vl.meanviralload.by.gender.loc.age.icar.cmdstan(dall, refit = args$refit)
 }
 
 # Estimate suppressed pop
 # _______________________
 
 if (args$run.gp.supp.hiv) { # Among HIV positive
-    vl.suppofinfected.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit, stanargs=args_stan)
+    vl.suppofinfected.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit)
 }
 
 
 if (args$run.gp.supp.pop) { # Among Entire population
-    vl.suppofpop.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit, stanargs=args_stan)
+    vl.suppofpop.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit)
 }

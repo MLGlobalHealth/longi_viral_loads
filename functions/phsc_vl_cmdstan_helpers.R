@@ -415,8 +415,7 @@ vl.vlprops.by.comm.gender.loc <- function(DT, write.csv = FALSE) {
 vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
     DT, 
     refit = FALSE,
-    vl.out.dir. = vl.out.dir,
-    stanargs = args_stan
+    vl.out.dir. = vl.out.dir
 ) {
 
     cat("\n\n--- Analysing HIV+ Prevalence ---\n\n")
@@ -676,8 +675,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
 vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
     DT,
     refit = FALSE,
-    vl.out.dir. = vl.out.dir,
-    stanargs = args_stan
+    vl.out.dir. = vl.out.dir
 ) {
 
     cat("\n\n--- Analyse suppressed among infected ---\n\n")
@@ -973,8 +971,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
 vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
     DT, 
     refit = FALSE,
-    vl.out.dir. = vl.out.dir,
-    stanargs = args_stan
+    vl.out.dir. = vl.out.dir
 ){
 
     cat("\n\n--- Analyse suppression among participants ---\n\n")
