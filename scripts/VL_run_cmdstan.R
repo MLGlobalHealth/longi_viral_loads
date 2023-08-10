@@ -42,7 +42,7 @@ source(file.path(gitdir.functions, "phsc_vl_cmdstan_helpers.R"))
 
 # options (automatically sourced in R/options.R)
 args_stan <- args[names(args) %like% "^iter.|chains"]
-args <- args[names(args) %like% '^run|viral.load|jobname|indir|out.dir|refit|round|^only.firstparticipants$^stan.alpha$']
+args <- args[names(args) %like% '^run|viral.load|jobname|indir|out.dir|refit|round|^only.firstparticipants$|^stan.alpha$']
 if(interactive()){ # testing
     args$only.firstparticipants <- TRUE 
     args$run.gp.supp.pop <- TRUE
