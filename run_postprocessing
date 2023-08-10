@@ -9,6 +9,7 @@ if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "--help" ]]; then
     echo "    STANWAY : either (r)stan or cmdstan           [default: stan]"
     echo "    INDIR : directory where github directory is located"
     echo "    OUTDIR : directory where output will be saved"
+    echo "    ALPHA : sd for alpha prior in GP              [default: 1]"
     exit 0
 fi
 
@@ -26,6 +27,7 @@ done
 # default options
 VL="${VL:-1000}" 
 FTP="${FTP:-FALSE}"
+ALPHA="${ALPHA:-1}"
 STANWAY="${STANWAY:-cmdstan}"
 INDIR="${INDIR:-/rds/general/user/ab1820/home/git/longi_viral_loads}"
 OUTDIR="${OUTDIR:-/rds/general/user/ab1820/home/projects/2022/longvl}"
@@ -49,12 +51,17 @@ echo "  OUTDIR = $OUTDIR"
 
 # "build" jobname and envname
 ENVNAME="longivl"
-JOBNAME="vl_$VL"
+ALPHA2=$(echo "$ALPHA" | sed 's/\.//')
+JOBNAME="alpha${ALPHA2}_vl_$VL"
 if [[ "$STANWAY" == "cmdstan" ]]; then
 	JOBNAME="${STANWAY}_${JOBNAME}"
 	ENVNAME="${ENVNAME}_cmdstan"
 fi
+if [[ "$FTP" == "TRUE" ]]; then
+    JOBNAME="$JOBNAME"_firstpart
+fi
 echo "  JOBNAME = $JOBNAME"
+
 
 
 cat > $OUTDIR/bash-$JOBNAME-joint_postprocessing.pbs <<EOF

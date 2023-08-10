@@ -75,7 +75,7 @@ fi
 if [[ "$FTP" == "TRUE" ]]; then
     JOBNAME="$JOBNAME"_firstpart
 fi
-echo "JOBNAME = $JOBNAME"
+echo "  JOBNAME = $JOBNAME"
 
 ########
 # MAIN #
