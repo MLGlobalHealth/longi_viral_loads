@@ -655,11 +655,11 @@ if (file.exists(filename_overleaf) & !overwrite) {
         by = c("MODEL", "ROUND")
     ]
     # save
-    saveRDS(object = contrib_viraemia_custom, file = filename_overleaf)
+    saveRDS(object = dmf_ratios, file = filename_overleaf)
 
     # print statements for paper
-    paper_statements_contributions_viraemia_round(round = 16)
-    paper_statements_contributions_viraemia_round(round = 19)
+    paper_statements_contributions_viraemia_round(DT=dmf_ratios,round = 16)
+    paper_statements_contributions_viraemia_round(DT=dmf_ratios,round = 19)
 
     # paper_statements_contributions_viraemia_round(round=16, agegroup="15-24")
     # paper_statements_contributions_viraemia_round(round=19, agegroup="15-24")

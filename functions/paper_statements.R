@@ -9,7 +9,7 @@ reverse_quantiles <- function(DT){
     return(DT)
 }
 
-paper_statements_contributions_viraemia_round <- function(DT= contrib_viraemia_custom, round=19, agegroup="25-39"){
+paper_statements_contributions_viraemia_round <- function(DT= dmf_ratios, round=19, agegroup="25-39"){
     tmp <- copy(DT)
     tmp[, CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE)]
     .round_lab <- drounds[ROUND == as.integer(round), END2]
