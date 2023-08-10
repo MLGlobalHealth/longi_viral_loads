@@ -1,4 +1,4 @@
-tablify.posterior.Nunsuppressed <- function(list, model = 'run-gp-supp-pop'){
+tablify.posterior.Nunsuppressed <- function(list, model = 'run-gp-supp-pop', CELLname='UNSUPP'){
 
     # number unsuppressed: 
     tab_list <- copy(list)
@@ -6,7 +6,6 @@ tablify.posterior.Nunsuppressed <- function(list, model = 'run-gp-supp-pop'){
     tab_list <- lapply(tab_list, function(DT) DT[MODEL==model])
 
     with(tab_list, {
-
         round_totals[ , CELL_N := prettify_cell(M, CL, CU, precision = 0, newline = FALSE)]
         percent_reduction[ , CELL_P := prettify_cell(M*100, CL*100, CU*100, newline = FALSE, percent=TRUE)]
         
@@ -15,17 +14,20 @@ tablify.posterior.Nunsuppressed <- function(list, model = 'run-gp-supp-pop'){
 
         .s <- function(DT) 
             subset(DT, select=intersect(c('SEX', 'LOC', 'ROUND', 'CELL_N', 'CELL_P'), names(DT)))
-        tab <<- merge(.s(round_totals), .s(percent_reduction), by=c('SEX', 'LOC', 'ROUND'), all.x=TRUE )
-    })
+        merge(.s(round_totals), .s(percent_reduction), by=c('SEX', 'LOC', 'ROUND'), all.x=TRUE )
+    }) -> tab
 
     prettify_labels(tab)
+    
     keys <- c('LOC_LAB', 'SEX_LAB', 'ROUND_LAB')
     tab <- subset(tab, select=c(keys, c('CELL_N', 'CELL_P'))) |> 
         setkeyv(keys)
 
-    tab2 <- delete.repeated.table.values(tab, cols = keys) |> 
-        table.na.to.empty(cols=keys)
-    return(tab2)
+    setnames(tab, c('CELL_N', 'CELL_P'), paste("CELL", CELLname,c('N', 'P'), sep="_"))
+
+    # tab2 <- delete.repeated.table.values(tab, cols = keys) |> 
+    #     table.na.to.empty(cols=keys)
+    return(tab)
 }
 
 tablify.agecontributions <- function(DT, model= 'run-gp-supp-pop'){
@@ -64,15 +66,23 @@ make.table.Nhivpositive <- function(DT=joint_ageagrr_list$round_totals, DC=dcens
     ) |> remove.ILIU()
     cols <- c("CL", "M", "CU")
     tab[, (cols) := lapply(.SD, function(x) x / ELIGIBLE), .SDcols = cols]
-    tab[, CELL := prettify_cell(M * 100, CL * 100, CU * 100, percent = TRUE)]
+    tab[, CELL_NHIV := prettify_cell(M * 100, CL * 100, CU * 100, percent = TRUE)]
     tab[ROUND == 19, {
         sprintf(
             "In round 19, %s of men and %s of women were estimated to be HIV positive in fishing communities, \n compared to %s and %s among men and women in inland, respectively.\n",
-            CELL[LOC == "fishing" & SEX == "M"], CELL[LOC == "fishing" & SEX == "F"],
-            CELL[LOC == "inland" & SEX == "M"], CELL[LOC == "inland" & SEX == "F"]
+            CELL_NHIV[LOC == "fishing" & SEX == "M"], CELL_NHIV[LOC == "fishing" & SEX == "F"],
+            CELL_NHIV[LOC == "inland" & SEX == "M"], CELL_NHIV[LOC == "inland" & SEX == "F"]
         ) |> cat()
     }]
-    tab <- subset(tab, select=c("ROUND", "LOC", "SEX", "CELL"))
+
+    # setnames(tab, 
+    #     c(""), 
+    #     c("")
+    # )
+
+
+    tab <- subset(tab, select=c("ROUND", "LOC", "SEX", "CELL_NHIV"))
+    prettify_labels(tab)
     return(tab)
 }
 
@@ -166,3 +176,21 @@ make.main.table.contributions <- function(DTPOP=ncen, DJOINT=djoint_agegroup, DC
     dtable_plot <- delete.repeated.table.values(dtable, cols)
     dtable_plot 
 }
+
+
+dict_table_names <- list(
+
+    percent_reduction=c(
+        LOC_LAB="Community type",
+        ROUND_LAB="Round",
+        SEX_LAB="Gender",
+        N_ELIGIBLE='Number of census\neligible individuals',
+        CELL_HIV_N="Estimated number\nof PLHIV",
+        CELL_HIV_P="Estimated percent reduction\nin number of PLHIV",
+        CELL_UNSUPP_N="Estimated number\nof unsuppressed PLHIV",
+        CELL_UNSUPP_P="Estimated percent reduction\nin number of unsuppressed PLHIV"
+    ),
+
+    NULL
+
+)

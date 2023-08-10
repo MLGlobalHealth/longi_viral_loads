@@ -1,5 +1,11 @@
 #!/bin/Rscript
 
+self_relative_path <- "scripts/VL_run_cmdstan.R"
+
+########################
+cat("\nStart of:", self_relative_path, "\n")
+########################
+
 # non-interactive debugging
 if( ! interactive() )
     options(error=dump.frames)

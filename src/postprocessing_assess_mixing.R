@@ -1,3 +1,9 @@
+self_relative_path <- "src/postprocessing_assess_mixing.R"
+
+########################
+cat("\nStart of:", self_relative_path, "\n")
+########################
+
 #################
 #      AIMS     #
 #################

@@ -419,18 +419,26 @@ if (file.exists(filename_rds) & !overwrite) {
 
 if (make_tables) {
 
-    # age-aggregated HIV prevalence by sex, round, loc
-    tab <- make.table.Nhivpositive (DT=joint_ageagrr_list$round_totals, DC=dcens)
-    filename_overleaf <- file.path(out.dir.tables, "overleaf_ageaggr_hivprev.rds")
-    saveRDS(object = tab, file = filename_overleaf)
-
-    # age-aggregated # of unsuppressed by sex, and location
-    tab2 <- tablify.posterior.Nunsuppressed(joint_ageagrr_list)
-    filename_tex <- file.path(out.dir.tables, "table_aggregatedNunsuppressed.tex")
-    write.to.tex(tab2, file = filename_tex)
-    filename <- "table_aggregatedNunsuppressed.pdf"
-    p <- table.to.plot(tab2)
-    ggsave2(p = p, file = filename, LALA = out.dir.tables, w = 8, h = 5.5)
+    ## age-aggregated HIV prevalence by sex, round, loc
+    #tab <- make.table.Nhivpositive (DT=joint_ageagrr_list$round_totals, DC=dcens)
+    #filename_overleaf <- file.path(out.dir.tables, "overleaf_ageaggr_hivprev.rds")
+ 
+    .dict <- dict_table_names$percent_reduction
+    tab_eligible <- dcens[, .(N_ELIGIBLE=sum(ELIGIBLE)), by=c("ROUND", "LOC", "SEX")] |>
+        prettify_labels() |>
+        remove.nonpretty()
+    tab_hiv <- tablify.posterior.Nunsuppressed(joint_ageagrr_list, CELLname="HIV", model="run-gp-prevl") 
+    tab_unsupp <- tablify.posterior.Nunsuppressed(joint_ageagrr_list, CELLname="UNSUPP", model="run-gp-supp-pop")
+    tab_merge <- merge(tab_eligible, tab_hiv) |>
+        merge(tab_unsupp, by=c("LOC_LAB", "SEX_LAB", "ROUND_LAB")) 
+    tab_merge[,SEX_LAB := sex_dictionary2[SEX_LAB] ]
+    tab_merge <- delete.repeated.table.values(tab_merge) |>
+        setnames(names(.dict), unname(.dict))
+    if(interactive()){
+        write.to.googlesheets(tab_merge, sheet="Table2")
+    }
+    filename_table <- file.path(out.dir.tables, "table_reductionHIVandUNSUPP.rds")
+    saveRDS(tab_merge, file=filename_table)
 }
 
 catn("Get quantiles for suppression levels in agegroups")
