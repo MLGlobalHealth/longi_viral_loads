@@ -111,6 +111,7 @@ extract.stan.hyperparams.rho <- function(re, encoding){
 .make.stan.data.gp <- function(DTsd,
                                num.var = NA,
                                den.var = NA,
+                               alpha_hyper_sd = .75,
                                rho_hyper_lower_bound = 1, rho_hyper_upper_bound = 35 ) {
     stopifnot(length(num.var == 1) & length(den.var == 1))
 
@@ -132,10 +133,10 @@ extract.stan.hyperparams.rho <- function(re, encoding){
         total_observed_10 = DTsd[SEX == 1 & LOC == 0, ..den.var][[1]],
         total_observed_01 = DTsd[SEX == 0 & LOC == 1, ..den.var][[1]],
         total_observed_11 = DTsd[SEX == 1 & LOC == 1, ..den.var][[1]],
-        alpha_hyper_par_00 = .5,
-        alpha_hyper_par_10 = .5,
-        alpha_hyper_par_01 = .5,
-        alpha_hyper_par_11 = .5,
+        alpha_hyper_par_00 = alpha_hyper_sd,
+        alpha_hyper_par_10 = alpha_hyper_sd,
+        alpha_hyper_par_01 = alpha_hyper_sd,
+        alpha_hyper_par_11 = alpha_hyper_sd,
         rho_hyper_lower_bound = rho_hyper_lower_bound,
         rho_hyper_upper_bound = rho_hyper_upper_bound
     )
@@ -415,7 +416,8 @@ vl.vlprops.by.comm.gender.loc <- function(DT, write.csv = FALSE) {
 vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
     DT, 
     refit = FALSE,
-    vl.out.dir. = vl.out.dir
+    vl.out.dir. = vl.out.dir,
+    alpha_hyper = .75
 ) {
 
     cat("\n\n--- Analysing HIV+ Prevalence ---\n\n")
@@ -437,7 +439,9 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
         stan.data <- .make.stan.data.gp(
             DTsd = DT,
             num.var = "HIV_N",
-            den.var = "N")
+            den.var = "N",
+            alpha_hyper_sd = alpha_hyper
+        )
 
         # file paths for fit and standata
         .prefix <- file.path(vl.out.dir., "cmd_hivprevalence_gp_stanfit_round")
@@ -675,7 +679,8 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
 vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
     DT,
     refit = FALSE,
-    vl.out.dir. = vl.out.dir
+    vl.out.dir. = vl.out.dir,
+    alpha_hyper = .75
 ) {
 
     cat("\n\n--- Analyse suppressed among infected ---\n\n")
@@ -696,7 +701,9 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
         DT[, VLSUP_N := HIV_N - VLNS_N, ]
         stan.data <- .make.stan.data.gp(DT, 
             num.var = "VLSUP_N",
-            den.var = "HIV_N")
+            den.var = "HIV_N",
+            alpha_hyper_sd = alpha_hyper
+        )
 
         .prefix <- file.path(vl.out.dir., "cmd_notsuppAmongInfected_gp_stan_round")
         filename <- paste0(.prefix, round, ".rds")
@@ -742,7 +749,9 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
             DT[, HIV_NARV_N := HIV_N - ARV_N]
             stan.data.2 <- .make.stan.data.gp(DT,
                 num.var = "HIV_NARV_N",
-                den.var = "HIV_N")
+                den.var = "HIV_N",
+                alpha_hyper_sd = alpha_hyper
+            )
 
             
             # file paths for fit and standata
@@ -971,7 +980,8 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
 vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
     DT, 
     refit = FALSE,
-    vl.out.dir. = vl.out.dir
+    vl.out.dir. = vl.out.dir,
+    alpha_hyper = .75
 ){
 
     cat("\n\n--- Analyse suppression among participants ---\n\n")
@@ -992,7 +1002,9 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
 
         stan.data <- .make.stan.data.gp(DT,
             num.var = "VLNS_N",
-            den.var = "N")
+            den.var = "N",
+            alpha_hyper_sd = alpha_hyper
+        )
 
         # outputs paths
         .prefix <- file.path(vl.out.dir., "cmd_suppAmongPop_gp_stan_round")
@@ -1197,6 +1209,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
     } else {
         # else do not
         for (r in args$round) {
+            cat("Running Round", r, "\n")
             .fit.stan.and.plot.by.round(vla[ROUND == r, ])
         }
     }

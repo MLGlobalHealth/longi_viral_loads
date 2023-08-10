@@ -218,14 +218,19 @@ split.agegroup <- function(x, breaks=c(15, 20, 25, 30, 35, 40, 45, 50))
 
 make.suffix <- function(args, cmdstan=FALSE)
 {
-    suffix <- c("", "cmdstan_")[as.integer(cmdstan) + 1]
-    suffix <- paste0(suffix, "vl_", VIREMIC_VIRAL_LOAD)
+    .alpha <- as.character(args$stan.alpha) |> gsub(pattern="\\.", replacement="", x=_)
+    .alpha <- paste0("alpha", .alpha)
+    suffix <- c("", "cmdstan")[as.integer(cmdstan) + 1]
+    suffix <- paste(.alpha, suffix, "vl", VIREMIC_VIRAL_LOAD, sep="_")
     suffix <- fifelse(args$only.firstparticipants==TRUE, 
         yes=paste0( suffix,'_firstpart'),
         no=suffix)
+    jobname <- gsub('vl_[0-9]+|cmdstan|stan|_firstpart', '', args$jobname) |>
+        gsub(pattern="__", replacement="_", x=_) |>
+        gsub(pattern="_$|^|", replacement="", x=_)
     suffix <- fifelse(is.na(args$jobname), 
         yes=suffix, 
-        no=paste0( suffix,'_',args$jobname))
+        no=paste0( jobname, '_',suffix))
     return(suffix)
 }
 

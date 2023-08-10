@@ -9,6 +9,7 @@ if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "--help" ]]; then
     echo "    VL : viremic viral load threshold             [default: 1000]"
     echo "    FTP: subset to first time participants or not [default: FALSE]"
     echo "    STANWAY : either (r)stan or cmdstan           [default: stan]"
+    echo "    ALPHA : sd for alpha prior in GP              [default: 1]"
     echo "    INDIR : directory where github directory is located"
     echo "    OUTDIR : directory where output will be saved"
     echo "    REFIT : if FALSE, will use previously fitted model, good for debugging "
@@ -28,6 +29,7 @@ done
 # default options
 VL="${VL:-1000}" 
 FTP="${FTP:-FALSE}"
+ALPHA="${ALPHA:-1}"
 REFIT="${FTP:-TRUE}"
 STANWAY="${STANWAY:-cmdstan}"
 INDIR="${INDIR:-$ABSOLUTE_PATH}"
@@ -56,6 +58,7 @@ fi
 echo "Selected options:"
 echo "  VL = $VL"
 echo "  FTP = $FTP"
+echo "  ALPHA = $ALPHA"
 echo "  STANWAY = $STANWAY"
 echo "  INDIR = $INDIR"
 echo "  OUTDIR = $OUTDIR"
@@ -63,7 +66,8 @@ echo "  REFIT = $REFIT"
 
 # "build" jobname and envname
 ENVNAME="longivl"
-JOBNAME="vl_$VL"
+ALPHA2=$(echo "$ALPHA" | sed 's/\.//')
+JOBNAME="alpha${ALPHA2}_vl_$VL"
 if [[ "$STANWAY" == "cmdstan" ]]; then
 	JOBNAME="${STANWAY}_${JOBNAME}"
 	ENVNAME="${ENVNAME}_cmdstan"
@@ -178,7 +182,8 @@ fi
 Rscript \$INDIR/scripts/VL_postprocessing.R \\
     --viremic-viral-load $VL \\
     --outdir \$OUTDIR/$JOBNAME \\
-    --indir \$OUTDIR
+    --indir \$OUTDIR \\
+    --stan-alpha $ALPHA
 
 # ideally this should oly be running once. (check it is)
 Rscript \$INDIR/scripts/VL_jointpostprocessing.R \\

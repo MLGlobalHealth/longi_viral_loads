@@ -42,15 +42,15 @@ source(file.path(gitdir.functions, "phsc_vl_cmdstan_helpers.R"))
 
 # options (automatically sourced in R/options.R)
 args_stan <- args[names(args) %like% "^iter.|chains"]
-args <- args[names(args) %like% '^run|viral.load|jobname|indir|out.dir|refit|round|^only.firstparticipants$']
+args <- args[names(args) %like% '^run|viral.load|jobname|indir|out.dir|refit|round|^only.firstparticipants$^stan.alpha$']
 if(interactive()){ # testing
     args$only.firstparticipants <- TRUE 
-    args$run.gp.prevl <- TRUE
-    args$out.dir.exact <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl//cmdstan_vl_1000/run-gp-prevl"
+    args$run.gp.supp.pop <- TRUE
+    args$round <- 19
+    args$stan.alpha <- .5
 } 
 print(args); print(args_stan)
 
-# parallel backend (use multiple cores if local)
 parallelise <- FALSE
 if (parallelise) 
     source(file.path(gitdir.R, "local_cores_parallelisation.R"))
@@ -58,7 +58,6 @@ if (parallelise)
 file.exists(path.hivstatusvl.r1520) |>
     all() |>
     stopifnot()
-
 
 ################
 #     MAIN     #
@@ -94,24 +93,24 @@ dall <- subset(dall, ROUND %in% args$round)
 # ________________________
 
 if (args$run.gp.prevl) {
-    vl.prevalence.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit)
+    vl.prevalence.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit, alpha_hyper = args$stan.alpha)
 }
 
 # Estimate mean viral load
 # ________________________
 
 if (args$run.icar.mean.vl) {
-    vl.meanviralload.by.gender.loc.age.icar.cmdstan(dall, refit = args$refit)
+    vl.meanviralload.by.gender.loc.age.icar.cmdstan(dall, refit = args$refit, alpha_hyper = args$stan.alpha)
 }
 
 # Estimate suppressed pop
 # _______________________
 
 if (args$run.gp.supp.hiv) { # Among HIV positive
-    vl.suppofinfected.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit)
+    vl.suppofinfected.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit, alpha_hyper = args$stan.alpha)
 }
 
 
 if (args$run.gp.supp.pop) { # Among Entire population
-    vl.suppofpop.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit)
+    vl.suppofpop.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit, alpha_hyper = args$stan.alpha)
 }

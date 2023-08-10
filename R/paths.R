@@ -87,5 +87,9 @@ path.participation.rates <- file.path(gitdir.data, "participation_rates_230517.r
 #     stan args     #
 #####################
 
-path.stan.config <- file.path(gitdir.stan, 'binomial_gp_config.yml')
+path.stan.config <- fifelse(usr == "andrea" & interactive(),
+    yes = file.path(gitdir.stan, 'binomial_gp_config_local.yml'),
+    no = file.path(gitdir.stan, 'binomial_gp_config.yml'),
+)
+
 

@@ -77,7 +77,6 @@ make_tables <- TRUE
 with(args, {
     VL_DETECTABLE <<- detectable.viral.load
     VIREMIC_VIRAL_LOAD <<- viremic.viral.load
-    # need to check that we have both samples for "" and "_firstpart"
     out.dir <<- gsub("_firstpart$", "_joint", out.dir.exact)
     if (is.na(out.dir.exact)) {
         out.dir <<- file.path(
@@ -87,6 +86,7 @@ with(args, {
     }
 })
 stopifnot("out.dir must end in _joint" = out.dir %like% "_joint$")
+# need to check that we have both samples for "" and "_firstpart"
 indir.ftp <- gsub("_joint", "_firstpart", out.dir)
 indir.all <- gsub("_joint", "", out.dir)
 stopifnot(

@@ -119,6 +119,13 @@ option_list <- list(
         default = NA_character_,
         help = "Jobname used to identify model run",
         dest= "jobname"
+    ),
+    make_option(
+        "--stan-alpha",
+        type = "numeric",
+        default = 1,
+        help = "Standard deviation for prior on marginal standard deviation in SE  gp kernel",
+        dest = "stan.alpha"
     )
 )
 

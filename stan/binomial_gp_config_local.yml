@@ -1,0 +1,8 @@
+seed: 1234
+warmup: 250
+iter: 1000
+chains: 2
+cores: 2
+control:
+  max_treedepth: 15
+  adapt_delta: 0.999
