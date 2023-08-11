@@ -10,6 +10,7 @@ if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "--help" ]]; then
     echo "    INDIR : directory where github directory is located"
     echo "    OUTDIR : directory where output will be saved"
     echo "    ALPHA : sd for alpha prior in GP              [default: 1]"
+    echo "    DEPENDS : list of queue id this job depends on [default: ]"
     exit 0
 fi
 
@@ -101,4 +102,9 @@ rmarkdown::render(
 EOF
 
 cd $OUTDIR
-qsub bash-$JOBNAME-joint_postprocessing.pbs
+
+if [[ ! -z "$DEPENDS" ]]; then
+    DEPENDS="depend=afterok:$DEPENDS"
+fi
+
+qsub $DEPENDS bash-$JOBNAME-joint_postprocessing.pbs
