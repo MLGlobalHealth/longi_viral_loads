@@ -9,7 +9,7 @@ reverse_quantiles <- function(DT){
     return(DT)
 }
 
-paper_statements_contributions_viraemia_round <- function(DT= dmf_ratios, round=19, agegroup="25-39"){
+paper_statements_contributions_viraemia_round <- function(DT= contrib_viraemia_custom, round=19, agegroup="25-39"){
     tmp <- copy(DT)
     tmp[, CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE)]
     .round_lab <- drounds[ROUND == as.integer(round), END2]
@@ -63,6 +63,35 @@ paper_statements_prevalence_viraemia <- function(DT=djoint_agegroup){
         ) |> cat()
     }, by=c("LOC", "SEX")]
     tmp
+}
+
+paper_statements_prevalence_viraemia2 <- function(DT=djoint_agegroup, model="run-gp-supp-pop", round = 19){
+
+    model <- match.arg(model, c("run-gp-supp-hiv", "run-gp-supp-pop"))
+    if(model == 'run-gp-supp-hiv'){
+        stop("this is not the function you want, refer to ... ")
+    }
+    msg <- fifelse( model == "run-gp-supp-hiv", 
+        yes="Suppression among PLHIV was larger in Fishing communities",
+        no="Suppression among eligible-individuals was larger in Inland communities")
+    dtable <- subset(DT, 
+        AGEGROUP %like% 'Total'  & SEX != "Total" &
+        ROUND == round & MODEL == model)
+    dtable[  , CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE) ] |>
+        remove_quantiles() |>
+        prettify_labels() |>
+        remove.nonpretty() |>
+        setcolorder(c("LOC_LAB", "ROUND_LAB")) |>
+        setkey(LOC_LAB, ROUND_LAB)
+
+    cat(msg, "\n")
+    dtable[, {
+        sprintf("%s in Fishing versus %s in Inland in %s\n",
+            CELL[LOC_LAB %like% 'Fish'],
+            CELL[LOC_LAB %like% "Inland"],
+            unique(SEX_LAB)) |> cat()
+    }, by=c("SEX_LAB")]
+    return(dtable)
 }
 
 paper_statements_contributions_PLHIV_custom <- function(DT=contrib_plhiv_custom){
@@ -175,6 +204,23 @@ paper_statements_malefemaleratio_suppression <- function(DT=dmf_ratios,reverse=F
     ), by=c('ROUND_LAB', "LOC_LAB")]
 }
 
+paper_statements_malefemaleratio_suppression2 <- function(DT=dmf_ratios){
+    dtable <- subset(DT, AGEGROUP %like% "Total" & TYPE == "VIR") 
+    dtable[  , CELL := prettify_cell(M, CL, CU, precision=2) ] |>
+        remove_quantiles() |>
+        prettify_labels() |>
+        remove.nonpretty() |>
+        setcolorder(c("LOC_LAB", "ROUND_LAB")) |>
+        setkey(LOC_LAB, ROUND_LAB)
+
+    .round_lab <- drounds[ROUND == 19, END2]
+    dtable[ ROUND_LAB %like% '19' & LOC_LAB == "Inland", {
+        sprintf("In Inland communities, by %s, an estimated %s  times more men than women remained unsuppressed\n",
+            .round_lab, CELL) |> cat()
+    }, by = c("LOC_LAB")]
+    return(dtable)
+}
+
 paper_statements_suppression_PLHIV_aggregated <- function(DT=dsupp_agegroup, reverse=FALSE){
     word <- fifelse(reverse==TRUE, yes="non-suppression", no="suppression")
     dtable <- subset(DT, AGEGROUP == "Total" & SEX != "Total" & ROUND %in% c(16, 19))
@@ -184,7 +230,7 @@ paper_statements_suppression_PLHIV_aggregated <- function(DT=dsupp_agegroup, rev
     dtable[ , sprintf("In %s communities, prevalence of %s in HIV positive %s was %s by 2013 and %s by 2019",
         unique(LOC_LAB), unique(word), unique(SEX_LAB),
         CELL[ROUND == 16], CELL[ROUND == 19]
-    )
+    ) |> cat()
     , by = c("LOC_LAB", "SEX_LAB")]
-    dtable
+    return(dtable)
 }

@@ -1372,7 +1372,8 @@ plot.main.suppression.among.plhiv <- function(DT=djoint, type='hist', unaids=FAL
                     yintercept = .yint,
                     color = 'black', 
                     linetype='dashed', 
-                    label = 'UNAIDS 95-95-95', 
+                    # label = 'UNAIDS 95-95-95', 
+                    label = "",
                     vjust=.5, hjust=fifelse(rev, yes=1, no=0),
                     linewidth=.LINEWIDTH,   
                     size=2.5

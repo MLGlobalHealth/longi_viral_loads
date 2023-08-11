@@ -44,6 +44,7 @@ if( interactive() )
 # helpers
 source(file.path(gitdir, "R/paths.R"))
 source(file.path(gitdir.functions, "phsc_vl_helpers.R"))
+source(file.path(gitdir.functions, "preprocessing_tables.R"))
 source(file.path(gitdir.functions, "phsc_vl_cmdstan_helpers.R"))
 
 # options (automatically sourced in R/options.R)
@@ -92,8 +93,11 @@ stopifnot(dir.exists(vl.out.dir))
 
 # get data
 dall <- get.dall(path = path.hivstatusvl.r1520, only_firstpart = args$only.firstparticipants)
+# if(local()){
+#     tmp <- make.table.firstparticipant.NPhiv.NPunsupp(dall)
+#     write.to.googlesheets(tmp, sheet='SuppTable1')
+# }
 dall <- subset(dall, ROUND %in% args$round)
-
 
 # Estimate HIV prevalence
 # ________________________

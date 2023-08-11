@@ -185,6 +185,7 @@ my_labs_dictionary <- c(
     COMM_NUM = "Community number",
     FIRST_VISIT = "First participant",
     FC = "Community type",
+    FC_LAB = "Community type",
     FC2 = "Community type",
     FTP_LAB = "Participants type",
     HIV = "HIV status",
@@ -261,4 +262,22 @@ plabels <- list(
         W = "Women",
         Female = "Women"
     )
+)
+
+dict_table_names <- list(
+    percent_reduction = c(
+        LOC_LAB = "Community type",
+        ROUND_LAB = "Round",
+        SEX_LAB = "Gender",
+        N_ELIGIBLE = "Number of census\neligible individuals",
+        CELL_HIV_N = "Estimated number\nof PLHIV",
+        CELL_HIV_P = "Estimated percent reduction\nin number of PLHIV",
+        CELL_UNSUPP_N = "Estimated number\nof unsuppressed PLHIV",
+        CELL_UNSUPP_P = "Estimated percent reduction\nin number of unsuppressed PLHIV",
+        N_HIV = "Number of PLHIV (ftp)",
+        N_UNSUPP = "Number of unsuppressed (ftp)",
+        P_HIV_REDUCTION = "Percent reduction\nin number of PLHIV (ftp)",
+        P_UNSUPP_REDUCTION = "Percent reduction\nin number of unsuppressed (ftp)"
+    ),
+    NULL
 )

@@ -92,6 +92,7 @@ indir.all <- gsub("_joint", "", out.dir)
 stopifnot(
     "did not find 2 directories necessary to run joint analysis" = all(dir.exists(c(indir.ftp, indir.all)))
 )
+if(!dir.exists(out.dir)) dir.create(out.dir)
 out.dir.figures <- file.path(out.dir, "figures")
 out.dir.tables <- file.path(out.dir, "tables")
 dir.create(out.dir.tables) 
@@ -353,6 +354,8 @@ if (make_tables) {
     .null <- paper_statements_overall_prevalence(round=19)
     .null <- paper_statements_female_prevalence(djoint_agegroup)
     .null <- paper_statements_prevalence_viraemia(djoint_agegroup)
+    .null <- paper_statements_prevalence_viraemia2(model = 'run-gp-supp-pop')
+    # NOT WORK .null <- paper_statements_prevalence_viraemia2(model = 'run-gp-supp-hiv')
     rm(.null)
 }
 
@@ -442,6 +445,7 @@ if (make_tables) {
 }
 
 catn("Get quantiles for suppression levels in agegroups")
+# _______________________________________________________
 
 filename_rds <- file.path(out.dir.tables, "posterior_quantiles_suppression_agegroup.rds")
 
@@ -511,7 +515,7 @@ if (make_plots & FALSE) {
 if( make_tables ){
 
     # paper_statements_suppression_PLHIV_aggregated()
-    paper_statements_suppression_PLHIV_aggregated(reverse=TRUE)
+    .null <- paper_statements_suppression_PLHIV_aggregated(reverse=TRUE, round=19)
 }
 
 catn("Get quantiles for contributions by age")
@@ -627,9 +631,9 @@ dcens_custom <- copy(dcens)
 dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, 25, 40, 50))]
 
 if (file.exists(filename_overleaf) & !overwrite) {
-    dmf_ratios <- readRDS(filename_overleaf)
+    contrib_viraemia_custom <- readRDS(filename_overleaf)
 } else {
-    dmf_ratios <- dfiles_rds[MODEL == "run-gp-supp-pop",
+    contrib_viraemia_custom <- dfiles_rds[MODEL == "run-gp-supp-pop",
         {
             stopifnot(.N == 2)
             paths <- file.path(D, F)
@@ -663,14 +667,15 @@ if (file.exists(filename_overleaf) & !overwrite) {
         by = c("MODEL", "ROUND")
     ]
     # save
-    saveRDS(object = dmf_ratios, file = filename_overleaf)
-
-    # print statements for paper
-    paper_statements_contributions_viraemia_round(DT=dmf_ratios,round = 16)
-    paper_statements_contributions_viraemia_round(DT=dmf_ratios,round = 19)
+    saveRDS(object = contrib_viraemia_custom, file = filename_overleaf)
 
     # paper_statements_contributions_viraemia_round(round=16, agegroup="15-24")
     # paper_statements_contributions_viraemia_round(round=19, agegroup="15-24")
+}
+
+if(make_paper){
+    paper_statements_contributions_viraemia_round(round = 16)
+    paper_statements_contributions_viraemia_round(round = 19)
 }
 
 catn("Other contribution to PLHIV quantiles for text")
@@ -1125,11 +1130,11 @@ if (file.exists(filename_rds) & !overwrite) {
 }
 
 if (make_tables) {
-    # aim:
-    paper_statements_malefemaleratio_suppression(DT = dmf_ratios, reverse = FALSE)
+    # paper_statements_malefemaleratio_suppression(DT = dmf_ratios, reverse = FALSE)
+    tmp <- paper_statements_malefemaleratio_suppression2()
 }
 
-
+                    
 #####################
 catn("End of script")
 #####################

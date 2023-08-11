@@ -2,7 +2,7 @@
 # Helpers for Latex tables 
 ### 
 
-delete.repeated.table.values <- function(DT, cols){
+delete.repeated.table.values <- function(DT, cols=names(DT)){
 
     .repeated.to.empty <- function(x){
         if( !is.character(x))
@@ -13,6 +13,13 @@ delete.repeated.table.values <- function(DT, cols){
     table <- copy(DT)
     table[, (cols) := lapply(.SD, .repeated.to.empty), .SDcols = cols ]
     return(table)
+}
+
+remove.nonpretty <- function(DT){
+    pretty_names <- names(DT) %which.like% '_LAB$'
+    non_pretty <- gsub("_LAB$", "", pretty_names)
+    DT[, (non_pretty) := NULL]
+    return(DT)
 }
 
 remove.ILIU <- function(DT){
