@@ -122,6 +122,7 @@ Rscript \$INDIR/scripts/VL_run_$STANWAY.R \\
     --viremic-viral-load $VL \\
     --outdir \$OUTDIR/\$JOBNAME/$MODEL \\
     --$MODEL TRUE \\
+    --stan-alpha $ALPHA \\
     --round \$ROUND \\
     --firstpart $FTP \\
     --refit $REFIT
@@ -182,8 +183,7 @@ fi
 Rscript \$INDIR/scripts/VL_postprocessing.R \\
     --viremic-viral-load $VL \\
     --outdir \$OUTDIR/$JOBNAME \\
-    --indir \$OUTDIR \\
-    --stan-alpha $ALPHA
+    --indir \$OUTDIR 
 
 # ideally this should oly be running once. (check it is)
 Rscript \$INDIR/scripts/VL_jointpostprocessing.R \\

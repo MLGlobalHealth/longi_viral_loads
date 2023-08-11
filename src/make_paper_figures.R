@@ -356,7 +356,10 @@ if (interactive()) system(zathura2gthumb(cmd))
 catn("Main table 1")
 #####################
 
-dtable1 <- make.main.table.contributions(add_asterisks_unaids = TRUE)
+dtable1 <- make.main.table.contributions(add_asterisks_unaids = FALSE)
+tail(dtable1)
+write.to.googlesheets(dtable1, "Table1")
+
 filename_tex <- file.path(out.dir.tables, "main_table_contributions_hiv.tex")
 write.to.tex(dtable1, file = filename_tex)
 p <- table.to.plot(dtable1)
