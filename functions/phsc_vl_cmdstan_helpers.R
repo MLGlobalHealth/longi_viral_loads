@@ -1909,3 +1909,31 @@ mcmc_intervals_2 <- function(x,
 
     out
 }
+
+plot.first.participant.estimates <- function(type="supp-pop"){
+
+    type <- match.arg(type, c("supp-pop", "prevalence", 'supp-hiv'))
+    if( type == 'supp-hiv'){
+        .expr <- expr(Hmisc::binconf(x=sum(VL_COPIES[z] >= VIREMIC_VIRAL_LOAD), n=sum(HIV_STATUS[z] == 1), return.df =T ))
+        .ylab <- 'Proportion of PLHIV with unsuppressed VL'
+    }else if(type == 'prevalence'){
+        .expr <- expr(Hmisc::binconf(x=sum(HIV_STATUS==1, n=length(HIV_STATUS)), return.df =T ))
+        .ylab <- 'Prevalence of HIV'
+    }else{
+        .expr <- expr(Hmisc::binconf(x=sum(VL_COPIES[z] >= VIREMIC_VIRAL_LOAD), n=length(HIV_STATUS), return.df =T))
+        .ylab <- 'Proportion of pop with unsuppressed VL'
+    }
+
+    tmp <- copy(dall)
+    tmp[, AGEGROUP := split.agegroup(AGEYRS)]
+    tmp <- tmp[ FIRST_PARTICIPATION == 1 & ROUND %in% c(16 ,19), {
+        z <- ! is.na(VL_COPIES); eval(.expr)
+    }, by=.(FC,ROUND, SEX, AGEGROUP)] 
+    prettify_labels(tmp)
+    ggplot(tmp, aes(x=AGEGROUP, y=PointEst, ymin=Lower, ymax=Upper, color=SEX_LAB)) +
+        geom_point(position = position_dodge(width = .4)) +
+        geom_linerange(position = position_dodge(width = .4)) +
+        facet_grid(FC_LAB ~ ROUND_LAB) +
+        scale_color_manual(values=palettes$sex, labels=sex_dictionary2) +
+        my_labs(y=.ylab)
+}

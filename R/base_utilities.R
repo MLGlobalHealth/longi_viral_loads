@@ -253,6 +253,11 @@ fetch.args.from.suffix <- function(suffix, asDT=FALSE)
     return(outargs)
 }
 
+setnamesdict <- function(DT, dict) {
+    setnames(DT, names(dict), unname(dict), skip_absent = TRUE)
+}
+
+
 zathura2gthumb <- function(cmd){
     cmd <- sub("zathura", "gthumb", cmd)
     cmd <- sub(".pdf", ".png", cmd)
@@ -266,6 +271,7 @@ tex2png <- function(filename){
 tex2pdf <- function(filename){
     gsub(".tex$", ".pdf", filename)
 }
+
 
 # copies data.frame to clipboard for easy copy-paste to google docs.
 clipboard <- function(x, sep="\t", row.names=FALSE, col.names=TRUE, quote=FALSE){

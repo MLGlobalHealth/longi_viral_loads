@@ -197,18 +197,3 @@ make.main.table.contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup
     )
     dtable
 }
-
-
-dict_table_names <- list(
-    percent_reduction = c(
-        LOC_LAB = "Community type",
-        ROUND_LAB = "Round",
-        SEX_LAB = "Gender",
-        N_ELIGIBLE = "Number of census\neligible individuals",
-        CELL_HIV_N = "Estimated number\nof PLHIV",
-        CELL_HIV_P = "Estimated percent reduction\nin number of PLHIV",
-        CELL_UNSUPP_N = "Estimated number\nof unsuppressed PLHIV",
-        CELL_UNSUPP_P = "Estimated percent reduction\nin number of unsuppressed PLHIV"
-    ),
-    NULL
-)
