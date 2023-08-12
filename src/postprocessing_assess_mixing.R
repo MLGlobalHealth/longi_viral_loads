@@ -51,7 +51,7 @@ args <- args[names(args) %like% "jobname|run|out.dir|round"]
 if(interactive()){
     args$jobname <- 'OLD_cmdstan_vl_1000_firstpart'
     args$run.gp.prevl <- TRUE
-    args$round <- 17
+    args$round <- 19
 }
 print(args)
 
@@ -160,8 +160,9 @@ catn("Pairs plot")
 
 # hyperparameters
 p <- lapply(c('00', '01', '10', '11'), function(group){
-    p <- bayesplot::mcmc_pairs(samples, regex_pars = paste0(c('rho_', 'alpha_'), group) ) 
-})  |> ggpubr::ggarrange(plotlist=_, ncol=2, nrow=2)
+    p <- bayesplot::mcmc_pairs(samples, regex_pars = paste0(c('rho_', 'alpha_'), group), np=bayesplot::nuts_params(fit) ) 
+})  |> 
+    ggpubr::ggarrange(plotlist=_, ncol=2, nrow=2)
 ggsave(p, file = paste0(outfile.figures, '-mcmc-pairs_plot_gphyperparams.png'), w  = 10, h = 10)
 
 #####################
