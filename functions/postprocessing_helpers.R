@@ -177,6 +177,14 @@ plot.comparison.ftptype.colsex <- function(DT, ylab) {
     return(p)
 }
 
+expr_setup_ftp_all <- expr({
+    stopifnot(.N==2);
+    paths <- file.path(D, F);
+    idx.all <- which(FTP==FALSE);
+    idx.ftp <- which(FTP==TRUE);
+    cat(paths[idx.all], "\n")
+})
+
 get.weighted.average.p_predict <- function(fit1, fit2, round, expression_prereturn = {}) {
 
     .optional.thinning <- function(DT){
@@ -321,7 +329,7 @@ plot.estimated.number.viraemic.among.census.eligible <- function(DT) {
 }
 
 check_median_contr_approx1 <- function(DT) {
-    cond <- DT[, abs(sum(M) - 1), by = c("MODEL", "ROUND", "LOC")][, sum(V1) < .5]
+    cond <- DT[ AGEGROUP != "Total", abs(sum(M) - 1), by = c("MODEL", "ROUND", "LOC")][, sum(V1) < .5]
     if (!cond) {
         warning("Unexpected value for aggregated contributions")
     }

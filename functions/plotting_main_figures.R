@@ -1,6 +1,21 @@
 .p <- function(x)
     paste0(round(100*x, 2), '%')
 
+plot_quantiles <- function(DT, x, facet, color=NULL){
+
+    WIDTH <- .4
+    x <- enexpr(x)
+    color <- enexpr(color)
+    facet <- enexpr(facet)
+    dplot <- copy(DT) |> prettify_labels()
+    ggplot(dplot, aes(x=eval(x), y=M, ymin=CL, ymax=CU, color=eval(color))) +
+        geom_point(position=position_dodge(width=WIDTH)) +
+        geom_linerange(position=position_dodge(width=WIDTH)) +
+        facet_grid(facet) +
+        scale_color_manual(values=c(palettes$sex, palettes$comm) ) +
+        theme_default()
+}
+
 dfacets <- list(
     sex = setNames(c('Male', 'Female'), c('M', 'F')),
     comm = setNames(c('Fishing', 'Inland'), c('fishing', 'inland') )

@@ -221,16 +221,24 @@ paper_statements_malefemaleratio_suppression2 <- function(DT=dmf_ratios){
     return(dtable)
 }
 
-paper_statements_suppression_PLHIV_aggregated <- function(DT=dsupp_agegroup, reverse=FALSE){
+paper_statements_suppression_PLHIV_aggregated <- function(DT=dsupp_agegroup, reverse=FALSE, round=19){
     word <- fifelse(reverse==TRUE, yes="non-suppression", no="suppression")
-    dtable <- subset(DT, AGEGROUP == "Total" & SEX != "Total" & ROUND %in% c(16, 19))
+    dtable <- subset(DT, AGEGROUP == "Total" & SEX != "Total" & ROUND %in% round)
     if(reverse){ dtable <- reverse_quantiles(dtable) }
     dtable[, CELL := prettify_cell( M*100, CL * 100, CU * 100, percent=TRUE)]
     remove_quantiles(dtable) |> prettify_labels()
-    dtable[ , sprintf("In %s communities, prevalence of %s in HIV positive %s was %s by 2013 and %s by 2019",
-        unique(LOC_LAB), unique(word), unique(SEX_LAB),
-        CELL[ROUND == 16], CELL[ROUND == 19]
-    ) |> cat()
-    , by = c("LOC_LAB", "SEX_LAB")]
+    if(length(round) == 2){
+        dtable[ , sprintf("In %s communities, prevalence of %s in HIV positive %s was %s by 2013 and %s by 2019\n",
+            unique(LOC_LAB), unique(word), unique(SEX_LAB),
+            CELL[ROUND == 16], CELL[ROUND == 19]
+        ) |> cat()
+        , by = c("LOC_LAB", "SEX_LAB")]
+    }else if(length(round) == 1){
+        dtable[ , sprintf("In %s communities, prevalence of %s in HIV positive %s was %s in Round %s\n",
+            unique(LOC_LAB), unique(word), unique(SEX_LAB),
+            CELL[ROUND == round], round
+        ) |> cat()
+        , by = c("LOC_LAB", "SEX_LAB")]
+    }
     return(dtable)
 }
