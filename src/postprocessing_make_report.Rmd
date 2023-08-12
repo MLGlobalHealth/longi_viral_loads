@@ -106,7 +106,7 @@ add_plots <- function(paths, ...)
 ```
 
 
-# Main Figures
+# Main Figures {.tabset}
 
 ```{r main, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
 mainfigs <- c(
@@ -114,7 +114,8 @@ mainfigs <- c(
     `Proposed metric` = "main_figure_proposedmetric.pdf",
     `Pepfar suppression` = "whopepfar_suppression.pdf",
     `Pepfar prevalence` = "whopepfar_prevalence.pdf",
-    `Suppression` = "main_figure_suppression_plhiv_r1619.pdf"
+    `Suppression` = "main_figure_suppression_plhiv_r1619.pdf",
+    `Suppression composition` = "propofpop_of_viraemic_byagesex_stratbycommround_cri.pdf" 
 )
 mainfigs.png <- gsub(".pdf$", ".png", mainfigs)
 for ( fig in mainfigs.png ){
