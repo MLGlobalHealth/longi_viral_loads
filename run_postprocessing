@@ -54,7 +54,7 @@ echo "  VL = $VL"
 echo "  STANWAY = $STANWAY"
 echo "  INDIR = $INDIR"
 echo "  OUTDIR = $OUTDIR"
-echo "  REFIT = $REFIT"
+echo "  SHARE = $SHARE"
 
 # "build" jobname and envname
 ENVNAME="longivl"
