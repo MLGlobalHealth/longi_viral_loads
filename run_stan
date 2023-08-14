@@ -10,6 +10,7 @@ if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "--help" ]]; then
     echo "    FTP: subset to first time participants or not [default: FALSE]"
     echo "    STANWAY : either (r)stan or cmdstan           [default: stan]"
     echo "    ALPHA : sd for alpha prior in GP              [default: 1]"
+    echo "    SHARE : share hyperpars for FTP and ALL?      [default: 1]"
     echo "    INDIR : directory where github directory is located"
     echo "    OUTDIR : directory where output will be saved"
     echo "    REFIT : if FALSE, will use previously fitted model, good for debugging "
@@ -30,6 +31,7 @@ done
 VL="${VL:-1000}" 
 FTP="${FTP:-FALSE}"
 ALPHA="${ALPHA:-1}"
+SHARE="${SHARE:-FALSE}"
 REFIT="${FTP:-TRUE}"
 STANWAY="${STANWAY:-cmdstan}"
 INDIR="${INDIR:-$ABSOLUTE_PATH}"
@@ -54,11 +56,17 @@ if [[ ! "$REFIT" =~ ^(TRUE|FALSE)$ ]]; then
     echo "REFIT must be either TRUE or FALSE."
     exit 1
 fi
+# stop if SHARE is not True, TRUE, T, False, FALSE, F
+if [[ ! "$SHARE" =~ ^(TRUE|FALSE)$ ]]; then
+    echo "SHARE must be either TRUE or FALSE."
+    exit 1
+fi
 
 echo "Selected options:"
 echo "  VL = $VL"
 echo "  FTP = $FTP"
 echo "  ALPHA = $ALPHA"
+echo "  SHARE = $SHARE"
 echo "  STANWAY = $STANWAY"
 echo "  INDIR = $INDIR"
 echo "  OUTDIR = $OUTDIR"
@@ -67,6 +75,9 @@ echo "  REFIT = $REFIT"
 # "build" jobname and envname
 ENVNAME="longivl"
 ALPHA2=$(echo "$ALPHA" | sed 's/\.//')
+if [[ "$SHARE" == "TRUE" ]]; then
+    ALPHA2="${ALPHA2}sharedhyper"
+fi
 JOBNAME="alpha${ALPHA2}_vl_$VL"
 if [[ "$STANWAY" == "cmdstan" ]]; then
 	JOBNAME="${STANWAY}_${JOBNAME}"
@@ -125,7 +136,8 @@ Rscript \$INDIR/scripts/VL_run_$STANWAY.R \\
     --stan-alpha $ALPHA \\
     --round \$ROUND \\
     --firstpart $FTP \\
-    --refit $REFIT
+    --refit $REFIT \\
+    --shared-hyper $SHARE
 
 echo "-------------"
 echo "ASSESS MIXING"

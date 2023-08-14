@@ -1,17 +1,16 @@
 .stan.get.sex.and.loc <- function(DT, var='variable', var_overwrite=TRUE, codes=NULL){
-
-    .s <- function(reg, x) gsub("^(.*)_([0-9])([0-9])", reg, x)
+    .s <- function(reg, x) gsub("^(.*)_([0-9])([0-9]).*$", reg, x)
     DT[, SEX := as.integer(.s("\\2", get(var)))]
     DT[, LOC := as.integer(.s("\\3", get(var)))]
-
+    if( DT[[var]] %like% '_ftp$' |> any() ){
+        DT[, PTYPE := fifelse( get(var) %like% '_ftp$', yes=0, no=1) ]
+    }
     if(var_overwrite){
         DT[, (var) := .s("\\1", get(var))]
     }
-
     if(! is.null(codes)){
         DT <- merge(DT, codes, by=c("SEX", "LOC"))
     }
-
     return(DT)
 }
 

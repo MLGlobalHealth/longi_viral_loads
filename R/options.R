@@ -126,6 +126,13 @@ option_list <- list(
         default = 1,
         help = "Standard deviation for prior on marginal standard deviation in SE  gp kernel",
         dest = "stan.alpha"
+    ),
+    make_option(
+        "--shared-hyper",
+        type = "logical",
+        default = FALSE,
+        help = "Use shared GP kernel hyperparameters across participant type",
+        dest = "shared.hyper"
     )
 )
 

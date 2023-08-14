@@ -220,6 +220,7 @@ make.suffix <- function(args, cmdstan=FALSE)
 {
     .alpha <- as.character(args$stan.alpha) |> gsub(pattern="\\.", replacement="", x=_)
     .alpha <- paste0("alpha", .alpha)
+    if(args$shared.hyper == TRUE) .alpha <- paste0(.alpha, 'sharedhyper')
     suffix <- c("", "cmdstan")[as.integer(cmdstan) + 1]
     suffix <- paste(.alpha, suffix, "vl", VIREMIC_VIRAL_LOAD, sep="_")
     suffix <- fifelse(args$only.firstparticipants==TRUE, 

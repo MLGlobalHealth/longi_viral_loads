@@ -49,12 +49,13 @@ source(file.path(gitdir.functions, "phsc_vl_cmdstan_helpers.R"))
 
 # options (automatically sourced in R/options.R)
 args_stan <- args[names(args) %like% "^iter.|chains"]
-args <- args[names(args) %like% '^run|viral.load|jobname|indir|out.dir|refit|round|^only.firstparticipants$|^stan.alpha$']
+args <- args[names(args) %like% '^run|viral.load|jobname|indir|out.dir|refit|round|^only.firstparticipants$|^stan.alpha$|^shared.hyper$']
 if(interactive()){ # testing
-    args$only.firstparticipants <- TRUE 
+    args$only.firstparticipants <- FALSE 
     args$run.gp.supp.pop <- TRUE
     args$round <- 19
     args$stan.alpha <- .5
+    args$shared.hyper <- TRUE
 } 
 print(args); print(args_stan)
 
@@ -98,29 +99,39 @@ dall <- get.dall(path = path.hivstatusvl.r1520, only_firstpart = args$only.first
 #     write.to.googlesheets(tmp, sheet='SuppTable1')
 # }
 dall <- subset(dall, ROUND %in% args$round)
+# dall[is.na(FIRST_PARTICIPATION), FIRST_PARTICIPATION := 0]
 
 # Estimate HIV prevalence
 # ________________________
 
-if (args$run.gp.prevl) {
-    vl.prevalence.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit, alpha_hyper = args$stan.alpha)
+if(args$shared.hyper){
+    source(file.path(gitdir.functions, "phsc_vl_cmdstan_helpers_sharedhyper.R"))
 }
 
-# Estimate mean viral load
-# ________________________
-
-if (args$run.icar.mean.vl) {
-    vl.meanviralload.by.gender.loc.age.icar.cmdstan(dall, refit = args$refit, alpha_hyper = args$stan.alpha)
+if (args$run.gp.prevl) {
+    if(args$shared.hyper){
+        vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper(dall, refit = args$refit, alpha_hyper = args$stan.alpha)
+    }else{
+        vl.prevalence.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit, alpha_hyper = args$stan.alpha)
+    }
 }
 
 # Estimate suppressed pop
 # _______________________
 
 if (args$run.gp.supp.hiv) { # Among HIV positive
-    vl.suppofinfected.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit, alpha_hyper = args$stan.alpha)
+    if(args$shared.hyper){
+        vl.suppofinfected.by.gender.loc.age.gp.cmdstan.hyper(dall, refit = args$refit, alpha_hyper = args$stan.alpha)
+    }else{
+        vl.suppofinfected.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit, alpha_hyper = args$stan.alpha)
+    }
 }
 
 
 if (args$run.gp.supp.pop) { # Among Entire population
-    vl.suppofpop.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit, alpha_hyper = args$stan.alpha)
+    if(args$shared.hyper){
+        vl.suppofpop.by.gender.loc.age.gp.cmdstan.hyper(dall, refit = args$refit, alpha_hyper = args$stan.alpha)
+    }else{
+        vl.suppofpop.by.gender.loc.age.gp.cmdstan(dall, refit = args$refit, alpha_hyper = args$stan.alpha)
+    }
 }
