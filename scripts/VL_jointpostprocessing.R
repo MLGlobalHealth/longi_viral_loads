@@ -430,7 +430,7 @@ if (make_tables) {
         merge(tab_unsupp, by=c("LOC_LAB", "SEX_LAB", "ROUND_LAB")) 
     tab_merge[,SEX_LAB := sex_dictionary2[SEX_LAB] ]
     tab_merge <- delete.repeated.table.values(tab_merge) |>
-        setnames(names(.dict), unname(.dict))
+        setnames(names(.dict), unname(.dict), skip_absent=TRUE) 
     if(interactive()){
         write.to.googlesheets(tab_merge, sheet="Table2")
     }
@@ -553,7 +553,7 @@ if (file.exists(filename_rds) & !overwrite) {
     saveRDS(object = dcontrib, file = filename_rds)
 }
 
-check_median_contr_approx1(dcontrib)
+# check_median_contr_approx1(dcontrib)
 
 if (make_plots) {
     .w <- 10; .h <- 12
@@ -660,7 +660,7 @@ if (file.exists(filename_overleaf) & !overwrite) {
     # paper_statements_contributions_viraemia_round(round=19, agegroup="15-24")
 }
 
-if(make_paper){
+if(make_tables){
     paper_statements_contributions_viraemia_round(round = 16)
     paper_statements_contributions_viraemia_round(round = 19)
     contrib_viraemia_custom |> plot_quantiles(x=AGEGROUP, color=SEX_LAB, facet=LOC_LAB~ROUND_LAB)
@@ -1072,8 +1072,8 @@ if (make_tables) {
         by = c("LOC", "SEX")
     ]
 
-    filename_overleaf <- file.path(out.dir.tables, "overleaf_")
-    saveRDS(object = tab, file = filename_overleaf)
+    # filename_overleaf <- file.path(out.dir.tables, "overleaf_")
+    # saveRDS(object = tab, file = filename_overleaf)
 }
 
 
