@@ -196,6 +196,7 @@ my_labs_dictionary <- c(
     PARTRATE = "Participation rate",
     PART_RATE = "Participation rate",
     PHIV_MEAN = "HIV prevalence",
+    PTYPE = "Participant type",
     PVLNS_MEAN = "Prevalence of viraemia among population",
     PVLNSofHIV_MEAN = "Prevalence of viraemia among HIV infected",
     ROUND = "Interview round",

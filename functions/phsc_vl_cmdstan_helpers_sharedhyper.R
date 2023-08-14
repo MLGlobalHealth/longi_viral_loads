@@ -184,6 +184,8 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
         catn("make prevalence plot by age")
         # _________________________________
 
+        browser()
+
         q <- c("M"=.5, "CL"=.025, "CU"=.975)
         cols <- names(re) %which.like% '^p_predict_'
         tmp <- re[, lapply(.SD, posterior::quantile2, probs=q), .SDcols =cols]
@@ -196,16 +198,38 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
         ) ]
         prev.hiv.by.age <- .stan.get.sex.and.loc(prev.hiv.by.age, 'variable', codes = group_codes)
 
-        plots <- .plot.stan.fit(
-            prev.hiv.by.age, 
-            DT2=ppDT,
+        plots_ftp <- .plot.stan.fit(
+            prev.hiv.by.age[PTYPE == "ftp"],
+            DT2=ppDT[PTYPE == "ftp"],
             ylims = c(0,.75),
-            ylab="HIV prevalence (95% credible intervals)")
+            ylab="HIV prevalence (95% credible intervals)"
+        )
+        filenames <- paste0("hivprevalence_vs_age_by_gender_fishinland_ftp",c("", "data_"),"gp_round", round, ".pdf")
+        ggsave2(plots_ftp[[1]], file = filenames[[1]], w = 6, h = 5)
+        ggsave2(plots_ftp[[2]], file = filenames[[2]], w = 6, h = 5)
 
-        filenames <- paste0("hivprevalence_vs_age_by_gender_fishinland_",c("", "data_"),"gp_round", round, ".pdf")
+        plots_all <- .plot.stan.fit(
+            prev.hiv.by.age[PTYPE == "all"],
+            DT2=ppDT[PTYPE == "all"],
+            ylims = c(0,.75),
+            ylab="HIV prevalence (95% credible intervals)"
+        )
+        filenames <- paste0("hivprevalence_vs_age_by_gender_fishinland_all_",c("", "data_"),"gp_round", round, ".pdf")
+        ggsave2(plots_all[[1]], file = filenames[[1]], w = 6, h = 5)
+        ggsave2(plots_all[[2]], file = filenames[[2]], w = 6, h = 5)
 
-        ggsave2(plots[[1]], file = filenames[[1]], w = 6, h = 5)
-        ggsave2(plots[[2]], file = filenames[[2]], w = 6, h = 5)
+
+        plots_comparison <- ggplot(prev.hiv.by.age, aes(x=AGE_LABEL, y=M, ymin=CL, ymax=CU, color=PTYPE, fill=PTYPE)) + 
+            geom_ribbon(alpha=.3, color=NA) +
+            geom_line() +
+            facet_grid(LOC_LABEL ~ SEX_LABEL) +
+            scale_fill_manual(values=palettes$ptype) +
+            scale_color_manual(values=palettes$ptype) +
+            my_labs() 
+        filenames <- paste0("hivprevalence_vs_age_by_gender_fishinland_ptype_gp_round", round, ".pdf")
+        ggsave2(plots_all[[1]], file = filenames[[1]], w = 6, h = 5)
+        ggsave2(plots_all[[2]], file = filenames[[2]], w = 6, h = 5)
+
 
         catn("extract basic prevalence estimates")
         # ________________________________________
@@ -219,26 +243,26 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
         ) ]
         draws <- .stan.get.sex.and.loc(draws, 'variable', codes=group_codes)
         draws[, variable := NULL ]
-
+    
         rp <- merge(
-            draws, DT[, .(SEX, LOC, AGE_LABEL, N )],
-            by=c('SEX', 'LOC', "AGE_LABEL"))
-        rp <- rp[, .(P = sum(P * N) / sum(N)), by = c("LOC", "SEX", ".draw")]
+            draws, DT[, .(SEX, LOC, PTYPE,AGE_LABEL, N )],
+            by=c('SEX', 'LOC', "PTYPE", "AGE_LABEL"))
+        rp <- rp[, .(P = sum(P * N) / sum(N)), by = c("LOC", "SEX", "PTYPE", ".draw")]
 
-        prev.hiv.by.sex.loc <- rp[, quantile2(P, ps = q) , by=c("LOC", "SEX")]
+        prev.hiv.by.sex.loc <- rp[, quantile2(P, ps = q) , by=c("LOC", "SEX", "PTYPE")]
         prev.hiv.by.sex.loc [, LABEL := prettify_cell(M*100, CL*100, CU*100, percent = TRUE) ]
-        prev.hiv.by.sex.loc <- merge(prev.hiv.by.sex.loc, group_codes, by=c('LOC', 'SEX'))
+        prev.hiv.by.sex.loc <- merge(prev.hiv.by.sex.loc, group_codes, by=c("LOC", "SEX"))
 
 
         catn("extract prevalence ratio female:male and male:female")
         # __________________________________________________________
 
         rp <- merge(group_codes, rp, by = c("LOC", "SEX"))
-        rp <- dcast.data.table(rp, LOC_LABEL + .draw ~ SEX_LABEL, value.var = "P")
+        rp <- dcast.data.table(rp, LOC_LABEL + PTYPE + .draw ~ SEX_LABEL, value.var = "P")
         rp[,  `:=` (PR_FM = F / M, PR_MF = M / F, M = NULL, F = NULL)]
 
-        rp <- melt(rp, id.vars = c("LOC_LABEL", ".draw"))
-        rp <- rp[, quantile2(value, ps = q), by = c("LOC_LABEL", "variable")]
+        rp <- melt(rp, id.vars = c("LOC_LABEL", "PTYPE",".draw"))
+        rp <- rp[, quantile2(value, ps = q), by = c("LOC_LABEL", "PTYPE","variable")]
         rp[, LABEL := prettify_cell(M*100, CL*100, CU*100, percent = TRUE) ]
 
         prevratio.hiv.by.loc <- copy(rp)
@@ -248,41 +272,41 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
 
 
         rp <- dcast.data.table(draws, 
-            LOC + LOC_LABEL + .draw + AGE_LABEL ~ SEX_LABEL, value.var = "P")
+            LOC + LOC_LABEL +  PTYPE + .draw + AGE_LABEL ~ SEX_LABEL, value.var = "P")
         rp[, `:=` (PR_FM = F / M, PR_MF = M / F, M = NULL, F = NULL)]
         rp <- melt( rp, 
-            id.vars = c("LOC_LABEL", "AGE_LABEL", ".draw"),
+            id.vars = c("LOC_LABEL", "PTYPE", "AGE_LABEL", ".draw"),
             measure.vars = c("PR_FM", "PR_MF"))
         prevratio.hiv.by.loc.age <- rp[, 
             quantile2(value),
-            by = c("LOC_LABEL", "AGE_LABEL", "variable")]
+            by = c("LOC_LABEL", "PTYPE", "AGE_LABEL", "variable")]
 
         p <- .plot.stan.fit.ratio(
             prevratio.hiv.by.loc.age[variable == "PR_FM"],
             ylab = "female to male HIV prevalence ratio\n(95% credibility interval)\n"
-        )
+        ) + facet_grid( LOC_LABEL ~ PTYPE, scales="free_y")
 
         filename <- paste0("fit_hivprevalenceratio_vs_age_by_fishinland_stan_round", round, ".pdf")
-        ggsave2(p, file = filename, w = 8, h = 5)
+        ggsave2(p, file = filename, w = 8, h = 8)
 
         catn("extract if diff in F:M prevalence risk ratio in fish vs inland")
         # ____________________________________________________________________
 
-        by_cols <- c("LOC", "SEX", "AGE_LABEL")
+        by_cols <- c("LOC", "SEX", "PTYPE", "AGE_LABEL")
         rp <- merge(subset(DT, select = c(by_cols, 'N') ), draws, by = by_cols )
         rp <- rp[, 
             .(P = sum(P * N) / sum(N)),
-            by = c("LOC_LABEL", "SEX_LABEL", ".draw")]
+            by = c("LOC_LABEL","SEX_LABEL", "PTYPE",".draw")]
         rp <- dcast.data.table(rp, 
-            LOC_LABEL + .draw ~ SEX_LABEL, value.var = "P")
+            LOC_LABEL + PTYPE + .draw ~ SEX_LABEL, value.var = "P")
 
         rp[, `:=` (PR_FM = F / M, PR_MF = M / F, M = NULL, F = NULL)]
 
-        rp <- dcast.data.table(rp, .draw ~ LOC_LABEL, value.var = "PR_FM")
+        rp <- dcast.data.table(rp, PTYPE + .draw ~ LOC_LABEL , value.var = "PR_FM")
         rp[, {
             PR_FM_D <- inland - fishing
             quantile2(PR_FM_D, ps = q)
-        }]
+        }, by="PTYPE"]
 
         # Save diff. qttities
         filename <- paste0("hivprevalence_round", round, ".rda")
@@ -291,34 +315,34 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
             file = file.path(vl.out.dir., filename)
         )
 
-        catn("make table version suppressed")
+        # catn("make table version suppressed")
 
-        # prev.hiv.by.age[, LABEL := .p1(M, CL, CU)]
-        prev.hiv.by.age[, LABEL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE) ]
-        prevratio.hiv.by.loc.age[, LABEL2 := prettify_cell(M, CL, CU)]
+        # # prev.hiv.by.age[, LABEL := .p1(M, CL, CU)]
+        # prev.hiv.by.age[, LABEL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE) ]
+        # prevratio.hiv.by.loc.age[, LABEL2 := prettify_cell(M, CL, CU)]
 
-        vec_ages <- c(20.5, 25.5, 30.5, 35.5, 40.5, 45.5)
+        # vec_ages <- c(20.5, 25.5, 30.5, 35.5, 40.5, 45.5)
 
-        dt <- subset(prev.hiv.by.age, AGE_LABEL %in% vec_ages) |> 
-            dcast.data.table(
-                LOC_LABEL + AGE_LABEL ~ SEX_LABEL,
-                value.var = "LABEL" )
+        # dt <- subset(prev.hiv.by.age, AGE_LABEL %in% vec_ages) |> 
+        #     dcast.data.table(
+        #         LOC_LABEL + PTYPE + AGE_LABEL ~ SEX_LABEL,
+        #         value.var = "LABEL" )
 
-        .f <- function(var){
-            tmp <- subset( prevratio.hiv.by.loc.age,
-                variable == var & AGE_LABEL %in% vec_ages,
-                select=c('LOC_LABEL', 'AGE_LABEL', 'LABEL2')
-            )
-            tmp <- setnames(tmp, "LABEL2", var)
-            tmp
-        }
-        tmp_fm <- .f("PR_FM"); tmp_mf <- .f("PR_MF")
+        # .f <- function(var){
+        #     tmp <- subset( prevratio.hiv.by.loc.age,
+        #         variable == var & AGE_LABEL %in% vec_ages,
+        #         select=c('LOC_LABEL', 'AGE_LABEL', 'LABEL2')
+        #     )
+        #     tmp <- setnames(tmp, "LABEL2", var)
+        #     tmp
+        # }
+        # tmp_fm <- .f("PR_FM"); tmp_mf <- .f("PR_MF")
 
-        dt <- merge(dt, tmp_fm, by = c("LOC_LABEL", "AGE_LABEL"))
-        dt <- merge(dt, tmp_mf, by = c("LOC_LABEL", "AGE_LABEL"))
+        # dt <- merge(dt, tmp_fm, by = c("LOC_LABEL", "AGE_LABEL"))
+        # dt <- merge(dt, tmp_mf, by = c("LOC_LABEL", "AGE_LABEL"))
 
-        filename <- file.path(vl.out.dir., paste0("tab_hivprevalence_round", round, ".csv"))
-        fwrite(dt, row.names = FALSE, file = filename)
+        # filename <- file.path(vl.out.dir., paste0("tab_hivprevalence_round", round, ".csv"))
+        # fwrite(dt, row.names = FALSE, file = filename)
 
         cat("Round", round, ": done.\n")
         return(TRUE)

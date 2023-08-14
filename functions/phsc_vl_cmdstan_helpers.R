@@ -3,7 +3,7 @@
     DT[, SEX := as.integer(.s("\\2", get(var)))]
     DT[, LOC := as.integer(.s("\\3", get(var)))]
     if( DT[[var]] %like% '_ftp$' |> any() ){
-        DT[, PTYPE := fifelse( get(var) %like% '_ftp$', yes=0, no=1) ]
+        DT[, PTYPE := fifelse( get(var) %like% '_ftp$', yes="ftp", no="all") ]
     }
     if(var_overwrite){
         DT[, (var) := .s("\\1", get(var))]

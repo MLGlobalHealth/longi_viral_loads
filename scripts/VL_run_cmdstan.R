@@ -57,6 +57,7 @@ if(interactive()){ # testing
     args$stan.alpha <- .5
     args$shared.hyper <- TRUE
 } 
+stopifnot(!(args$shared.hyper & args$only.firstparticipants))
 print(args); print(args_stan)
 
 parallelise <- FALSE
