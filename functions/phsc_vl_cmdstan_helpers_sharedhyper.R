@@ -78,6 +78,33 @@
     return(stan.data)
 }
 
+get.draws.wholepop <- function(DRAWS, DPART){
+
+    dpartrates <- copy(DPART)
+    draws_wholepop <- dcast.data.table(DRAWS,
+        SEX + LOC + SEX_LABEL + LOC_LABEL + AGE_LABEL + .draw ~ PTYPE,
+        value.var = "P")
+    setnames(dpartrates, 
+        c("AGEYRS", "SEX", "LOC"),
+        c("AGE_LABEL", "SEX_LABEL", "LOC_LABEL"))
+    draws_wholepop <- merge(draws_wholepop, dpartrates, by=c("LOC_LABEL", "SEX_LABEL", "AGE_LABEL"))
+    draws_wholepop[, P := PARTRATE*all + (1-PARTRATE)*ftp]
+    return(draws_wholepop)
+}
+
+plot.quantiles.wholepop <- function(DQUANT, ylim=NA, ylab){
+    ggplot(DQUANT, aes(x=AGE_LABEL, y=M, ymin=CL, ymax=CU, color=SEX_LABEL,fill=SEX_LABEL)) + 
+        geom_ribbon(alpha=.3, color=NA) +
+        geom_line() +
+        facet_grid(. ~ LOC_LABEL , labeller=labeller(LOC_LABEL=community_dictionary$long)) + 
+        scale_x_continuous(expand = c(0, 0)) +
+        scale_y_continuous(labels=scales::label_percent(), limits=c(0,ylim), expand=c(0,0)) + 
+        scale_color_manual(values=palettes$sex, labels=sex_dictionary2) +
+        scale_fill_manual(values=palettes$sex, labels=sex_dictionary2) +
+        my_labs(y=ylab) +
+        theme_default()
+}
+
 vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
     DT, 
     refit = FALSE,
@@ -184,13 +211,13 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
         catn("make prevalence plot by age")
         # _________________________________
 
-        browser()
-
         q <- c("M"=.5, "CL"=.025, "CU"=.975)
         cols <- names(re) %which.like% '^p_predict_'
         tmp <- re[, lapply(.SD, posterior::quantile2, probs=q), .SDcols =cols]
         tmp[, quantile := names(q)]
         tmp <- melt( tmp, id.vars = "quantile")
+
+
         prev.hiv.by.age <- dcast.data.table(tmp, variable ~ quantile, value.var = "value")
         prev.hiv.by.age[ , `:=` (
             AGE_LABEL = .stan.brackets.to.age(variable, .stan.data=stan.data),
@@ -226,9 +253,8 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
             scale_fill_manual(values=palettes$ptype) +
             scale_color_manual(values=palettes$ptype) +
             my_labs() 
-        filenames <- paste0("hivprevalence_vs_age_by_gender_fishinland_ptype_gp_round", round, ".pdf")
-        ggsave2(plots_all[[1]], file = filenames[[1]], w = 6, h = 5)
-        ggsave2(plots_all[[2]], file = filenames[[2]], w = 6, h = 5)
+        filename <- paste0("hivprevalence_vs_age_by_gender_fishinland_ptype_gp_round", round, ".pdf")
+        ggsave2(plots_comparison, file = filename, w = 6, h = 9)
 
 
         catn("extract basic prevalence estimates")
@@ -243,7 +269,13 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
         ) ]
         draws <- .stan.get.sex.and.loc(draws, 'variable', codes=group_codes)
         draws[, variable := NULL ]
-    
+
+        draws_wholepop <- get.draws.wholepop(DRAWS=draws, DPART=dpartrates[ROUND==round])
+        quants_wholepop <- draws_wholepop[, quantile2(P), by=c("AGE_LABEL", "SEX_LABEL", "LOC_LABEL")] 
+        p <- plot.quantiles.wholepop(quants_wholepop, ylab="HIV prevalence (95% credible intervals)")
+        filename <- paste0("hivprevalence_vs_age_by_gender_fishinland_joint_round", round, ".pdf")
+        cmd <- ggsave2(p, file = filename, w = 9, h = 6)
+
         rp <- merge(
             draws, DT[, .(SEX, LOC, PTYPE,AGE_LABEL, N )],
             by=c('SEX', 'LOC', "PTYPE", "AGE_LABEL"))
@@ -285,7 +317,6 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
             prevratio.hiv.by.loc.age[variable == "PR_FM"],
             ylab = "female to male HIV prevalence ratio\n(95% credibility interval)\n"
         ) + facet_grid( LOC_LABEL ~ PTYPE, scales="free_y")
-
         filename <- paste0("fit_hivprevalenceratio_vs_age_by_fishinland_stan_round", round, ".pdf")
         ggsave2(p, file = filename, w = 8, h = 8)
 
@@ -487,8 +518,8 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan.hyper <- function(
         nsinf.by.age <- .stan.get.sex.and.loc(nsinf.by.age, 'variable', codes=group_codes)
 
         plots_ftp <- .plot.stan.fit(
-            nsinf.by.age[PTYPE == 0],
-            DT2=ppDT[PTYPE == 0],
+            nsinf.by.age[PTYPE == "ftp"],
+            DT2=ppDT[PTYPE == "ftp"],
             ylims = c(0,1),
             ylab = "HIV+ individuals with suppressed viral load\n(95% credibility interval)\n"
         )
@@ -497,8 +528,8 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan.hyper <- function(
         ggsave2(plots_ftp[[2]], file = filenames[[2]], w = 6, h = 5)
 
         plots_all <- .plot.stan.fit(
-            nsinf.by.age[PTYPE == 1],
-            DT2=ppDT[PTYPE == 1],
+            nsinf.by.age[PTYPE == "all"],
+            DT2=ppDT[PTYPE == "all"],
             ylims = c(0,1),
             ylab = "HIV+ individuals with suppressed viral load\n(95% credibility interval)\n"
         )
@@ -520,6 +551,12 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan.hyper <- function(
         ) ]
         draws <- .stan.get.sex.and.loc(draws, 'variable', codes=group_codes)
         draws[, variable := NULL ]
+
+        draws_wholepop <- get.draws.wholepop(DRAWS=draws, DPART=dpartrates[ROUND==round])
+        quants_wholepop <- draws_wholepop[, quantile2(P), by=c("AGE_LABEL", "SEX_LABEL", "LOC_LABEL")] 
+        p <- plot.quantiles.wholepop(quants_wholepop, ylim=1,ylab="HIV+ individuals with suppressed viral load\n(95% credibility interval)\n")
+        filename <- paste0("suppAmongInfected_vs_age_by_gender_fishinland__joint_round", round, ".pdf")
+        cmd <- ggsave2(p, file = filename, w = 9, h = 6)
 
         rp <- merge(
             draws, DT[, .(SEX, LOC, AGE_LABEL, PTYPE ,N )],
@@ -576,10 +613,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan.hyper <- function(
         rp <- rp[, quantile2(PR_FM_D, ps)]
 
         filename <- paste0("suppAmongInfected_round", round, ".rda")
-        if (!arv_bool) {
-            nainf.by.age <- re2 <- data.table()
-        }
-        save(DT, stan.data, re, re2, nainf.by.age,
+        save(DT, stan.data, re, 
             nsinf.by.age, nsinf.by.sex.loc,
             nsinf.by.loc, nsinf.ratio.by.loc.age,
             file = file.path(vl.out.dir., filename)
@@ -735,7 +769,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan.hyper <- function(
         cols <- c("M", "CU", "CL")
         ppDT[, (cols) := binconf(VLNS_N, N, return.df = T)]
 
-        catn("make prevalence plot by age")
+        catn("make prevalence plot by age and ptype")
         # _________________________________
 
         q <- c("M"=.5, "CL"=.025, "CU"=.975)
@@ -743,31 +777,32 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan.hyper <- function(
         tmp <- re[, lapply(.SD, posterior::quantile2, probs=q), .SDcols =cols]
         tmp[, quantile := names(q)]
         tmp <- melt( tmp, id.vars = "quantile")
-        nspop.by.age <- dcast.data.table(tmp, variable ~ quantile, value.var = "value")
-        nspop.by.age[ , `:=` (
+
+        nspop.byage.ptype <- dcast.data.table(tmp, variable ~ quantile, value.var = "value")
+        nspop.byage.ptype[ , `:=` (
             AGE_LABEL = .stan.brackets.to.age(variable, .stan.data=stan.data),
             variable = .stan.remove.brackets(variable)
         ) ]
-        nspop.by.age <- .stan.get.sex.and.loc(nspop.by.age, 'variable', codes=group_codes)
+        nspop.byage.ptype <- .stan.get.sex.and.loc(nspop.byage.ptype, 'variable', codes=group_codes)
 
         plots_ftp <- .plot.stan.fit(
-            nspop.by.age[PTYPE == 0],
-            DT2=ppDT[PTYPE == 0],
+            nspop.byage.ptype[PTYPE == "ftp"],
+            DT2=ppDT[PTYPE == "ftp"],
             ylims = c(0,.4),
             ylab = "population with unsuppressed viral load\n(95% credibility interval)\n"
         )
 
-        filenames <- paste0("hivprevalence_vs_age_by_gender_fishinland_ftp_",c("", "data_"),"gp_round", round, ".pdf")
+        filenames <- paste0("notsuppAmongPop_vs_age_by_gender_fishinland_ftp_",c("", "data_"),"gp_round", round, ".pdf")
         ggsave2(plots_ftp[[1]], file = filenames[[1]], w = 6, h = 5)
         ggsave2(plots_ftp[[2]], file = filenames[[2]], w = 6, h = 5)
 
         plots_all <- .plot.stan.fit(
-            nspop.by.age[PTYPE == 1],
-            DT2=ppDT[PTYPE == 1],
+            nspop.byage.ptype[PTYPE == "all"],
+            DT2=ppDT[PTYPE == "all"],
             ylims = c(0,.4),
             ylab = "population with unsuppressed viral load\n(95% credibility interval)\n"
         )
-        filenames <- paste0("hivprevalence_vs_age_by_gender_fishinland_all_",c("", "data_"),"gp_round", round, ".pdf")
+        filenames <- paste0("notsuppAmongPop_vs_age_by_gender_fishinland_all_",c("", "data_"),"gp_round", round, ".pdf")
         ggsave2(plots_all[[1]], file = filenames[[1]], w = 6, h = 5)
         ggsave2(plots_all[[2]], file = filenames[[2]], w = 6, h = 5)
 
@@ -782,6 +817,12 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan.hyper <- function(
         ) ]
         draws <- .stan.get.sex.and.loc(draws, 'variable', codes=group_codes)
         draws[, variable := NULL ]
+
+        draws_wholepop <- get.draws.wholepop(DRAWS=draws, DPART=dpartrates[ROUND==round])
+        quants_wholepop <- draws_wholepop[, quantile2(P), by=c("AGE_LABEL", "SEX_LABEL", "LOC_LABEL")] 
+        p <- plot.quantiles.wholepop(quants_wholepop, ylim=.4,ylab="population with unsuppressed viral load\n(95% credibility interval)\n")
+        filename <- paste0("notsuppAmongPop_vs_age_by_gender_fishinland__joint_round", round, ".pdf")
+        cmd <- ggsave2(p, file = filename, w = 9, h = 6)
 
         rp <- merge(
             draws, DT[, .(SEX, LOC, AGE_LABEL, N )],
@@ -830,7 +871,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan.hyper <- function(
         rp[, quantile2(PR_FM_D, q)]
 
         filename <- paste0("suppAmongPop_round", round, ".rda")
-        save(DT, stan.data, re, nspop.by.age,
+        save(DT, stan.data, re, nspop.byage.ptype,
             nspop.by.sex.loc, nspop.ratio.by.loc.age,
             file = file.path(vl.out.dir., filename)
         )
@@ -839,12 +880,12 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan.hyper <- function(
         catn("make table version suppressed")
         # ___________________________________
 
-        nspop.by.age[, LABEL := .write.CIs(M, CL, CU, percent = T, d = 1)]
+        nspop.byage.ptype[, LABEL := .write.CIs(M, CL, CU, percent = T, d = 1)]
         setnames(nspop.ratio.by.loc.age, "LABEL", "LABEL2")
 
         vec_ages <- c(20.5, 25.5, 30.5, 35.5, 40.5, 45.5)
 
-        dt <- subset(nspop.by.age, AGE_LABEL %in% vec_ages) |>
+        dt <- subset(nspop.byage.ptype, AGE_LABEL %in% vec_ages) |>
             dcast.data.table(LOC_LABEL + AGE_LABEL ~ SEX_LABEL, value.var = "LABEL")
         .f <- function(var){
             tmp <- subset(nspop.ratio.by.loc.age,
