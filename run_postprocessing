@@ -29,6 +29,7 @@ done
 VL="${VL:-1000}" 
 FTP="${FTP:-FALSE}"
 ALPHA="${ALPHA:-1}"
+SHARE="${SHARE:-FALSE}"
 STANWAY="${STANWAY:-cmdstan}"
 INDIR="${INDIR:-/rds/general/user/ab1820/home/git/longi_viral_loads}"
 OUTDIR="${OUTDIR:-/rds/general/user/ab1820/home/projects/2022/longvl}"
@@ -43,16 +44,24 @@ if [[ ! "$STANWAY" =~ ^(stan|cmdstan)$ ]]; then
     echo "STANWAY must be either stan (rstan) or cmdstan (cmdstanr)."
     exit 1
 fi
-
+# stop if SHARE is not True, TRUE, T, False, FALSE, F
+if [[ ! "$SHARE" =~ ^(TRUE|FALSE)$ ]]; then
+    echo "SHARE must be either TRUE or FALSE."
+    exit 1
+fi
 echo "Selected options:"
 echo "  VL = $VL"
 echo "  STANWAY = $STANWAY"
 echo "  INDIR = $INDIR"
 echo "  OUTDIR = $OUTDIR"
+echo "  REFIT = $REFIT"
 
 # "build" jobname and envname
 ENVNAME="longivl"
 ALPHA2=$(echo "$ALPHA" | sed 's/\.//')
+if [[ "$SHARE" == "TRUE" ]]; then
+    ALPHA2="${ALPHA2}sharedhyper"
+fi
 JOBNAME="alpha${ALPHA2}_vl_$VL"
 if [[ "$STANWAY" == "cmdstan" ]]; then
 	JOBNAME="${STANWAY}_${JOBNAME}"
@@ -84,13 +93,15 @@ Rscript \$INDIR/scripts/VL_jointpostprocessing.R \\
     --viremic-viral-load $VL \\
     --jobname \$JOBNAME \\
     --outdir \$OUTDIR/\${JOBNAME}_joint \\
-    --indir \$OUTDIR
+    --indir \$OUTDIR \\
+    --shared-hyper $SHARE
 
 Rscript \$INDIR/src/make_paper_figures.R \\
     --viremic-viral-load $VL \\
     --jobname \$JOBNAME \\
     --outdir \$OUTDIR/\${JOBNAME}_joint \\
-    --indir \$OUTDIR
+    --indir \$OUTDIR \\
+    --shared-hyper $SHARE
 
 Rscript -e "
 rmarkdown::render(
