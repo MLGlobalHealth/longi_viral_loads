@@ -17,10 +17,10 @@ output:
 ---
 
 ```{r read_args, include=FALSE}
-indir <- params$indir
-jobid <- params$jobid
-testing <- FALSE
-if(interactive() | testing == TRUE){
+if( exists('params') ){
+    indir <- params$indir
+    jobid <- params$jobid
+}else{  # testing
     indir <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/"
     jobid <- "cmdstan_alpha100sharedhyper_vl_1000"
 }
