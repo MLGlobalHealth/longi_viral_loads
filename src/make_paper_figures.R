@@ -52,9 +52,13 @@ opts_vec <- c(
     "out.dir.exact",
     "round",
     "jobname",
-    "only.firstparticipants"
+    "shared.hyper"
 )
 args <- args[names(args) %in% opts_vec]
+# testing
+if (interactive()) {
+    args$out.dir.exact <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/vl_1000_joint"
+}
 print(args)
 {
     source(file.path(gitdir.functions, "plotting_main_figures.R"))
@@ -66,10 +70,6 @@ print(args)
     naturemed_reqs()
 }
 
-# testing
-if (interactive()) {
-    args$out.dir.exact <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/vl_1000_joint"
-}
 
 overwrite <- !interactive()
 make_plots <- TRUE
@@ -82,7 +82,6 @@ if (make_paper_numbers) {
 with(args, {
     VL_DETECTABLE <<- detectable.viral.load
     VIREMIC_VIRAL_LOAD <<- viremic.viral.load
-    # need to check that we have both samples for "" and "_firstpart"
     out.dir <<- gsub("_firstpart$", "_joint", out.dir.exact)
     if (is.na(out.dir.exact)) {
         out.dir <<- file.path(
@@ -91,10 +90,18 @@ with(args, {
         )
     }
 })
-stopifnot("out.dir must end in _joint" = out.dir %like% "_joint$")
-indir.ftp <- gsub("_joint", "_firstpart", out.dir)
-indir.all <- gsub("_joint", "", out.dir)
-stopifnot("did not find 2 directories necessary to run joint analysis" = all(dir.exists(c(indir.ftp, indir.all))))
+stopifnot(
+    "out.dir must end in _joint or must point to a sharedhyper analysis" =
+        out.dir %like% "_joint$" | args$shared.hyper
+)
+if (!args$shared.hyper) {
+    # probably not even necessary here
+    indir.ftp <- gsub("_joint", "_firstpart", out.dir)
+    indir.all <- gsub("_joint", "", out.dir)
+    stopifnot(
+        "did not find 2 directories necessary to run joint analysis" = all(dir.exists(c(indir.ftp, indir.all)))
+    )
+}
 out.dir.figures <- file.path(out.dir, "figures")
 out.dir.tables <- file.path(out.dir, "tables")
 

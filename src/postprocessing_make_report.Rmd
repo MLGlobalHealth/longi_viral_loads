@@ -22,13 +22,21 @@ jobid <- params$jobid
 testing <- FALSE
 if(interactive() | testing == TRUE){
     indir <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/"
-    jobid <- "cmdstan_vl_1000"
+    jobid <- "cmdstan_alpha100sharedhyper_vl_1000"
 }
+
 # check all input directories exists
-all.dir <- file.path(indir, jobid)
-ftp.dir <- paste0(all.dir, "_firstpart")
-joint.dir <- paste0(all.dir, "_joint")
-dir.exists(c(all.dir, ftp.dir, joint.dir)) |> all() |> stopifnot()
+if(! jobid %like% 'shared'){
+    all.dir <- file.path(indir, jobid)
+    ftp.dir <- paste0(all.dir, "_firstpart")
+    joint.dir <- paste0(all.dir, "_joint")
+    dirs <- c(all.dir, ftp.dir, joint.dir)
+}else{
+    joint.dir <- paste0(indir, jobid)
+    dirs <- c(joint.dir)
+}
+dir.exists(dirs) |> all() |> stopifnot()
+
 # helpers
 aggregate_diagnostics_over_all_rounds <- function(files=NULL, dir=dirname(outfile.diagnostics), diagn='num_divergent'){
     diagn <- match.arg(diagn, c('num_divergent', 'num_max_treedepth', 'ebfmi'))
@@ -67,16 +75,19 @@ library(knitr)
     return(out)
 }
 dfigs_joint <- .find.files(joint.dir)
-dfigs_single <- rbind(.find.files(ftp.dir, part="ftp"), .find.files(all.dir, part="all"))
-dfigs_single[, MODEL := gsub("^.*run-gp-(.*?)/.*$", "\\1", F)]
-dfigs_single <- dfigs_single[! MODEL %like% 'png$' & ! is.na(ROUND)]
-with(dfigs_single, stopifnot(
-    uniqueN(MODEL)==3,
-    uniqueN(ROUND)==4
-))
+if( ! jobid %like% 'shared' ){
+    dfigs_single <- rbind(.find.files(ftp.dir, part="ftp"), .find.files(all.dir, part="all"))
+    dfigs_single[, MODEL := gsub("^.*run-gp-(.*?)/.*$", "\\1", F)]
+    dfigs_single <- dfigs_single[! MODEL %like% 'png$' & ! is.na(ROUND)]
+    with(dfigs_single, stopifnot(
+        uniqueN(MODEL)==3,
+        uniqueN(ROUND)==4
+    ))
+}
 # get diagnostics files
-nms <- list.dirs(c(all.dir, ftp.dir)) |>
+nms <- list.dirs(dirs) |>
     grep(pattern="diagnostics", x=_, value=TRUE) 
+
 if(length(nms)){
     ddiagn <- lapply(nms, function(x) data.table(FILE=list.files(x)) )
     names(ddiagn) <- dirname(nms)
@@ -152,70 +163,74 @@ if(exists('ddiagn')){
 ```
 
 ```{r diagnostics, echo=FALSE, results='asis', message=FALSE}
-with(dfigs_single, {
-    MODELS <<- unique(MODEL)
-    ROUNDS <<- unique(ROUND)
-    PARTS <<- unique(PART)
-})
-relabel.models <- function(x){
-    dict <- c("hivprev", "suppofhiv", "suppofpop")
-    names(dict) <- c("prevl","supp-hiv","supp-pop")
-    dict[x]
-}
+if( exists("dfigs_single") ){
+    with(dfigs_single, {
+        MODELS <<- unique(MODEL)
+        ROUNDS <<- unique(ROUND)
+        PARTS <<- unique(PART)
+    })
+    relabel.models <- function(x){
+        dict <- c("hivprev", "suppofhiv", "suppofpop")
+        names(dict) <- c("prevl","supp-hiv","supp-pop")
+        dict[x]
+    }
 
-for ( model in c("none", MODELS)){
-    sprintf("## Model %s {.tabset}\n", model) |> cat()
+    for ( model in c("none", MODELS)){
+        sprintf("## Model %s {.tabset}\n", model) |> cat()
 
-    for ( round in ROUNDS ) {
-        sprintf("### Round %s {.tabset}\n", round) |> cat()
+        for ( round in ROUNDS ) {
+            sprintf("### Round %s {.tabset}\n", round) |> cat()
 
-        for ( part in PARTS ) {
-            sprintf("#### Part %s {.tabset}\n", part) |> cat()
+            for ( part in PARTS ) {
+                sprintf("#### Part %s {.tabset}\n", part) |> cat()
 
-            dfigs_single[ MODEL==model & ROUND==round & PART==part & BASE %like% 'assess_round', add_plots(F, width=75) ] |>
-                cat()
-            dfigs_single[ MODEL==model & ROUND==round & PART==part & BASE %like% 'gppars', add_plots(F, width=75) ] |>
-                cat()
+                dfigs_single[ MODEL==model & ROUND==round & PART==part & BASE %like% 'assess_round', add_plots(F, width=75) ] |>
+                    cat()
+                dfigs_single[ MODEL==model & ROUND==round & PART==part & BASE %like% 'gppars', add_plots(F, width=75) ] |>
+                    cat()
+            }
         }
     }
-}
 
-# remove png shown 
-dfigs_single <- subset(dfigs_single, ! BASE %like% 'assess_round' & ! BASE %like% 'gppars')
+    # remove png shown 
+    dfigs_single <- subset(dfigs_single, ! BASE %like% 'assess_round' & ! BASE %like% 'gppars')
+}
 ```
 
 # Individual run results {.tabset}
 
 ```{r summary_single, echo=FALSE, results='asis', message=FALSE}
-for ( model in c("none", MODELS)){
+if( exists("dfigs_single") ){
+    for ( model in c("none", MODELS)){
 
-    sprintf("## Model %s {.tabset}\n", model) |> cat()
+        sprintf("## Model %s {.tabset}\n", model) |> cat()
 
-    for ( round in ROUNDS )
-    {
-        sprintf("### Round %s {.tabset}\n", round) |> cat()
-
-        for ( part in PARTS )
+        for ( round in ROUNDS )
         {
-            sprintf("#### Part %s {.tabset}\n", part) |> cat()
+            sprintf("### Round %s {.tabset}\n", round) |> cat()
 
-            dfigs_single[ MODEL==model & ROUND==round & PART==part,  add_plots(F) ] |>
-                cat()
+            for ( part in PARTS )
+            {
+                sprintf("#### Part %s {.tabset}\n", part) |> cat()
 
+                dfigs_single[ MODEL==model & ROUND==round & PART==part,  add_plots(F) ] |>
+                    cat()
+
+            }
+            sprintf("#### Comparison type comparison\n") |> cat()
+            dfigs_joint[! BASE %like% 'comparefishinland' & BASE %like% relabel.models(model) & ROUND==round,  add_plots(F, width=100) ] |> cat()
         }
-        sprintf("#### Comparison type comparison\n") |> cat()
-        dfigs_joint[! BASE %like% 'comparefishinland' & BASE %like% relabel.models(model) & ROUND==round,  add_plots(F, width=100) ] |> cat()
     }
 }
-
-dfigs_joint <- subset(dfigs_joint, 
-    BASE %like% 'comparefishinland' | ! BASE %in% relabel.models(MODELS) | is.na(ROUND))
 ```
 
 
 # Joint runs results {.tabset}
 
 ```{r summary_joint, echo=FALSE, results='asis', message=FALSE}
+ROUNDS <- dfigs_joint[!is.na(ROUND), unique(ROUND) |> sort()]
+dfigs_joint <- subset(dfigs_joint, 
+    BASE %like% 'comparefishinland' | ! BASE %in% relabel.models(MODELS) | is.na(ROUND))
 for ( round in ROUNDS )
 {
     sprintf("## Round %s {.tabset}\n", round) |> cat()
