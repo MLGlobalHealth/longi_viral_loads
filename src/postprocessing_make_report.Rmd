@@ -19,7 +19,7 @@ output:
 ```{r read_args, include=FALSE}
 indir <- params$indir
 jobid <- params$jobid
-testing <- FALSE
+testing <- TRUE
 if(interactive() | testing == TRUE){
     indir <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/"
     jobid <- "cmdstan_alpha100sharedhyper_vl_1000"
@@ -145,11 +145,16 @@ dfigs_joint <- subset(dfigs_joint,  ! BASE %in% mainfigs.png)
 # Diagnostics {.tabset}
 
 ```{r diagnostics_rds}
-rbind( 
-    .find.files(dir=all.dir, .pattern='asses.*rds$', part="all"),
-    .find.files(dir=ftp.dir, .pattern='asses.*rds$', part="ftp")
-)  -> fdiagn
+if( jobid %like% 'shared' ){
+    fdiagn <- .find.files(dir=joint.dir, .pattern='asses.*rds$', part="")
+}else{
+    rbind( 
+        .find.files(dir=all.dir, .pattern='asses.*rds$', part="all"),
+        .find.files(dir=ftp.dir, .pattern='asses.*rds$', part="ftp")
+    )  -> fdiagn
+}
 # compute divergences 
+
 if(exists('ddiagn')){
     tab <- ddiagn[ FILE %like% "diagnostics", { 
         tmp <- file.path(DIR,'diagnostics', FILE)
@@ -164,17 +169,17 @@ if(exists('ddiagn')){
 ```
 
 ```{r diagnostics, echo=FALSE, results='asis', message=FALSE}
+MODELS <- paste0('run-gp-', c("prevl","supp-hiv","supp-pop"))
+relabel.models <- function(x){
+    dict <- c("hivprev", "suppofhiv", "suppofpop")
+    names(dict) <- c("prevl","supp-hiv","supp-pop")
+    dict[x]
+}
 if( exists("dfigs_single") ){
     with(dfigs_single, {
-        MODELS <<- unique(MODEL)
         ROUNDS <<- unique(ROUND)
         PARTS <<- unique(PART)
     })
-    relabel.models <- function(x){
-        dict <- c("hivprev", "suppofhiv", "suppofpop")
-        names(dict) <- c("prevl","supp-hiv","supp-pop")
-        dict[x]
-    }
 
     for ( model in c("none", MODELS)){
         sprintf("## Model %s {.tabset}\n", model) |> cat()
