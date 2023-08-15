@@ -786,7 +786,7 @@ if (file.exists(filename_rds) & !overwrite) {
     saveRDS(object = dsexcontrib_agegroup, file = filename_rds)
 }
 
-if (make_table) {
+if (make_tables) {
     dsexcontrib_agegroup |> plot_quantiles(facet = LOC ~ ROUND, color = SEX_LAB, x = AGEGROUP)
 }
 
