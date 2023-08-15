@@ -897,8 +897,9 @@ if (file.exists(filename_rds) & !overwrite) {
         {
             eval(expr_setup_ftp_all)
             get.posterior.logratios.ftp(
-                readRDS(paths[idx.all]),
-                readRDS(paths[idx.ftp]),
+                fit1=readRDS(paths[idx.all]),
+                fit2=readRDS(paths[idx.ftp]),
+                fit_all = readRDS(paths),
                 round = unique(ROUND)
             )
         },
@@ -914,8 +915,9 @@ if (file.exists(filename_rds2) & !overwrite) {
         {
             eval(expr_setup_ftp_all)
             get.posterior.diff.ftp(
-                readRDS(paths[idx.all]),
-                readRDS(paths[idx.ftp])
+                fit1=readRDS(paths[idx.all]),
+                fit2=readRDS(paths[idx.ftp]),
+                fit_all = readRDS(paths)
             )
         },
         by = c("MODEL", "ROUND")

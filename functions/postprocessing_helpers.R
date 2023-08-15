@@ -197,6 +197,19 @@ expr_setup_ftp_all <- expr({
     cat(paths[idx.all], "\n")
 })
 
+extract.p_predict <- function(fit, lab=NA_character_){
+    out <- posterior::as_draws_df(fit) |>
+        posterior::subset_draws(variable = "^p_predict", regex=TRUE)
+    if(!is.na(lab)){
+        names(out) <- gsub("p_predict", lab, names(out))
+    }else{
+        setDT(out)
+        names(out) <- gsub("p_predict(.*)_ftp(.*)$", "ftp\\1\\2", names(draws_all)) 
+        names(out) <- gsub("p_predict(.*)$", "parts\\1", names(draws_all)) 
+    }
+    return(out)
+}
+
 get.weighted.average.p_predict <- function(fit1, fit2, fit_all, round, expression_prereturn = {}, uniqueRDS=args$shared.hyper) {
     .optional.thinning <- function(DT){
         if(! interactive()) return(DT) 
@@ -209,26 +222,11 @@ get.weighted.average.p_predict <- function(fit1, fit2, fit_all, round, expressio
 
     # extract age-specific draws from both ftp and allparts
     if(!uniqueRDS){
-        draws_parts <- posterior::as_draws_df(fit1) |>
-            posterior::subset_draws(variable = "^p_predict", regex = TRUE) |>
-            .optional.thinning()
-        names(draws_parts) <- gsub("p_predict", "parts", names(draws_parts))
-
-        draws_ftp <- posterior::as_draws_df(fit2) |>
-            posterior::subset_draws(variable = "^p_predict", regex = TRUE) |> 
-            .optional.thinning()
-        names(draws_ftp) <- gsub("p_predict", "ftp", names(draws_ftp))
-
-        # merge together
+        draws_parts <- extract.p_predict(fit1, "parts") |> .optional.thinning() 
+        draws_ftp <- extract.p_predict(fit2, "ftp") |> .optional.thinning() 
         draws_all <- posterior::bind_draws(draws_parts, draws_ftp) |> setDT()
     }else{
-        # probably needs chaging
-        draws_all <- posterior::as_draws_df(fit_all) |>
-            posterior::subset_draws(variable = "^p_predict", regex = TRUE) |>
-            .optional.thinning() |>
-            setDT()
-        names(draws_all) <- gsub("p_predict(.*)_ftp(.*)$", "ftp\\1\\2", names(draws_all)) 
-        names(draws_all) <- gsub("p_predict(.*)$", "parts\\1", names(draws_all)) 
+        draws_all <- extract.p_predict(fit_all)
     }
     draws_all <- melt(draws_all,
         id.vars = dot.cols,
@@ -257,29 +255,30 @@ get.weighted.average.p_predict <- function(fit1, fit2, fit_all, round, expressio
     eval(expression_prereturn)
 }
 
-get.posterior.diff.ftp <- function(fit1, fit2, expression_prereturn=NULL){
+get.posterior.diff.ftp <- function(fit1, fit2, fit_all, expression_prereturn=NULL, uniqueRDS=args$shared.hyper) {
+
+    .optional.thinning <- function(DT){
+        if(! interactive()) return(DT) 
+        posterior::thin_draws(DT, thin=5)
+    }
 
     dot.cols <- c(".chain", ".iteration", ".draw")
     demo.cols <- c("SEX", "LOC", "AGEYRS")
     demo.cols2 <- paste0(demo.cols, "_LAB")
 
-    .extract.p_predict <- function(fit, lab){
-        out <- posterior::as_draws_df(fit) |>
-            posterior::subset_draws(variable = "^p_predict", regex=TRUE)
-        names(out) <- gsub("p_predict", lab, names(out))
-        return(out)
+    if(!uniqueRDS){
+        draws_parts <- extract.p_predict(fit1, "parts") |> .optional.thinning() 
+        draws_ftp <- extract.p_predict(fit2, "ftp") |> .optional.thinning() 
+        draws_all <- posterior::bind_draws(draws_parts, draws_ftp) |> setDT()
+    }else{
+        draws_all <- extract.p_predict(fit_all)
     }
 
-    draws_all <- posterior::bind_draws( 
-        .extract.p_predict(fit1, lab="parts"),
-        .extract.p_predict(fit2, lab="ftp")
-    ) |> 
-        setDT() |>
-        melt( 
-            id.vars = dot.cols,
-            variable.name = "participation",
-            value.name = "value"
-        )
+    draws_all <- melt(draws_all,
+        id.vars = dot.cols,
+        variable.name = "participation",
+        value.name = "value"
+    )
     draws_all[, (demo.cols) := stanindices2vars(participation)]
     draws_all[, participation := fifelse(participation %like% 'ftp', yes='ftp',no='parts' )]
     draws_all <- dcast.data.table(draws_all,  ... ~ participation, value.var='value' )
@@ -559,22 +558,23 @@ plot.diff.ftpvsnon <- function(DT, label) {
         NULL
 }
 
-get.posterior.logratios.ftp <- function(fit1, fit2, round, expression_prereturn = {}) {
-    # round <- 19
+get.posterior.logratios.ftp <- function(fit1, fit2, fit_all, round, expression_prereturn = {}, uniqueRDS=args$shared.hyper) {
+
+    .optional.thinning <- function(DT){
+        if(! interactive()) return(DT) 
+        posterior::thin_draws(DT, thin=5)
+    }
     dot.cols <- c(".chain", ".iteration", ".draw")
     demo.cols <- c("SEX", "LOC", "AGEYRS")
 
     # extract age-specific draws from both ftp and allparts
-    draws_parts <- posterior::as_draws_df(fit1) |>
-        posterior::subset_draws(variable = "^p_predict", regex = TRUE)
-    names(draws_parts) <- gsub("p_predict", "parts", names(draws_parts))
-
-    draws_ftp <- posterior::as_draws_df(fit2) |>
-        posterior::subset_draws(variable = "^p_predict", regex = TRUE)
-    names(draws_ftp) <- gsub("p_predict", "ftp", names(draws_ftp))
-
-    # merge together
-    draws_all <- posterior::bind_draws(draws_parts, draws_ftp) |> setDT()
+    if(!uniqueRDS){
+        draws_parts <- extract.p_predict(fit1, "parts") |> .optional.thinning() 
+        draws_ftp <- extract.p_predict(fit2, "ftp") |> .optional.thinning() 
+        draws_all <- posterior::bind_draws(draws_parts, draws_ftp) |> setDT()
+    }else{
+        draws_all <- extract.p_predict(fit_all)
+    }
     draws_all <- melt(draws_all,
         id.vars = dot.cols,
         variable.name = "participation",
