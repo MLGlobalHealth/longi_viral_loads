@@ -132,9 +132,9 @@ catn("=== Compare model fits among FTP and ALL ===")
 ####################################################
 
 dfiles_rda <- get.output.paths.ftp.and.all(regex = ".rda$")
-stopifnot(dfiles_rda[, .N, by = "F"][, all(N == 2)])
 
 if (!args$shared.hyper) {
+    stopifnot(dfiles_rda[, .N, by = "F"][, all(N == 2)])
     env_list <- store.rda.environments.in.list.by.round.ftpstatus(dfiles_rda)
 }
 
