@@ -3,8 +3,8 @@ title: "Summary"
 author: "Andrea Brizzi"
 date: "`r Sys.Date()`"
 params:
-   indir: ""
-   jobid: ""
+   indir: "/home/andrea/HPC/ab1820/home/projects/2022/longvl/"
+   jobid: "cmdstan_alpha100sharedhyper_vl_1000"
 output: 
    html_document:
        theme: sandstone
@@ -47,7 +47,7 @@ aggregate_diagnostics_over_all_rounds <- function(files=NULL, dir=dirname(outfil
         files <- list.files(dir , pattern="diagnostics.rds$", full.names = TRUE)
     }
     .tmp <- lapply(files, readRDS) |>
-        lapply(`[[`, diagn) |>
+        lapply(getElement, diagn) |>
         sapply(func) |> 
         func()
     return(.tmp)
@@ -84,6 +84,8 @@ if( ! jobid %like% 'shared' ){
         uniqueN(MODEL)==3,
         uniqueN(ROUND)==4
     ))
+}else{
+    dfigs_joint[, MODEL := fifelse( F %like% 'run-gp', yes=gsub("^.*run-gp-(.*?)/.*$", "\\1", F),no=NA_character_)]
 }
 # get diagnostics files
 nms <- list.dirs(dirs) |>
@@ -144,7 +146,7 @@ dfigs_joint <- subset(dfigs_joint,  ! BASE %in% mainfigs.png)
 
 # Diagnostics {.tabset}
 
-```{r diagnostics_rds}
+```{r diagnostics_rds, include=FALSE}
 if( jobid %like% 'shared' ){
     fdiagn <- .find.files(dir=joint.dir, .pattern='asses.*rds$', part="")
 }else{
@@ -169,7 +171,6 @@ if(exists('ddiagn')){
 ```
 
 ```{r diagnostics, echo=FALSE, results='asis', message=FALSE}
-MODELS <- paste0('run-gp-', c("prevl","supp-hiv","supp-pop"))
 relabel.models <- function(x){
     dict <- c("hivprev", "suppofhiv", "suppofpop")
     names(dict) <- c("prevl","supp-hiv","supp-pop")
@@ -177,29 +178,48 @@ relabel.models <- function(x){
 }
 if( exists("dfigs_single") ){
     with(dfigs_single, {
-        ROUNDS <<- unique(ROUND)
-        PARTS <<- unique(PART)
+        ROUNDS <<- unique(ROUND) |> sort()
+        MODELS <<- unique(MODEL)|> sort()
+        PARTS <<- unique(PART)|> sort()
     })
+    plot.expr <- expr({
+        dfigs_single[ MODEL==model & ROUND==round & PART==part & BASE %like% 'assess_round', add_plots(F, width=75) ] |>
+            cat()
+        dfigs_single[ MODEL==model & ROUND==round & PART==part & BASE %like% 'gppars', add_plots(F, width=75) ] |>
+            cat()
+    })
+}else{
+    with(dfigs_joint, {
+        ROUNDS <<- unique(ROUND)|> sort()
+        MODELS <<- unique(MODEL)|> sort()
+    })
+    plot.expr <- expr({
+        dfigs_joint[ MODEL==model & ROUND==round & BASE %like% 'assess_round', add_plots(F, width=75) ] |>
+            cat()
+        dfigs_joint[ MODEL==model & ROUND==round & BASE %like% 'gppars', add_plots(F, width=75) ] |>
+            cat()
+    })
+}
 
-    for ( model in c("none", MODELS)){
-        sprintf("## Model %s {.tabset}\n", model) |> cat()
+for ( model in c("none", MODELS)){
+    sprintf("## Model %s {.tabset}\n", model) |> cat()
 
-        for ( round in ROUNDS ) {
-            sprintf("### Round %s {.tabset}\n", round) |> cat()
+    for ( round in ROUNDS ) {
+        sprintf("### Round %s %s\n", round, fifelse(exists("dfigs_single"),yes="{.tabset}", no="")) |> cat()
 
-            for ( part in PARTS ) {
-                sprintf("#### Part %s {.tabset}\n", part) |> cat()
-
-                dfigs_single[ MODEL==model & ROUND==round & PART==part & BASE %like% 'assess_round', add_plots(F, width=75) ] |>
-                    cat()
-                dfigs_single[ MODEL==model & ROUND==round & PART==part & BASE %like% 'gppars', add_plots(F, width=75) ] |>
-                    cat()
-            }
+        if( exists("PARTS")){
+            for ( part in PARTS ) { sprintf("#### Part %s {.tabset}\n", part) |> cat(); eval(plot.expr) }
+        }else{
+            eval(plot.expr)
         }
     }
+}
 
-    # remove png shown 
+# remove png shown 
+if( exists("dfigs_single")){
     dfigs_single <- subset(dfigs_single, ! BASE %like% 'assess_round' & ! BASE %like% 'gppars')
+}else{
+    dfigs_joint <- subset(dfigs_joint, ! BASE %like% 'assess_round' & ! BASE %like% 'gppars')
 }
 ```
 
