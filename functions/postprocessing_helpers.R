@@ -204,8 +204,8 @@ extract.p_predict <- function(fit, lab=NA_character_){
         names(out) <- gsub("p_predict", lab, names(out))
     }else{
         setDT(out)
-        names(out) <- gsub("p_predict(.*)_ftp(.*)$", "ftp\\1\\2", names(draws_all)) 
-        names(out) <- gsub("p_predict(.*)$", "parts\\1", names(draws_all)) 
+        names(out) <- gsub("p_predict(.*)_ftp(.*)$", "ftp\\1\\2", names(out)) 
+        names(out) <- gsub("p_predict(.*)$", "parts\\1", names(out)) 
     }
     return(out)
 }
