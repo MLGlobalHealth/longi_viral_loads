@@ -26,6 +26,7 @@ if(interactive() | testing == TRUE){
 }
 
 # check all input directories exists
+library(data.table)
 if(! jobid %like% 'shared'){
     all.dir <- file.path(indir, jobid)
     ftp.dir <- paste0(all.dir, "_firstpart")
