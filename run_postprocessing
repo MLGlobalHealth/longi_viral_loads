@@ -88,18 +88,25 @@ set -euo pipefail
 INDIR=$INDIR
 OUTDIR=$OUTDIR
 JOBNAME=$JOBNAME
+#
+# only add the joint prefix if $SHARE is FALSE: 
+JOBNAME_JOINT="$JOBNAME"
+if [[ "$SHARE" == "FALSE" ]]; then
+    JOBNAME_JOINT="$JOBNAME"_joint
+fi
+
   
 Rscript \$INDIR/scripts/VL_jointpostprocessing.R \\
     --viremic-viral-load $VL \\
     --jobname \$JOBNAME \\
-    --outdir \$OUTDIR/\${JOBNAME}_joint \\
+    --outdir \$OUTDIR/\${JOBNAME_JOINT} \\
     --indir \$OUTDIR \\
     --shared-hyper $SHARE
 
 Rscript \$INDIR/src/make_paper_figures.R \\
     --viremic-viral-load $VL \\
     --jobname \$JOBNAME \\
-    --outdir \$OUTDIR/\${JOBNAME}_joint \\
+    --outdir \$OUTDIR/\${JOBNAME_JOINT} \\
     --indir \$OUTDIR \\
     --shared-hyper $SHARE
 
@@ -107,7 +114,7 @@ Rscript -e "
 rmarkdown::render(
     '\$INDIR/src/postprocessing_make_report.Rmd',
     params=list(indir='\$OUTDIR', jobid='\$JOBNAME'),
-    output_dir='\$OUTDIR/\${JOBNAME}_joint')
+    output_dir='\$OUTDIR/\${JOBNAME_JOINT}')
 "
 
 EOF

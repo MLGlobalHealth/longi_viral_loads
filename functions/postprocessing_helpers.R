@@ -28,12 +28,19 @@ stanindices2vars <- function(names) {
     out
 }
 
-get.output.paths.ftp.and.all <- function(regex, dir.ftp=indir.ftp, dir.all=indir.all){
+get.output.paths.ftp.and.all <- function(regex, dir.shared=out.dir, dir.ftp=indir.ftp, dir.all=indir.all, shared=args$shared.hyper){
     # vl is not well read but not important
-    files1 <- list.files.from.output.directory(regex, dir=dir.ftp, rounds = 16:19)
-    files2 <- list.files.from.output.directory(regex, dir=dir.all,  rounds = 16:19)
+    if( shared ){
+        files <- list.files.from.output.directory(regex, dir=out.dir, rounds = 16:19)
+    }else{
+        files <- c( 
+            list.files.from.output.directory(regex, dir=dir.ftp, rounds = 16:19),
+            list.files.from.output.directory(regex, dir=dir.all,  rounds = 16:19)
+        )
+    }
+    
     # get paths of models
-    dfiles <- data.table(F = c(files1, files2))
+    dfiles <- data.table(F = files)
     dfiles[, `:=`(
         D = dirname(F),
         F = basename(F),

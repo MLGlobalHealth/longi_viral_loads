@@ -106,7 +106,11 @@ dall <- subset(dall, ROUND %in% args$round)
 # ________________________
 
 if(args$shared.hyper){
+    dpartrates <- readRDS(path.participation.rates) |>
+        subset(select = c("ROUND", "FC", "SEX", "AGEYRS", "PARTRATE_SMOOTH.25")) |>
+        setnames(c("FC", "PARTRATE_SMOOTH.25"), c("LOC", "PARTRATE"))
     source(file.path(gitdir.functions, "phsc_vl_cmdstan_helpers_sharedhyper.R"))
+
 }
 
 if (args$run.gp.prevl) {

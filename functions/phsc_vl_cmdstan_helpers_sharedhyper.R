@@ -555,7 +555,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan.hyper <- function(
         draws_wholepop <- get.draws.wholepop(DRAWS=draws, DPART=dpartrates[ROUND==round])
         quants_wholepop <- draws_wholepop[, quantile2(P), by=c("AGE_LABEL", "SEX_LABEL", "LOC_LABEL")] 
         p <- plot.quantiles.wholepop(quants_wholepop, ylim=1,ylab="HIV+ individuals with suppressed viral load\n(95% credibility interval)\n")
-        filename <- paste0("suppAmongInfected_vs_age_by_gender_fishinland__joint_round", round, ".pdf")
+        filename <- paste0("suppAmongInfected_vs_age_by_gender_fishinland_joint_round", round, ".pdf")
         cmd <- ggsave2(p, file = filename, w = 9, h = 6)
 
         rp <- merge(
@@ -821,7 +821,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan.hyper <- function(
         draws_wholepop <- get.draws.wholepop(DRAWS=draws, DPART=dpartrates[ROUND==round])
         quants_wholepop <- draws_wholepop[, quantile2(P), by=c("AGE_LABEL", "SEX_LABEL", "LOC_LABEL")] 
         p <- plot.quantiles.wholepop(quants_wholepop, ylim=.4,ylab="population with unsuppressed viral load\n(95% credibility interval)\n")
-        filename <- paste0("notsuppAmongPop_vs_age_by_gender_fishinland__joint_round", round, ".pdf")
+        filename <- paste0("notsuppAmongPop_vs_age_by_gender_fishinland_joint_round", round, ".pdf")
         cmd <- ggsave2(p, file = filename, w = 9, h = 6)
 
         rp <- merge(

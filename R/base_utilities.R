@@ -239,7 +239,7 @@ fetch.args.from.suffix <- function(suffix, asDT=FALSE)
 {
     stopifnot("fetch.args.from.suffix can only process one suffix"=length(suffix) == 1)
     outargs <- list(
-        VL=gsub('vl_([0-9]+).*$', '\\1', suffix) |> as.integer(),
+        VL=gsub('^.*vl_([0-9]+).*$', '\\1', suffix) |> as.integer(),
         FTP=grepl('firstpart',suffix),
         JOB = NA_character_
     )
@@ -247,6 +247,7 @@ fetch.args.from.suffix <- function(suffix, asDT=FALSE)
     jobname <- gsub("vl_[0-9]+|_firstpart",'',suffix)
     if(jobname != "")
         outargs$JOB <- jobname
+    outargs$JOB<- gsub('_$', '', outargs$JOB)
 
     if(asDT)
         outargs <- as.data.table(outargs)
