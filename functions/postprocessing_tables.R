@@ -129,6 +129,8 @@ make.main.table.contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup
     r19_supphiv <- DSUPP[eval(e_sex) & eval(e_age)]
     ncen_agegroup <- ncen_agegroup[eval(e_sex) & eval(e_age)]
 
+    # go from supp to unsupp
+    negate.percent.quantiles(r19_supphiv) 
     if (add_asterisks_unaids) {
         r19_supphiv[, `:=`(UNAIDS_achieved = fifelse(M > .95^3, yes = " * ", no = ""), M = NULL, CL = NULL, CU = NULL, IL = NULL, IU = NULL)]
     } else {
@@ -143,6 +145,7 @@ make.main.table.contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup
             }
         )
     }
+
     null <- lapply(
         list(r19_hivprev, r19_prop_unsupp, r19_comp_usnupp, r19_supphiv, r19_comp_hiv),
         function(DT) {
@@ -150,6 +153,7 @@ make.main.table.contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup
             DT[, `:=`(MODEL = NULL, M = NULL, CL = NULL, CU = NULL, IU = NULL, IL = NULL)]
         }
     ); rm(null)
+
 
     # prettify all
     names_comp <- c(

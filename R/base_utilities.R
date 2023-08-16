@@ -3,8 +3,7 @@
 ###################
 
 # non-interactive debugging (https://adv-r.hadley.nz/debugging.html#non-interactive-debugging)
-dump_and_quit <- function(){
-    # works in concomitance with 
+dump_and_quit <- function(){ # works in concomitance with 
     # options(error=dump_and_quit)
 
     # save debugging info to file last.dump.rda
@@ -274,6 +273,9 @@ tex2pdf <- function(filename){
     gsub(".tex$", ".pdf", filename)
 }
 
+pdf2png <- function(filename){
+    gsub(".pdf$", ".png", filename)
+}
 
 # copies data.frame to clipboard for easy copy-paste to google docs.
 clipboard <- function(x, sep="\t", row.names=FALSE, col.names=TRUE, quote=FALSE){
@@ -282,3 +284,10 @@ clipboard <- function(x, sep="\t", row.names=FALSE, col.names=TRUE, quote=FALSE)
      close(con)
 }
 
+negate.percent.quantiles <- function(DT){
+    DT[, `:=` (M = 1-M, CL=1-CU, CU=1-CL)]
+    if("IL" %in% names(DT)){
+        DT[, `:=` (IL = 1 - IU, IU=1-IL)]
+    }
+    return(DT)
+}

@@ -110,6 +110,22 @@ djoint_agegroup <- readRDS(filename_rds_prevalence_agegroup)
 dcontrib_agegroup <- readRDS(filename_rds_contrib_agegroup)
 dsupp_agegroup <- readRDS(filename_rds_supphiv_agegroup)
 
+######################
+# Google drive stuff #
+######################
+
+if ( interactive()){
+    library(googledrive)
+    drive_project_base <-'longivl_paper_figures' 
+    drive_outdir <- file.path(drive_project_base, basename(out.dir))
+    drive_mkdir(name = drive_outdir)
+    drive_find(drive_outdir)
+    
+    upload_to_googledrive <- function(path){
+        drive_upload( media=path, path = file.path(drive_outdir, basename(path)), overwrite = TRUE )
+    }
+}
+
 ###########
 # HELPERS #
 ###########
@@ -171,6 +187,7 @@ if (system.file(package = "ggsn") != "") {
             nm_reqs + t_nomargin
     filename <- paste0("main_figure_populationcomposition.pdf")
     ggsave_nature(p = fig1, filename = filename, LALA = out.dir.figures, w = 19.5, h = 23)
+    upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
 }
 
 
@@ -208,7 +225,7 @@ tmp <- paper_statements_suppression_above_959595(djoint)
 fig2 <- plot.main.suppression.among.plhiv(DT = djoint, type = "point", unaids = TRUE, rev = TRUE, m = -9)
 filename <- paste0("main_figure_suppression_plhiv_r1619.pdf")
 cmd <- ggsave_nature(p = fig2, filename = filename, LALA = out.dir.figures, w = 17, h = 16)
-
+if(interactive()) upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
 
 ########################
 catn("=== FIGURE 3 ===")
@@ -218,7 +235,6 @@ dcens <- copy(ncen) |> setnames("FC", "LOC")
 fig3 <- plot_propofpop_of_viraemic_byagesex_stratbycommround(DT=djoint, colorby='ROUND_LAB', cri=TRUE)
 dlabels <- labels_propofpop_of_viraemic_byagesex_stratbycommround()
 dtriangles <- point_propofpop_of_viraemic_byagesex_stratbycommround()
-
 .f <- function(add_labels=FALSE, add_ages=FALSE){
     list(
         if(add_labels)  geom_text(data=dlabels, aes(label=CELL), color="black", x=Inf, y=Inf, hjust=1, vjust=1),
@@ -227,7 +243,10 @@ dtriangles <- point_propofpop_of_viraemic_byagesex_stratbycommround()
     ) -> out 
     out[!sapply(out, is.null)]
 }
-fig3 + .f(add_ages=TRUE, add_labels=TRUE)
+fig3 <- fig3 + .f(add_ages=FALSE, add_labels=FALSE)
+filename <- paste0("main_figure_profile_nonsuppressed.pdf")
+cmd <- ggsave_nature(p = fig3, filename = filename, LALA = out.dir.figures, w = 17, h = 16)
+if(interactive()) upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
 
 ########################
 catn(" FIGURE for KATE")
@@ -354,3 +373,12 @@ dcontrib_agegroup[ROUND %in% c(16, 19) & MODEL == "run-gp-supp-pop" & AGEGROUP %
     by = c("ROUND", "SEX", "LOC")
 ] |>
     dcast(SEX + LOC ~ ROUND)
+
+
+####################
+catn("Main table 2")
+####################
+
+filename_table <- file.path(out.dir.tables, "table_reductionHIVandUNSUPP.rds")
+tab_merge <- readRDS(filename_table)
+write.to.googlesheets(tab_merge, sheet = "Table2")
