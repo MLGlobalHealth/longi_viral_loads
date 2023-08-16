@@ -24,7 +24,7 @@ if( exists('params') ){
     indir <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/"
     jobid <- "cmdstan_alpha100sharedhyper_vl_1000"
 }
-sprintf("indir: %s\noutdir: %s\n", indir, outdir) |> cat()
+sprintf("indir: %s\noutdir: %s\n", indir, jobid) |> cat()
 
 # check all input directories exists
 library(data.table)
@@ -34,7 +34,7 @@ if(! jobid %like% 'shared'){
     joint.dir <- paste0(all.dir, "_joint")
     dirs <- c(all.dir, ftp.dir, joint.dir)
 }else{
-    joint.dir <- paste0(indir, jobid)
+    joint.dir <- file.path(indir, jobid)
     dirs <- c(joint.dir)
 }
 dir.exists(dirs) |> all() |> stopifnot()
