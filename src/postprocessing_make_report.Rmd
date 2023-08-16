@@ -24,6 +24,7 @@ if( exists('params') ){
     indir <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/"
     jobid <- "cmdstan_alpha100sharedhyper_vl_1000"
 }
+sprintf("indir: %s\noutdir: %s\n", indir, outdir) |> cat()
 
 # check all input directories exists
 library(data.table)
