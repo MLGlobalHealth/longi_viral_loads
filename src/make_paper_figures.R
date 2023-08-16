@@ -57,7 +57,9 @@ opts_vec <- c(
 args <- args[names(args) %in% opts_vec]
 # testing
 if (interactive()) {
-    args$out.dir.exact <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/vl_1000_joint"
+    # args$out.dir.exact <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/vl_1000_joint"
+    args$out.dir.exact <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/cmdstan_alpha100sharedhyper_vl_1000"
+    args$shared.hyper <- TRUE
 }
 print(args)
 {
@@ -72,39 +74,11 @@ print(args)
 
 
 overwrite <- !interactive()
-make_plots <- TRUE
-make_tables <- TRUE
-make_paper_numbers <- TRUE
+make_plots <- make_tables <- make_paper_numbers <- TRUE
 if (make_paper_numbers) {
     ppr_numbers <- list()
 }
-
-with(args, {
-    VL_DETECTABLE <<- detectable.viral.load
-    VIREMIC_VIRAL_LOAD <<- viremic.viral.load
-    out.dir <<- gsub("_firstpart$", "_joint", out.dir.exact)
-    if (is.na(out.dir.exact)) {
-        out.dir <<- file.path(
-            out.dir.prefix,
-            gsub("_firstpart$", "_joint", jobname)
-        )
-    }
-})
-stopifnot(
-    "out.dir must end in _joint or must point to a sharedhyper analysis" =
-        out.dir %like% "_joint$" | args$shared.hyper
-)
-if (!args$shared.hyper) {
-    # probably not even necessary here
-    indir.ftp <- gsub("_joint", "_firstpart", out.dir)
-    indir.all <- gsub("_joint", "", out.dir)
-    stopifnot(
-        "did not find 2 directories necessary to run joint analysis" = all(dir.exists(c(indir.ftp, indir.all)))
-    )
-}
-out.dir.figures <- file.path(out.dir, "figures")
-out.dir.tables <- file.path(out.dir, "tables")
-
+fetch.postprocessing.settings.from.args(args)
 
 # Census eligible, participants, and smooth
 ncen <- fread(path.census.eligible, select = c("ROUND", "TYPE", "SEX", "AGEYRS", "ELIGIBLE", "ELIGIBLE_SMOOTH")) |>

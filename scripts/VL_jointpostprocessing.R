@@ -76,37 +76,8 @@ source(file.path(gitdir.functions, "paper_statements.R"))
 naturemed_reqs()
 
 overwrite <- !interactive()
-make_plots <- TRUE
-make_tables <- TRUE
-
-with(args, {
-    VL_DETECTABLE <<- detectable.viral.load
-    VIREMIC_VIRAL_LOAD <<- viremic.viral.load
-    out.dir <<- gsub("_firstpart$", "_joint", out.dir.exact)
-    if (is.na(out.dir.exact)) {
-        out.dir <<- file.path(
-            out.dir.prefix,
-            gsub("_firstpart$", "_joint", jobname)
-        )
-    }
-})
-stopifnot(
-    "out.dir must end in _joint or must point to a sharedhyper analysis" =
-        out.dir %like% "_joint$" | args$shared.hyper
-)
-# need to check that we have both samples for "" and "_firstpart"
-if (!args$shared.hyper) {
-    indir.ftp <- gsub("_joint", "_firstpart", out.dir)
-    indir.all <- gsub("_joint", "", out.dir)
-    stopifnot(
-        "did not find 2 directories necessary to run joint analysis" = all(dir.exists(c(indir.ftp, indir.all)))
-    )
-}
-if (!dir.exists(out.dir)) dir.create(out.dir)
-out.dir.figures <- file.path(out.dir, "figures")
-out.dir.tables <- file.path(out.dir, "tables")
-dir.create(out.dir.tables)
-dir.create(out.dir.figures)
+make_plots <- make_tables <- TRUE
+fetch.postprocessing.settings.from.args(args)
 
 ####################
 catn("=== MAIN ===")
@@ -232,9 +203,7 @@ if (make_plots & !args$shared.hyper) {
         my_labs(y = "Prevalence of suppression among HIV positives", fill = "Gender", linetype = "") +
         NULL
     p2 <- p + geom_ribbon(alpha = .1, aes(ymin = CL, ymax = CU, fill = SEX_LAB), color = NA)
-
     filenames <- paste0("fit_suppofhiv_compare_ftpvsall", c("", "CrIs"), "_r1619.pdf")
-
     cmd <- ggsave2(p = p, file = filenames[1], LALA = out.dir.figures, w = 16, h = 14)
     cmd <- ggsave2(p = p2, file = filenames[2], LALA = out.dir.figures, w = 16, h = 14)
 }

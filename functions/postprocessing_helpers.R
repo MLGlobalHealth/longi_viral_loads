@@ -53,6 +53,37 @@ get.output.paths.ftp.and.all <- function(regex, dir.shared=out.dir, dir.ftp=indi
     return(dfiles)
 }
 
+fetch.postprocessing.settings.from.args <- function(args=args){
+    with(args, {
+        VL_DETECTABLE <<- detectable.viral.load
+        VIREMIC_VIRAL_LOAD <<- viremic.viral.load
+        out.dir <<- gsub("_firstpart$", "_joint", out.dir.exact)
+        if (is.na(out.dir.exact)) {
+            out.dir <<- file.path(
+                out.dir.prefix,
+                gsub("_firstpart$", "_joint", jobname)
+            )
+        }
+    })
+    stopifnot(
+        "out.dir must end in _joint or must point to a sharedhyper analysis" =
+            out.dir %like% "_joint$" | args$shared.hyper
+    )
+    if (!args$shared.hyper) {
+        # probably not even necessary here
+        indir.ftp <<- gsub("_joint", "_firstpart", out.dir)
+        indir.all <<- gsub("_joint", "", out.dir)
+        stopifnot(
+            "did not find 2 directories necessary to run joint analysis" = all(dir.exists(c(indir.ftp, indir.all)))
+        )
+    }
+    out.dir.figures <<- file.path(out.dir, "figures")
+    out.dir.tables <<- file.path(out.dir, "tables")
+    if(!dir.exists(out.dir.figures)) dir.create(out.dir.figures)
+    if(!dir.exists(out.dir.tables)) dir.create(out.dir.tables)
+}
+
+
 load.summarised.draws.from.rdafiles <- function(lab, files, include.raw) {
     # lab <- 'prevalence' ; files <- rda_files; include.raw <- FALSE;
 
