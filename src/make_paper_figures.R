@@ -117,10 +117,11 @@ dsupp_agegroup <- readRDS(filename_rds_supphiv_agegroup)
 if ( interactive()){
     library(googledrive)
     drive_project_base <-'longivl_paper_figures' 
-    drive_outdir <- file.path(drive_project_base, basename(out.dir))
-    drive_mkdir(name = drive_outdir)
-    drive_find(drive_outdir)
-    
+    if( ! basename(out.dir) %in% drive_ls(drive_project_base)$name){
+        drive_mkdir(name = basename(out.dir),path=drive_project_base, overwrite = FALSE)
+    }else{
+        cat("GoogleDrive job directory already present\n")
+    }
     upload_to_googledrive <- function(path){
         drive_upload( media=path, path = file.path(drive_outdir, basename(path)), overwrite = TRUE )
     }
@@ -301,33 +302,39 @@ ggsave_nature(p = plot_prevalence, filename = "whopepfar_prevalence.pdf", LALA =
     dprev_vir2 <- .load.model.subset(filename_rds_prevalence, MODEL == "run-gp-supp-hiv" & ROUND == 19) |> prettify_labels()
     dprev_vir2[, (c("M", "CU", "CL")) := lapply(.SD, function(x) 1 - x), .SDcols = c("M", "CL", "CU")]
 
-    fig_kate_1c <- plot_suppandcontrib(
-        dprev_vir[LOC == "inland"],
-        dcontrib_vir[LOC == "inland"],
-        sec_name = "Contribution of each age group to people with unsuppressed viral load",
-        prevalence.label = "Prevalence of viraemia among population",
-        remove.legend = TRUE,
-        CrI = FALSE,
-        slides = TRUE
-    )
     fig_kate_1d <- plot_suppandcontrib(
         dprev_vir2[LOC == "inland"],
         dcontrib_vir[LOC == "inland"],
         sec_name = "Contribution of each age group to people with unsuppressed viral load",
         prevalence.label = "Prevalence of viraemia among HIV positive population",
-        slides = TRUE,
+        slides = FALSE,
         CrI = FALSE,
-        sec_axis_scale = .069,
+        sec_axis_scale = .08,
         UNAIDS = TRUE
-    )
+    ) |> annotate_figure(top = text_grob( community_dictionary$longest['I'], size = 12))
+    fig_kate_1f <- plot_suppandcontrib(
+        dprev_vir2[LOC == "fishing"],
+        dcontrib_vir[LOC == "fishing"],
+        sec_name = "Contribution of each age group to people with unsuppressed viral load",
+        prevalence.label = "Prevalence of viraemia among HIV positive population",
+        slides = FALSE,
+        CrI = FALSE,
+        sec_axis_scale = .08,
+        UNAIDS = TRUE
+    ) |> annotate_figure(top=text_grob( community_dictionary$longest['F'] , size = 12))
+    
 
     # plot_suppression <- (
     #     (fig_kate_1c +  labs(tag="Considering entire population") + nm_reqs + labs(x="LALALA")) /
     #     (fig_kate_1d +  labs(tag="Considering PLHIV only (as per 95-95-95 goals)") + slides_reqs )
     # ) + plot_layout(guides="collect", ncol=1, heights=c(1,1.1)) + theme(legend.position="bottom")
     plot_suppression <- fig_kate_1d
+    plot_suppression2 <- fig_kate_1d / fig_kate_1f
 }
 ggsave_nature(p = plot_suppression, filename = "whopepfar_suppression.pdf", LALA = out.dir.figures, w = 23, h = 17)
+cmd <- ggsave_nature(p = plot_suppression2, filename = "whopepfar_suppression_comms.pdf", LALA = out.dir.figures, w = 30 , h = 23)
+
+system(cmd)
 
 
 ################################################
