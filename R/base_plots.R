@@ -64,12 +64,12 @@ ggsave2 <- function(p, file, w, h, LALA = vl.out.dir, u = "in") {
 naturemed_reqs <- function() {
     # call this before doing your plots
     nm_reqs <<- theme(
-        axis.text = element_text(size = 6.5, family = "sans"),
-        strip.text = element_text(size = 7.5, family = "sans"),
-        text = element_text(size = 7.5, family = "sans"),
-        legend.text = element_text(size = 7.5, family = "sans"),
+        axis.text = element_text(size = 7, family = "sans"),
+        strip.text = element_text(size = 8, family = "sans"),
+        text = element_text(size = 8, family = "sans"),
+        legend.text = element_text(size = 8, family = "sans"),
         strip.background = element_rect(colour = "white", fill = "white"),
-        plot.tag = element_text(size = 9, face = "bold", color = "black"),
+        plot.tag = element_text(size = 10, face = "bold", color = "black"),
         plot.tag.position = c(0, 1),
         strip.placement = "outside"
     )
@@ -265,7 +265,7 @@ palettes <- list(
         "#FF4949"
     ),
     minimal2 = c(
-        "#374E55",
+        "#000000",
         "#DF8F44"
     ),
 

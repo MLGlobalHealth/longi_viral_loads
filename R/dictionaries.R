@@ -91,6 +91,30 @@ community_dictionary <- list(
         "inland" = "Inland communities with typical HIV prevalence",
         "Fishing" = "Fishing communities with high HIV prevalence",
         "Inland" = "Inland communities with typical HIV prevalence"
+    ),
+    longestn = c(
+        "F" = "Fishing communities\nwith high HIV prevalence",
+        "I" = "Inland communities\nwith typical HIV prevalence",
+        "fishing" = "Fishing communities\nwith high HIV prevalence",
+        "inland" = "Inland communities\nwith typical HIV prevalence",
+        "Fishing" = "Fishing communities\nwith high HIV prevalence",
+        "Inland" = "Inland communities\nwith typical HIV prevalence"
+    ),
+    none = c(
+        "F" = "",
+        "I" = "",
+        "fishing" = "",
+        "inland" = "",
+        "Fishing" = "",
+        "Inland" = ""
+    ),
+    none2 = c(
+        "F" = NULL,
+        "I" = NULL,
+        "fishing" = NULL,
+        "inland" = NULL,
+        "Fishing" = NULL,
+        "Inland" = NULL
     )
 
     # I would probably try "Fishing communities with high HIV prevalence", "Inland communities with typical/more moderate HIV prevalence"

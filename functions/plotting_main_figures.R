@@ -921,7 +921,7 @@ plot.rakai.map <- function(.size = 3, labs = FALSE) {
         zoom = 11
     ) -> map
 
-    .breaks <- list(NULL, waiver)[[labs + 1]]
+    .breaks <- list(NULL, waiver())[[labs + 1]]
     .xlab <- list(NULL, "Longitude (°E)")[[labs + 1]]
     .ylab <- list(NULL, "Latitude (°N)")[[labs + 1]]
 
@@ -962,6 +962,108 @@ plot.rakai.map <- function(.size = 3, labs = FALSE) {
             st.size = 2
         )
     p
+}
+
+plot.all.maps <- function( type="inset",delta.inset=.7, return_list=FALSE){
+
+    # decide how to format
+    type <- match.arg(type, c("inset", "columns"))
+
+    # Map of the Rakai communities
+    if(type == "inset"){
+        naturemed_reqs()
+        # get plots
+        fig1a.outer <- plot.uganda.map(zoom = "medium", maptype = "toner-lines", labs = TRUE) + nm_reqs
+        fig1a.inner <- plot.rakai.map(.size = 1, labs = FALSE) +
+            theme(
+                panel.border = element_rect(colour = "red", size = 1),
+                plot.margin = margin(t = 0, b = 0, l = 0, r = 0, unit = "cm"),
+                legend.key.size = unit(0.01, "cm"),
+                legend.spacing.x = unit(0.01, "cm")
+            ) + nm_reqs
+        # inset format
+        pmap <- fig1a.outer + inset_element(
+            fig1a.inner,
+            left = 1 - delta.inset, right = 1, bottom = 0, top = delta.inset, align_to = "panel"
+        )
+    }else if(type == "columns"){
+
+        fig1a.outer <- plot.uganda.map(
+            zoom = "medium",
+            maptype = "toner-lines",
+            position = "center"
+        )
+        fig1a.inner <- plot.rakai.map(.size = 1, labs = TRUE) +
+            theme(
+                # panel.border = element_rect(colour = "red", size = 1),
+                plot.margin = margin(t = 0, b = 0, l = 0, r = 0, unit = "cm"),
+                legend.key.size = unit(0.01, "cm"),
+                legend.spacing.x = unit(0.01, "cm")
+            )
+        # inset format
+        if(return_list){ return(list(top=fig1a.outer, bottom=fig1a.inner)) }
+        pmap <- fig1a.outer / fig1a.inner
+    }
+    return(pmap)
+}
+
+plot_paper_population_pyramid <- function(layout="horizontal", return_list=FALSE){
+
+    layout <- match.arg(layout, c("horizontal", "vertical"))
+    # pyramid of census eligible, participants, and smooth
+    .plot.pyr <- function(DT, ylim=NA, commdict="long")
+    {
+        extra <- list(
+            geom_hline(yintercept = 0, color = "black"),
+            geom_line(aes(y = ELIGIBLE_SMOOTH * (1 - 2 * (SEX == "M")), color = SEX_LAB)),
+            my_labs(color = "Gender"),
+            theme(legend.position = "none")
+        )
+        plot.pyramid.bysexround(DT, 
+            .ylab = "Number of census eligible individuals",
+            .ylim = ylim,
+            NUM = NULL,
+            DEN = "ELIGIBLE",
+            percent_lab = FALSE,
+            commdict = commdict,
+            .facet=formula(. ~ FC_LAB)
+        ) + extra
+    }
+
+    if(layout=="vertical"){
+        p_top= .plot.pyr(dprop[ROUND %in% c(19) & FC== "inland"], ylim=800, commdict="longest") + labs(x="") 
+        p_bottom= .plot.pyr(dprop[ROUND %in% c(19) & FC== "fishing"], ylim=200, commdict="longest") 
+        if(return_list){ return(list(top=p_top, bottom=p_bottom)) }
+        return(p_top/p_pottom)
+    }else if(layout=="horizontal"){
+        .plot.pyr(dprop[ROUND %in% c(19)]) + labs(x="Age", y="Number of census eligible individuals")
+    }
+}
+
+plot.figure.main.prevalence <- function(DPREV=dprev, DCONTRIB=dcontrib, subtitles=TRUE, size=12){
+    fig_list <- plot_prevalenceandcontrid(
+        DPREV,
+        DCONTRIB,
+        sec_name = "Age profile of census-eligible PLHIV", return_list=TRUE,
+        loc_labeller = fifelse(subtitles==TRUE, yes="none", no="longestn" ),
+    )
+    .title <- function(lab){
+        out <- list( 
+            plot_layout(guides = "collect"),
+            if(subtitles){ plot_annotation(
+                subtitle=community_dictionary$longest[[lab]],
+                theme=theme(plot.subtitle = element_text(hjust = 0.5, size=size))
+            )}else{ NULL}
+        )
+        out
+    }
+    p <- ggarrange(
+        wrap_plots(fig_list[[1]], fig_list[[2]]) + .title('I') & theme(legend.position="none"),
+        wrap_plots(fig_list[[3]], fig_list[[4]]) + .title("F") & theme(legend.position="none"),
+        common.legend = TRUE, legend = "bottom",
+        nrow=2
+    )
+    return(p)
 }
 
 plot.relative.suppression.vs.round16.ratio <- function(DT = dincreasessupp) {
@@ -1049,26 +1151,25 @@ plot_prevalenceandcontrid <- function(DTprev,
                                       sec_axis_scale = NA_real_,
                                       extra_fig = NULL,
                                       CrI = TRUE,
-                                      slides = FALSE) {
-    ALPHA <- .5
-    DODGE <- .5
+                                      slides = FALSE,
+                                      return_list = FALSE,
+                                      loc_labeller = "longest"
+                                      ) {
+    ALPHA <- .5; DODGE <- .5
 
     n_loc <- DTprev[, uniqueN(LOC)]
     n_sex <- DTprev[, uniqueN(SEX)]
 
-    REQS <- if (slides == TRUE) {
-        slides_reqs
-    } else {
-        nm_reqs
-    }
+    REQS <- if (slides == TRUE) { slides_reqs } else { nm_reqs }
+    naturemed_reqs()
+
+    loc_labeller <- match.arg(loc_labeller, c("longest", "longestn","none", "none2"))
+    .loc_labeller <- community_dictionary[[ loc_labeller ]]
 
     .plot.facet <- function(DT) {
-        naturemed_reqs()
 
         # if empty data table do not plot:
-        if (nrow(DT) == 0) {
-            return(NULL)
-        }
+        if (nrow(DT) == 0) { return(NULL) }
 
         # plot settings
         .loc_lab <- unique(DT$LOC_LAB)
@@ -1098,11 +1199,10 @@ plot_prevalenceandcontrid <- function(DTprev,
         .breaks <- c(unique(DThist$LABEL2), unique(DTline$LABEL2))
         # return(DThist[,range(M)])
 
-
-        .facet_formula <- if (n_loc == 1) {
+        .facet_formula <- if (n_loc == 1 | loc_labeller %like% 'longest') {
             as.formula(LOC_LAB ~ SEX_LAB)
         } else {
-            as.formula(LOC_LAB ~ SEX_LAB)
+            as.formula(. ~ SEX_LAB)
         }
 
         # rescale 2nd data frame for the secondary axis
@@ -1134,7 +1234,7 @@ plot_prevalenceandcontrid <- function(DTprev,
             scale_fill_manual(values = rev(palettes$minimal2), breaks = .breaks) +
             scale_color_manual(values = rev(palettes$minimal2), breaks = .breaks) +
             facet_wrap(.facet_formula,
-                labeller = labeller(LOC_LAB = community_dictionary$longest, SEX_LAB = sex_dictionary2, .multi_line = FALSE)
+                labeller = labeller(LOC_LAB = .loc_labeller, SEX_LAB = sex_dictionary2, .multi_line = FALSE)
             ) +
             my_labs(
                 y = list("HIV prevalence by age", NULL)[[.M.intcode]],
@@ -1149,6 +1249,7 @@ plot_prevalenceandcontrid <- function(DTprev,
                 plot.margin = margin(t = 0, b = 0, l = 0, r = 0, unit = "cm")
             ) +
             REQS
+
     }
 
     # bind
@@ -1165,8 +1266,8 @@ plot_prevalenceandcontrid <- function(DTprev,
     )
     # remove facets in case they are not needed
     ps <- lapply(facets_dts, .plot.facet)
-
     ps <- ps[!sapply(ps, is.null)]
+    if(return_list) return(ps)
 
     if (length(ps) == 4) {
         p <- ggarrange(
@@ -1251,7 +1352,7 @@ plot_suppandcontrib <- function(DTprev1,
 
         # rescale 2nd data frame for the secondary axis
         ggplot(DT, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = LABEL2)) +
-            geom_col(alpha = ALPHA, color = "grey80", position = position_dodge(width = DODGE)) +
+            geom_col(alpha = ALPHA, color = NA, position = position_dodge(width = DODGE)) +
             {
                 if (CrI) {
                     geom_linerange(position = position_dodge(width = DODGE))
@@ -1273,7 +1374,7 @@ plot_suppandcontrib <- function(DTprev1,
                 if (UNAIDS) {
                     geom_texthline(
                         yintercept = 1 - .95^3, color = "red", linetype = "dashed",
-                        label = "UNAIDS 95-95-95", vjust = 0.5, hjust = 1
+                        label = "95-95-95", vjust = 0.5, hjust = 1
                     )
                 } else {
                     NULL
@@ -1336,18 +1437,21 @@ plot_suppandcontrib <- function(DTprev1,
     return(p)
 }
 
-plot.uganda.map <- function(zoom = "medium", maptype = "toner-lite", labs = TRUE) {
+plot.uganda.map <- function(zoom = "medium", maptype = "toner-lite", position="corner", labs = TRUE) {
     require(ggmap)
 
-    stopifnot(zoom %in% c("far", "medium", "close"))
+    zoom <- match.arg(zoom, c("far", "medium", "close"))
+    position <- match.arg(position, c("corner", "center"))
 
     .xlab <- list(NULL, "Longitude (°E)")[[labs + 1]]
     .ylab <- list(NULL, "Latitude (°N)")[[labs + 1]]
 
-    box_uganda <- if (zoom == "far") {
+    box_uganda <- if (zoom == "far" ) {
         c(top = 6.158199, left = 24.681059, bottom = -6.314563, right = 42.125359)
-    } else if (zoom == "medium") {
+    } else if (zoom == "medium" & position == "corner") {
         c(top = 1.5, left = 29, bottom = -8, right = 40)
+    } else if (zoom == "medium" & position == "center") {
+        c(top = 4.4, bottom = -4.6, left = 26, right = 37)
     } else if (zoom == "close") {
         c(top = NA_real_, left = NA_real_, bottom = NA_real_, right = NA_real_)
     }

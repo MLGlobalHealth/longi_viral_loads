@@ -382,7 +382,7 @@ plot.pyramid.eligible.participants <- function(DT) {
         NULL
 }
 
-plot.pyramid.bysexround <- function(DT, NUM, DEN, .ylab, percent_lab=TRUE ) {
+plot.pyramid.bysexround <- function(DT, NUM, DEN, .ylab, .ylim=NA, percent_lab=TRUE, .facet=formula(ROUND_LAB ~ FC_LAB), commdict="long" ) {
     dplot <- copy(DT)
     cols <- c(NUM, DEN)
     new_cols <- paste(c("NUM", "DEN"), "PYR", sep = "_")
@@ -423,11 +423,11 @@ plot.pyramid.bysexround <- function(DT, NUM, DEN, .ylab, percent_lab=TRUE ) {
                 NULL
             }
         } + 
+        facet_grid(.facet, scales = "free", labeller = labeller(ROUND_LAB = round_labs, FC_LAB = community_dictionary[[commdict]])) +
         coord_flip() +
-        facet_grid(ROUND_LAB ~ FC_LAB, scales = "free_x", labeller = labeller(ROUND_LAB = round_labs)) +
         scale_fill_manual(labels=plabels$sex ,values = palettes$sex, limits=rev) +
         scale_color_manual(labels=plabels$sex ,values = palettes$sex, limits=rev) +
-        scale_y_continuous(labels = abs, expand = c(0.05, 0)) +
+        scale_y_continuous(labels = abs, expand = c(0.05, 0), limits=c(-.ylim, .ylim)) +
         scale_x_continuous(expand = c(0, 0), breaks=seq(15,50, by=5)) +
         theme_default() +
         my_labs(y = .ylab) +

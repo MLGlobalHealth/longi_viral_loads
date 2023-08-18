@@ -145,50 +145,62 @@ dcontrib <- .load.model.subset(filename_rds_contrib, MODEL == "run-gp-prevl" & R
 dprev <- .load.model.subset(filename_rds_prevalence, MODEL == "run-gp-prevl" & ROUND == 19) |> prettify_labels()
 
 if (system.file(package = "ggsn") != "") {
-    # Map of the Rakai communities
-    fig1a.outer <- plot.uganda.map(zoom = "medium", maptype = "toner-lines", labs = TRUE)
-    fig1a.inner <- plot.rakai.map(.size = 1, labs = FALSE) +
-        theme(
-            panel.border = element_rect(colour = "red", size = 1),
-            plot.margin = margin(t = 0, b = 0, l = 0, r = 0, unit = "cm"),
-            legend.key.size = unit(0.01, "cm"),
-            legend.spacing.x = unit(0.01, "cm")
-        )
-    .delta <- .7
-    fig1a <- fig1a.outer + inset_element(
-        fig1a.inner,
-        left = 1 - .delta, right = 1, bottom = 0, top = .delta, align_to = "panel"
-    )
 
-    # pyramid of census eligible, participants, and smooth
-    fig1b <- plot.pyramid.bysexround(dprop[ROUND %in% c(19)],
-        .ylab = "Number of census eligible individuals",
-        NUM = NULL,
-        DEN = "ELIGIBLE",
-        percent_lab = FALSE
-    ) +
-        facet_grid(ROUND_LAB ~ FC_LAB, labeller = labeller(ROUND_LAB = round_labs2), scales = "free_x") +
-        geom_hline(yintercept = 0, color = "black") +
-        geom_line(aes(y = ELIGIBLE_SMOOTH * (1 - 2 * (SEX == "M")), color = SEX_LAB)) +
-        my_labs(color = "Gender") +
-        theme(legend.position = "none")
+    fig1a_inset <- plot.all.maps(type="inset")
+    fig1a_columns <- plot.all.maps(type="columns")
+    fig1a_columns_list <- plot.all.maps(type="columns", return_list=TRUE)
+
+    fig1b_h <- plot_paper_population_pyramid(layout="horizontal")
+    fig1b_v_list <- plot_paper_population_pyramid(layout="vertical", return_list=TRUE)
+
+    # fig_map_and_hist <- patchwork::wrap_plots(
+    #     plot_spacer(), 
+    #     fig1a_columns,
+    #     plot_spacer(), 
+    #     fig1b_v
+    # ) + plot_layout(widths=c(-3,7, -3, 1))
+
+    .byrow <- TRUE
+    fig_map_and_hist <- patchwork::wrap_plots(
+        fig1a_columns_list[[1]] + nm_reqs,
+        fig1a_columns_list[[2]] + nm_reqs + theme(legend.key.size = unit(0.05, "cm"), legend.spacing.x = unit(0.05, "cm")),
+        fig1b_v_list[[1]] + nm_reqs + labs(x="Age") + if(.byrow==FALSE){labs(y="")}else{NULL},
+        fig1b_v_list[[2]] + nm_reqs,
+        nrow = 2, 
+        byrow = .byrow,
+        widths=c(1,1)
+    ) + plot_annotation(tag_levels = "a") 
+    filename <- "main_figure_mapandhist.pdf"
+    cmd <- ggsave_nature(p = fig_map_and_hist, filename = filename, LALA = out.dir.figures, w = 18.5, h = 16)
+    # system(zathura2gthumb(cmd))
+
 
     # fig 1c
-    fig1c <- plot_prevalenceandcontrid(dprev, dcontrib)
+    fig1c <- plot.figure.main.prevalence(subtitles=TRUE, size=9)
+    filename <- paste0("main_figure_hivprevalenceonly.pdf")
+    cmd <- ggsave_nature(p = fig1c, filename = filename, LALA = out.dir.figures, w = 19.5, h = 16)
+    system(zathura2gthumb(cmd))
+    upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
+    # plot.figure.main.prevalence(subtitles=FALSE)
 
-    fig1 <- {{
-        (fig1a | fig1b) + plot_layout(widths = c(1, 1))
-    } / {
-        fig1c
-    }} + plot_layout(heights = c(1, 3), widths = c(1, 1, 1)) &
+    fig1_top <- (fig1a_inset + nm_reqs | fig1b_h) + plot_layout(widths = c(1, 1))
+    fig1 <- {
+        fig1_top / fig1c
+    } + plot_layout(heights = c(1, 2.7), widths = c(1, 1, 1)) &
         theme(
             legend.key.size = unit(3, "mm"),
             legend.margin = margin(1.6, 1.6, 1.6, 1.6, unit = "mm"),
         ) +
             nm_reqs + t_nomargin
+
+    fig1 <- ggarrange(
+        fig1_top + nm_reqs + t_nomargin + theme(legend.key.size=unit(3, 'mm'), legend.position='none'),
+        fig1c + nm_reqs + t_nomargin, nrow=2, heights=c(1,2), align="v" )
     filename <- paste0("main_figure_populationcomposition.pdf")
-    ggsave_nature(p = fig1, filename = filename, LALA = out.dir.figures, w = 19.5, h = 23)
+    cmd <- ggsave_nature(p = fig1, filename = filename, LALA = out.dir.figures, w = 19.5, h = 22)
+    system(zathura2gthumb(cmd))
     upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
+
 }
 
 
