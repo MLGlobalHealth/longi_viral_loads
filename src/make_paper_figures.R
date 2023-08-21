@@ -408,3 +408,15 @@ catn("Main table 2")
 filename_table <- file.path(out.dir.tables, "table_reductionHIVandUNSUPP.rds")
 tab_merge <- readRDS(filename_table)
 write.to.googlesheets(tab_merge, sheet = "Table2")
+
+
+########################
+catn("Supp table 2 on mean ages")
+########################
+
+dmeanage <- file.path(out.dir.tables, "mean_ages_plhiv_viraemic.rds") |>
+    readRDS()
+
+tab <- make.supp.table.meanage()
+filename_table <- file.path(out.dir.tables, "table_agemeanstd_prev_unsupp.rds")
+write.to.googlesheets(tab, sheet = "SuppTable2")

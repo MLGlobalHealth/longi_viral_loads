@@ -143,8 +143,8 @@ paper_statements_meanage_population <- function(DT=dmeanage, label="run-gp-supp-
         remove_quantiles()
 
     fmt <- fifelse(type == "AGEMEAN", 
-        yes= "In %s communities, the average age of %s with viraemia was %s in round 16 and %s in round 19.\n",
-        no =  "In %s communities, the standard deviation around the age of %s with viraemia was %s in round 16 and %s in round 19.\n",
+        yes= "In %s communities, the average age of unsuppressed %s was %s in round 16 and %s in round 19.\n",
+        no =  "In %s communities, the standard deviation around the age of unsuppressed %s was %s in round 16 and %s in round 19.\n",
     )
     
     dtable[, { sprintf(

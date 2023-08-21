@@ -292,8 +292,8 @@ plabels <- list(
 dict_table_names <- list(
     percent_reduction = c(
         LOC_LAB = "Community type",
-        ROUND_LAB = "Round",
         SEX_LAB = "Gender",
+        ROUND_LAB = "Round",
         N_ELIGIBLE = "Number of census\neligible individuals",
         CELL_HIV_N = "Estimated number\nof PLHIV",
         CELL_HIV_P = "Estimated percent reduction\nin number of PLHIV",
@@ -304,5 +304,16 @@ dict_table_names <- list(
         P_HIV_REDUCTION = "Percent reduction\nin number of PLHIV (ftp)",
         P_UNSUPP_REDUCTION = "Percent reduction\nin number of unsuppressed (ftp)"
     ),
+
+    mean_ages = c(
+        LOC_LAB = "Community type",
+        SEX_LAB = "Gender",
+        ROUND_LAB = "Round",
+        `AGEMEAN_run-gp-prevl` = "Mean age of PLHIV",
+        `AGESTD_run-gp-prevl` = "Standard deviation of PLHIV",
+        `AGEMEAN_run-gp-supp-pop` = "Mean age of unsuppressed population",
+        `AGESTD_run-gp-supp-pop` = "Standard deviation of unsuppressed population"
+    ),
+
     NULL
 )

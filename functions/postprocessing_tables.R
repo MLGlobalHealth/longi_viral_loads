@@ -201,3 +201,23 @@ make.main.table.contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup
     )
     dtable
 }
+
+make.supp.table.meanage <- function(DT=dmeanage, label=NA_character_){
+
+    if(! is.na(label)){
+        tab <- subset(DT,  MODEL == label )
+    }else{
+        tab <- copy(DT)
+    }
+    tab <- tab[, CELL := prettify_cell(M, IU, IL)] |>
+        remove_quantiles() |>
+        prettify_labels() |>
+        remove.nonpretty() |>
+        dcast(  LOC_LAB + SEX_LAB + ROUND_LAB ~ TYPE + MODEL, value.var = "CELL") |>
+        delete.repeated.table.values(cols=c("LOC_LAB", "SEX_LAB", "ROUND_LAB"))
+    setnames(tab, 
+        old=names(dict_table_names$mean_ages),
+        new=unname(dict_table_names$mean_ages), 
+        skip_absent = TRUE)
+    return(tab)
+}
