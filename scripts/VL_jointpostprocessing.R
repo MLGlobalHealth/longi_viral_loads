@@ -555,6 +555,85 @@ if (make_plots) {
 }
 
 
+catn("Get quantiles for sex-contributions by age")
+# _____________________________________________
+
+# This first paragraph is not strictly necessary, but it was used to determine the range of ages 
+# which contribute to ~ 50 % of the PLHIV population
+filename_rds <- file.path(out.dir.tables, "fullpop_allcontributions_sex.rds")
+if (file.exists(filename_rds) & !overwrite) {
+    dcontrib_sex <- readRDS(filename_rds)
+} else {
+    dcontrib_sex <- dfiles_rds[ MODEL != "run-gp-supp-hiv",
+        {
+            eval(expr_setup_ftp_all)
+            get.weighted.average.p_predict(
+                fit1 = readRDS(paths[idx.all]),
+                fit2 = readRDS(paths[idx.ftp]),
+                fit_all = readRDS(paths),
+                round = unique(ROUND),
+                expression_prereturn = {
+                    tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
+                    tmp <- tmp[,
+                        {
+                            z <- joint * ELIGIBLE_SMOOTH
+                            list(
+                                AGEYRS = AGEYRS,
+                                CONTRIBUTION = z / sum(z)
+                            )
+                        },
+                        by = c(dot.cols, "LOC", "SEX")
+                    ]
+                    tmp[, quantile2(CONTRIBUTION), by = c("SEX", "LOC", "AGEYRS")]
+                }
+            )
+        },
+        by = c("MODEL", "ROUND")
+    ]
+    saveRDS(object = dcontrib_sex, file = filename_rds)
+}
+
+if(make_tables){
+    # these were the results 
+    plhiv_contributors <- data.table(
+        SEX = c("F", "F", "M", "M"),
+        LOC = c("fishing", "inland", "fishing", "inland"),
+        MIN = c(27, 27, 30, 34),
+        MAX = c(37, 39, 39, 45)
+    )
+
+    dcontrib_50p_PLHIV <- dfiles_rds[ ROUND == 19 & MODEL == "run-gp-prevl",
+        {
+            eval(expr_setup_ftp_all)
+            get.weighted.average.p_predict(
+                fit1 = readRDS(paths[idx.all]),
+                fit2 = readRDS(paths[idx.ftp]),
+                fit_all = readRDS(paths),
+                round = unique(ROUND),
+                expression_prereturn = {
+                    tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
+                    tmp <- merge(tmp, plhiv_contributors, by=c("SEX", "LOC"))
+                    tmp[, INAGEGROUP := (AGEYRS >= MIN & AGEYRS <= MAX)]
+                    tmp <- tmp[, list(z = sum(joint * ELIGIBLE_SMOOTH)), by = c(dot.cols, "LOC", "SEX", "INAGEGROUP")]
+                    tmp <- tmp[,
+                        {
+                            list(
+                                INAGEGROUP = INAGEGROUP,
+                                CONTRIBUTION = z / sum(z)
+                            )
+                        },
+                        by = c(dot.cols, "LOC", "SEX")
+                    ]
+                    tmp[, quantile2(CONTRIBUTION), by = c("SEX", "LOC", "INAGEGROUP")] |>
+                        subset(INAGEGROUP == TRUE)
+                }
+            )
+        },
+        by = c("MODEL", "ROUND")
+    ]
+    print_statements_half_plhiv(dcontrib_50p_PLHIV, plhiv_contributors)
+}
+
 catn("Get average age for PLHIV & viraemic population")
 # _____________________________________________________
 

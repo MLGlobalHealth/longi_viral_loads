@@ -14,6 +14,9 @@ theme_default <- function(...) {
         theme(
             legend.position = "bottom",
             strip.background = element_blank(),
+            # center title and substitle
+            plot.title=element_text(hjust=0.5),
+            plot.subtitle=element_text(hjust=0.5),
             ...
         )
 }
@@ -64,6 +67,7 @@ ggsave2 <- function(p, file, w, h, LALA = vl.out.dir, u = "in") {
 naturemed_reqs <- function() {
     # call this before doing your plots
     nm_reqs <<- theme(
+        plot.subtitle = element_text(size=8, family="sans"),
         axis.text = element_text(size = 7, family = "sans"),
         strip.text = element_text(size = 8, family = "sans"),
         text = element_text(size = 8, family = "sans"),
@@ -75,6 +79,7 @@ naturemed_reqs <- function() {
     )
 
     slides_reqs <<- theme(
+        plot.subtitle = element_text(size=9, family="sans"),
         axis.text = element_text(size = 6, family = "sans"),
         text = element_text(size = 9, family = "sans"),
         legend.text = element_text(size = 9, family = "sans"),

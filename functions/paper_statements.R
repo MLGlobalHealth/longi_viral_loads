@@ -242,3 +242,17 @@ paper_statements_suppression_PLHIV_aggregated <- function(DT=dsupp_agegroup, rev
     }
     return(dtable)
 }
+
+print_statements_half_plhiv <- function(DT=dcontrib_50p_PLHIV, DAGES=plhiv_contributors){
+    DT[, CELL := prettify_cell( M * 100, CL * 100, CU * 100) ]
+    tab <- DT |> 
+        prettify_labels() |>
+        remove_quantiles() |>
+        set(j="INAGEGROUP", value=NULL) |>
+        merge(DAGES, c('SEX', 'LOC')) 
+    catn("In round 19:")
+    tab[, sprintf(
+        "In %s communities, %s of %s with HIV were aged between %s and %s",
+        LOC_LAB, CELL, SEX_LAB, MIN, MAX), 
+    by=c("SEX_LAB", "LOC_LAB")]
+}

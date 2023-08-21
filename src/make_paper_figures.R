@@ -100,11 +100,12 @@ check_more_elig_than_part <- dprop[, all(N_PART < ELIGIBLE)]
 stopifnot(check_more_elig_than_part)
 
 # paths
-filename_rds_contrib <- file.path(out.dir.tables, "fullpop_allcontributions.rds")
-filename_rds_prevalence <- file.path(out.dir.tables, "fullpop_posteriorquantiles_by_agesexround.rds")
-filename_rds_prevalence_agegroup <- file.path(out.dir.tables, "posterior_quantiles_agegroups.rds")
-filename_rds_contrib_agegroup <- file.path(out.dir.tables, "fullpop_allcontributions_byagegroup.rds")
-filename_rds_supphiv_agegroup <- file.path(out.dir.tables, "posterior_quantiles_suppression_agegroup.rds")
+.fp <- function(x) file.path(out.dir.tables, x)
+filename_rds_contrib <- .fp("fullpop_allcontributions.rds")
+filename_rds_prevalence <- .fp("fullpop_posteriorquantiles_by_agesexround.rds")
+filename_rds_prevalence_agegroup <- .fp("posterior_quantiles_agegroups.rds")
+filename_rds_contrib_agegroup <- .fp("fullpop_allcontributions_byagegroup.rds")
+filename_rds_supphiv_agegroup <- .fp("posterior_quantiles_suppression_agegroup.rds")
 
 djoint_agegroup <- readRDS(filename_rds_prevalence_agegroup)
 dcontrib_agegroup <- readRDS(filename_rds_contrib_agegroup)
@@ -123,7 +124,7 @@ if ( interactive()){
         cat("GoogleDrive job directory already present\n")
     }
     upload_to_googledrive <- function(path){
-        drive_upload( media=path, path = file.path(drive_outdir, basename(path)), overwrite = TRUE )
+        drive_upload( media=path, path = file.path(drive_project_base, basename(path)), overwrite = TRUE )
     }
 }
 
@@ -223,7 +224,7 @@ djoint <- {
     file.path(out.dir.tables, "fullpop_posteriorquantiles_by_agesexround.rds") |>
         readRDS()
 }
-fig2a <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-hiv")
+# fig2a <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-hiv")
 tmp <- paper_statements_suppression_above_959595(djoint)
 
 # fig2b <- {
@@ -236,6 +237,12 @@ tmp <- paper_statements_suppression_above_959595(djoint)
 # fig2b
 
 fig2 <- plot.main.suppression.among.plhiv(DT = djoint, type = "point", unaids = TRUE, rev = TRUE, m = -9)
+
+# fig2 <- plot.main.suppression.among.plhiv(DT = djoint, rev = TRUE, m = -9)
+fig2a <- plot.main.suppression.among.plhiv(DT = djoint[LOC=="inland"]) + labs(tag = "a")
+fig2b <- plot.main.suppression.among.plhiv(DT = djoint[LOC=="fishing"]) +labs(tag = "b")
+fig2 <- ggarrange(fig2a, fig2b, ncol=1, legend="bottom", common.legend = TRUE)
+
 filename <- paste0("main_figure_suppression_plhiv_r1619.pdf")
 cmd <- ggsave_nature(p = fig2, filename = filename, LALA = out.dir.figures, w = 17, h = 16)
 if(interactive()) upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
