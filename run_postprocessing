@@ -10,6 +10,7 @@ if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "--help" ]]; then
     echo "    INDIR : directory where github directory is located"
     echo "    OUTDIR : directory where output will be saved"
     echo "    ALPHA : sd for alpha prior in GP              [default: 1]"
+    echo "    SHARE : whether gp hyper needs sharing        [default: TRUE]"
     echo "    DEPENDS : list of queue id this job depends on [default: ]"
     exit 0
 fi

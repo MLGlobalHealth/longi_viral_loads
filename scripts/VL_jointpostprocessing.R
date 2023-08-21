@@ -213,7 +213,9 @@ if (make_plots & !args$shared.hyper) {
 catn("=== Get posterior draws from rds files ===")
 ##################################################
 
-dfiles_rds <- get.output.paths.ftp.and.all("round1[0-9].rds$|220729.rds$") |> unique()
+dfiles_rds <- get.output.paths.ftp.and.all("round1[0-9].rds$|220729.rds$") |> 
+    unique() |>
+    subset(MODEL != "tables")
 if (!args$shared.hyper) {
     stopifnot(dfiles_rds[, .N, by = "F"][, all(N == 2)])
     stopifnot(dfiles_rds[, .N, by = "MODEL"][, all(N == 8)])
