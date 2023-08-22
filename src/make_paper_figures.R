@@ -325,23 +325,24 @@ ggsave_nature(p = plot_prevalence, filename = "whopepfar_prevalence.pdf", LALA =
         dprev_vir2[LOC == "inland"],
         dcontrib_vir[LOC == "inland"],
         sec_name = "Contribution of each age group to people with unsuppressed viral load",
-        prevalence.label = "Prevalence of viraemia among HIV positive population",
+        prevalence.label = "Prevalence of viraemia among HIV positive population in each age band",
         slides = FALSE,
         CrI = FALSE,
         sec_axis_scale = .08,
         UNAIDS = TRUE
-    ) |> annotate_figure(top = text_grob( community_dictionary$longest['I'], size = 12))
+    ) |> annotate_figure(top = text_grob( community_dictionary$longest2['I'], size = 12))
     fig_kate_1f <- plot_suppandcontrib(
         dprev_vir2[LOC == "fishing"],
         dcontrib_vir[LOC == "fishing"],
         sec_name = "Contribution of each age group to people with unsuppressed viral load",
-        prevalence.label = "Prevalence of viraemia among HIV positive population",
+        prevalence.label = "Prevalence of viraemia among HIV positive population in each age band",
         slides = FALSE,
         CrI = FALSE,
         sec_axis_scale = .08,
         UNAIDS = TRUE
-    ) |> annotate_figure(top=text_grob( community_dictionary$longest['F'] , size = 12))
+    ) |> annotate_figure(top=text_grob( community_dictionary$longest2['F'] , size = 12))
     
+
 
     # plot_suppression <- (
     #     (fig_kate_1c +  labs(tag="Considering entire population") + nm_reqs + labs(x="LALALA")) /
@@ -352,7 +353,6 @@ ggsave_nature(p = plot_prevalence, filename = "whopepfar_prevalence.pdf", LALA =
 }
 ggsave_nature(p = plot_suppression, filename = "whopepfar_suppression.pdf", LALA = out.dir.figures, w = 23, h = 17)
 cmd <- ggsave_nature(p = plot_suppression2, filename = "whopepfar_suppression_comms.pdf", LALA = out.dir.figures, w = 30 , h = 23)
-
 system(cmd)
 
 
