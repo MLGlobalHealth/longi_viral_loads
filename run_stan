@@ -10,7 +10,7 @@ if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "--help" ]]; then
     echo "    FTP: subset to first time participants or not [default: FALSE]"
     echo "    STANWAY : either (r)stan or cmdstan           [default: stan]"
     echo "    ALPHA : sd for alpha prior in GP              [default: 1]"
-    echo "    SHARE : share hyperpars for FTP and ALL?      [default: 1]"
+    echo "    SHARE : share hyperpars for FTP and ALL?      [default: FALSE]"
     echo "    INDIR : directory where github directory is located"
     echo "    OUTDIR : directory where output will be saved"
     echo "    REFIT : if FALSE, will use previously fitted model, good for debugging "
