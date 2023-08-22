@@ -1391,9 +1391,9 @@ plot_suppandcontrib <- function(DTprev1,
                 }
             } +
             scale_x_continuous(expand = c(0, 0), breaks = c(seq(15, 45, 5), 50)) +
-            scale_fill_manual(values = palettes$minimal3) +
-            scale_color_manual(values = palettes$minimal3) +
-            facet_grid(facet_formula, labeller = labeller(LOC_LAB = community_dictionary$longest, SEX_LAB = sex_dictionary2)) +
+            scale_fill_manual(values = palettes$minimal2) +
+            scale_color_manual(values = palettes$minimal2) +
+            facet_grid(facet_formula, labeller = labeller(LOC_LAB = community_dictionary$longest2, SEX_LAB = sex_dictionary2)) +
             my_labs(y = prevalence.label, x = "", color = "", fill = "") +
             theme_default(
                 strip.placement = "outside",
