@@ -51,13 +51,15 @@ paper_statements_female_prevalence <- function(DT=djoint_agegroup){
     tmp
 }
 
-paper_statements_prevalence_viraemia <- function(DT=djoint_agegroup){
+paper_statements_prevalence_viraemia <- function(DT=djoint_agegroup, model="run-gp-supp-pop"){
 
-    tmp <- subset(DT, ROUND %in% c(16, 19) & SEX=="Total" & AGEGROUP == 'Total' & MODEL == "run-gp-supp-pop")
+    lab <- fifelse(model == "run-gp-supp-pop", yes="census eligible", no = "PLHIV")
+    tmp <- subset(DT, ROUND %in% c(16, 19) & SEX=="Total" & AGEGROUP == 'Total' & MODEL == model)
     tmp[, `:=` ( CELL = prettify_cell(M*100, CL*100, CU*100, percent=TRUE), M=NULL, CL=NULL, CU=NULL, IL=NULL, IU=NULL)]
     tmp[, {
-        sprintf("in %s communities, the contribution of viraemic individuals to the census eligible population decreased from %s in round 16 to %s in round 19.\n", 
+        sprintf("in %s communities, the contribution of unsuppressed individuals to the %s population decreased from %s in round 16 to %s in round 19.\n", 
             unique(LOC),
+            lab,
             CELL[ ROUND == 16],
             CELL[ ROUND == 19 ]
         ) |> cat()

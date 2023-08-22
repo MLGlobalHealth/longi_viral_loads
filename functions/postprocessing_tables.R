@@ -209,15 +209,22 @@ make.supp.table.meanage <- function(DT=dmeanage, label=NA_character_){
     }else{
         tab <- copy(DT)
     }
-    tab <- tab[, CELL := prettify_cell(M, IU, IL)] |>
+
+    # get entries
+    tab <- tab[, CELL := prettify_cell(M, IL, IU)] |>
         remove_quantiles() |>
         prettify_labels() |>
         remove.nonpretty() |>
         dcast(  LOC_LAB + SEX_LAB + ROUND_LAB ~ TYPE + MODEL, value.var = "CELL") |>
         delete.repeated.table.values(cols=c("LOC_LAB", "SEX_LAB", "ROUND_LAB"))
+
+    # change colnames 
     setnames(tab, 
         old=names(dict_table_names$mean_ages),
         new=unname(dict_table_names$mean_ages), 
         skip_absent = TRUE)
+
+    # sort colnames
+    setcolorder(tab, unname(dict_table_names$mean_ages))
     return(tab)
 }

@@ -339,7 +339,8 @@ if (file.exists(filename_rds) & !overwrite) {
 if (make_tables) {
     .null <- paper_statements_overall_prevalence(round = 19)
     .null <- paper_statements_female_prevalence(djoint_agegroup)
-    .null <- paper_statements_prevalence_viraemia(djoint_agegroup)
+    .null <- paper_statements_prevalence_viraemia(djoint_agegroup, model="run-gp-supp-pop")
+    # .null <- paper_statements_prevalence_viraemia(djoint_agegroup, model="run-gp-supp-hiv")
     .null <- paper_statements_prevalence_viraemia2(model = "run-gp-supp-pop")
     # NOT WORK .null <- paper_statements_prevalence_viraemia2(model = 'run-gp-supp-hiv')
     rm(.null)
