@@ -246,6 +246,24 @@ if( exists("dfigs_single") ){
             dfigs_joint[! BASE %like% 'comparefishinland' & BASE %like% relabel.models(model) & ROUND==round,  add_plots(F, width=100) ] |> cat()
         }
     }
+}else{
+
+    for ( model in c("none", MODELS)){
+
+        sprintf("## Model %s {.tabset}\n", model) |> cat()
+
+        for ( round in ROUNDS )
+        {
+            sprintf("### Round %s {.tabset}\n", round) |> cat()
+
+            for ( part in c("ftp", "all") )
+            {
+                sprintf("#### Part %s {.tabset}\n", part) |> cat()
+
+                dfigs_joint[ MODEL==model & ROUND==round & BASE %like% part, add_plots(F) ] |> cat()
+            }
+        }
+    }
 }
 ```
 
