@@ -217,11 +217,11 @@ split.agegroup <- function(x, breaks=c(15, 20, 25, 30, 35, 40, 45, 50))
 
 make.suffix <- function(args, cmdstan=FALSE)
 {
-    .alpha <- as.character(args$stan.alpha) |> gsub(pattern="\\.", replacement="", x=_)
-    .alpha <- paste0("alpha", .alpha)
+    .alpha <- sprintf("alpha%.2f", args$stan.alpha)
+    .alpha <- as.character(.alpha) |> gsub(pattern="\\.", replacement="", x=_)
     if(args$shared.hyper == TRUE) .alpha <- paste0(.alpha, 'sharedhyper')
     suffix <- c("", "cmdstan")[as.integer(cmdstan) + 1]
-    suffix <- paste(.alpha, suffix, "vl", VIREMIC_VIRAL_LOAD, sep="_")
+    suffix <- paste(suffix, .alpha, "vl", VIREMIC_VIRAL_LOAD, sep="_")
     suffix <- fifelse(args$only.firstparticipants==TRUE, 
         yes=paste0( suffix,'_firstpart'),
         no=suffix)
