@@ -147,7 +147,7 @@ dfigs_joint <- subset(dfigs_joint,  ! BASE %in% mainfigs.png)
 
 # Diagnostics {.tabset}
 
-```{r diagnostics_rds, include=FALSE}
+```{r diagnostics_rds, include=TRUE, results= 'asis'}
 if( jobid %like% 'shared' ){
     fdiagn <- .find.files(dir=joint.dir, .pattern='asses.*rds$', part="")
 }else{
@@ -156,18 +156,16 @@ if( jobid %like% 'shared' ){
         .find.files(dir=ftp.dir, .pattern='asses.*rds$', part="ftp")
     )  -> fdiagn
 }
-# compute divergences 
-
 if(exists('ddiagn')){
     tab <- ddiagn[ FILE %like% "diagnostics", { 
         tmp <- file.path(DIR,'diagnostics', FILE)
         list(
-            div=aggregate_diagnostics_over_all_rounds(files=tmp, diagn='num_divergent'),
+            div     =aggregate_diagnostics_over_all_rounds(files=tmp, diagn='num_divergent'),
             maxdepth=aggregate_diagnostics_over_all_rounds(files=tmp, diagn='num_max'),
-            ebfmi=aggregate_diagnostics_over_all_rounds(files=tmp, diagn='ebfmi')
+            ebfmi   =aggregate_diagnostics_over_all_rounds(files=tmp, diagn='ebfmi')
         )
     }, by=.(MODEL, PART)] 
-    knitr::kable(tab, caption = "Summary of convergence diagnostics")
+    knitr::kable(tab, caption = "Summary of convergence diagnostics") |> print()
 }
 ```
 
