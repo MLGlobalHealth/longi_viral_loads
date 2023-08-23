@@ -251,8 +251,7 @@ if (file.exists(filename_rds) & !overwrite) {
 
 if (make_plots) {
     # set dimensions for all plots below
-    .w <- 10
-    .h <- 12
+    .w <- 10; .h <- 12
     p_hiv <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-prevl")
     p_supp <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-hiv")
     p_vir <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-pop")
@@ -264,8 +263,7 @@ if (make_plots) {
     ggsave2(p = p_vir, file = .fnm("suppofpop"), LALA = out.dir.figures, .w, .h)
 
     # need to compare suppression in Round 19 in Inland and fishing communities...
-    .w <- 10
-    .h <- 7
+    .w <- 10; .h <- 7
     p1_vir <- plot.comparison.prevalence.fishinginland.oneround(DT = djoint, model = "run-gp-supp-pop", round = 19)
     p1_supp <- plot.comparison.prevalence.fishinginland.oneround(DT = djoint, model = "run-gp-supp-hiv", round = 19, ylim = 1)
     p1_hiv <- plot.comparison.prevalence.fishinginland.oneround(DT = djoint, model = "run-gp-prevl", round = 19)
@@ -282,8 +280,7 @@ if (make_plots) {
         ggsave2(p = p, file = filename, LALA = out.dir.figures, w = 9, h = 8)
     }
 
-    .w <- 18
-    .h <- 16
+    .w <- 18; .h <- 16
     p1 <- plot_propofpop_of_viraemic_byagesex_stratbycommround(djoint, colorby = "ROUND", cri = TRUE)
     p2 <- plot_propofpop_of_viraemic_byagesex_stratbycommround(djoint, colorby = "ROUND", cri = FALSE)
     filename <- paste0("propofpop_of_viraemic_byagesex_stratbycommround", c("_cri", ""), ".pdf")
