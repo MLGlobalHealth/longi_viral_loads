@@ -180,7 +180,7 @@ if (system.file(package = "ggsn") != "") {
     fig1c <- plot.figure.main.prevalence(subtitles=TRUE, size=9)
     filename <- paste0("main_figure_hivprevalenceonly.pdf")
     cmd <- ggsave_nature(p = fig1c, filename = filename, LALA = out.dir.figures, w = 19.5, h = 16)
-    system(zathura2gthumb(cmd))
+    # system(zathura2gthumb(cmd))
     upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
     # plot.figure.main.prevalence(subtitles=FALSE)
 
@@ -199,7 +199,7 @@ if (system.file(package = "ggsn") != "") {
         fig1c + nm_reqs + t_nomargin, nrow=2, heights=c(1,2), align="v" )
     filename <- paste0("main_figure_populationcomposition.pdf")
     cmd <- ggsave_nature(p = fig1, filename = filename, LALA = out.dir.figures, w = 19.5, h = 22)
-    system(zathura2gthumb(cmd))
+    # system(zathura2gthumb(cmd))
     upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
 
 }
@@ -353,7 +353,7 @@ ggsave_nature(p = plot_prevalence, filename = "whopepfar_prevalence.pdf", LALA =
 }
 ggsave_nature(p = plot_suppression, filename = "whopepfar_suppression.pdf", LALA = out.dir.figures, w = 23, h = 17)
 cmd <- ggsave_nature(p = plot_suppression2, filename = "whopepfar_suppression_comms.pdf", LALA = out.dir.figures, w = 30 , h = 23)
-system(cmd)
+# system(cmd)
 
 
 ################################################
@@ -383,9 +383,7 @@ catn("Main table 1")
 #####################
 
 dtable1 <- make.main.table.contributions(add_asterisks_unaids = FALSE)
-if(interactive()){
-    write.to.googlesheets(dtable1, "Table1")
-}
+write.to.googlesheets(dtable1, "Table1")
 
 filename_tex <- file.path(out.dir.tables, "main_table_contributions_hiv.tex")
 write.to.tex(dtable1, file = filename_tex)

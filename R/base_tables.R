@@ -100,6 +100,11 @@ write.to.tex <- function(DT, file){
 
 write.to.googlesheets <- function(DT, sheet=NA_character_){
 
+    if( ! local() ){
+        print("`write.to.googlesheets()` function is meant to be used locally.Skipping")
+        return()
+    }
+
     LINK="https://docs.google.com/spreadsheets/d/1yDgS0tsdjJYgtGb5KgxbUI88EYT14biaPaB4ktbZmX8"
     # check sheet is in the correct format:
     stopifnot(sheet %like% "^Table[0-9]+$|^SuppTable[0-9]+$")
