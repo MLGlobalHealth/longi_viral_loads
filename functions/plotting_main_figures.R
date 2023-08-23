@@ -1309,9 +1309,6 @@ plot_suppandcontrib <- function(DTprev1,
                                 slides = FALSE,
                                 CrI = TRUE,
                                 UNAIDS = TRUE) {
-    if (UNAIDS) {
-        require(geomtextpath)
-    }
 
     ALPHA <- .5
     DODGE <- 1
