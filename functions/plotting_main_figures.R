@@ -1379,7 +1379,7 @@ plot_suppandcontrib <- function(DTprev1,
             ) +
             {
                 if (UNAIDS) {
-                    geom_texthline(
+                    geomtextpath::geom_texthline(
                         yintercept = 1 - .95^3, color = "red", linetype = "dashed",
                         label = "95-95-95", vjust = 0.5, hjust = 1
                     )
@@ -1530,7 +1530,6 @@ plot.comparison.ftp.nonftp.and.all <- function(env = env_list, DT = djoint, mode
 
 plot.comparison.prevalence.fishinginland.oneround <- function(DT, model, round, ylim = NA) {
     ALPHA <- .3
-    require(geomtextpath)
     stopifnot(model %in% names(model_dictionary))
 
     dplot <- subset(DT, MODEL == model & ROUND == round) |>
@@ -1542,7 +1541,7 @@ plot.comparison.prevalence.fishinginland.oneround <- function(DT, model, round, 
         geom_ribbon(alpha = ALPHA, color = NA) +
         {
             if (model == "run-gp-supp-hiv") {
-                # geom_texthline(
+                # geomtextpath::geom_texthline(
                 #     yintercept=.95^3, color='red', linetype='dashed',
                 #     label="UNAIDS 95-95-95", vjust=0.5, hjust=1)
                 geom_hline(yintercept = .95^3, color = "red", linetype = "dashed")
