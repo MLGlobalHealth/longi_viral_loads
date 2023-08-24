@@ -152,6 +152,11 @@ quantile2 <- function(x, ps = c(CL = .025, IL = .25, M = .5, IU = .75, CU = .975
     as.data.table(out)
 }
 
+setnamesdict <- function(DT, dict) {
+    setnames(DT, names(dict), unname(dict), skip_absent = TRUE)
+}
+
+
 
 ############################
 # Project-specific helpers #
@@ -253,11 +258,6 @@ fetch.args.from.suffix <- function(suffix, asDT=FALSE)
 
     return(outargs)
 }
-
-setnamesdict <- function(DT, dict) {
-    setnames(DT, names(dict), unname(dict), skip_absent = TRUE)
-}
-
 
 zathura2gthumb <- function(cmd){
     cmd <- sub("zathura", "gthumb", cmd)
