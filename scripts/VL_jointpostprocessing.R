@@ -192,7 +192,7 @@ if (make_plots & !args$shared.hyper) {
         theme_default() +
         facet_grid(ROUND_LAB ~ LOC_LAB,
             labeller = labeller(
-                LOC_LAB = community_dictionary$longest,
+                LOC_LAB = community_dictionary$longest2,
                 ROUND_LAB = round_labs
             )
         ) +

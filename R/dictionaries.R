@@ -108,6 +108,14 @@ community_dictionary <- list(
         "Inland" = "Inland communities with HIV prevalence typical of rural and semi-urban East Africa",
         "Fishing" = "Hyperendemic Lake Victoria fishing communities"
     ),
+    longest2n = c(
+        "I" = "Inland communities with HIV prevalence\ntypical of rural and semi-urban East Africa",
+        "F" = "Hyperendemic Lake Victoria\nfishing communities",
+        "inland" = "Inland communities with HIV prevalence typical\nof rural and semi-urban East Africa",
+        "fishing" = "Hyperendemic Lake Victoria\nfishing communities",
+        "Inland" = "Inland communities with HIV prevalence typical\nof rural and semi-urban East Africa",
+        "Fishing" = "Hyperendemic Lake Victoria\nfishing communities"
+    ),
     none = c(
         "F" = "",
         "I" = "",

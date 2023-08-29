@@ -1029,8 +1029,8 @@ plot_paper_population_pyramid <- function(layout = "horizontal", return_list = F
     }
 
     if (layout == "vertical") {
-        p_top <- .plot.pyr(dprop[ROUND %in% c(19) & FC == "inland"], ylim = 800, commdict = "longest") + labs(x = "")
-        p_bottom <- .plot.pyr(dprop[ROUND %in% c(19) & FC == "fishing"], ylim = 200, commdict = "longest")
+        p_top <- .plot.pyr(dprop[ROUND %in% c(19) & FC == "inland"], ylim = 800, commdict = "longest2") + labs(x = "")
+        p_bottom <- .plot.pyr(dprop[ROUND %in% c(19) & FC == "fishing"], ylim = 200, commdict = "longest2")
         if (return_list) {
             return(list(top = p_top, bottom = p_bottom))
         }
@@ -1045,14 +1045,14 @@ plot.figure.main.prevalence <- function(DPREV = dprev, DCONTRIB = dcontrib, subt
         DPREV,
         DCONTRIB,
         sec_name = "Age profile of census-eligible PLHIV", return_list = TRUE,
-        loc_labeller = fifelse(subtitles == TRUE, yes = "none", no = "longestn"),
+        loc_labeller = fifelse(subtitles == TRUE, yes = "none", no = "longest2n"),
     )
     .title <- function(lab) {
         out <- list(
             plot_layout(guides = "collect"),
             if (subtitles) {
                 plot_annotation(
-                    subtitle = community_dictionary$longest[[lab]],
+                    subtitle = community_dictionary$longest2[[lab]],
                     theme = theme(plot.subtitle = element_text(hjust = 0.5, size = size))
                 )
             } else {
@@ -1157,7 +1157,7 @@ plot_prevalenceandcontrid <- function(DTprev,
                                       CrI = TRUE,
                                       slides = FALSE,
                                       return_list = FALSE,
-                                      loc_labeller = "longest") {
+                                      loc_labeller = "longest2") {
     ALPHA <- .5
     DODGE <- .5
 
@@ -1171,7 +1171,7 @@ plot_prevalenceandcontrid <- function(DTprev,
     }
     naturemed_reqs()
 
-    loc_labeller <- match.arg(loc_labeller, c("longest", "longestn", "none", "none2"))
+    loc_labeller <- match.arg(loc_labeller, c("longest2", "longest2n", "none", "none2"))
     .loc_labeller <- community_dictionary[[loc_labeller]]
 
     .plot.facet <- function(DT) {
@@ -1534,7 +1534,7 @@ plot.comparison.prevalence.fishinginland.oneround <- function(DT, model, round, 
 
     dplot <- subset(DT, MODEL == model & ROUND == round) |>
         prettify_labels()
-    dplot[, LOC_LAB := community_dictionary$longest[LOC_LAB]]
+    dplot[, LOC_LAB := community_dictionary$longest2[LOC_LAB]]
 
     ggplot(dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = LOC_LAB, color = LOC_LAB)) +
         geom_line() +
@@ -1625,11 +1625,11 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
             .ylab <<- gsub("suppression in", "suppression\nin", .ylab)
             out <- list(
                 facet_grid(~ROUND_LAB, labeller = labeller(ROUND_LAB = round_labs2)),
-                labs(subtitle = community_dictionary$longest[unique(dplot$LOC)])
+                labs(subtitle = community_dictionary$longest2[unique(dplot$LOC)])
             )
         } else {
             out <- list(
-                facet_grid(LOC_LAB ~ ROUND_LAB, labeller = labeller(ROUND_LAB = round_labs, LOC_LAB = community_dictionary$longestn))
+                facet_grid(LOC_LAB ~ ROUND_LAB, labeller = labeller(ROUND_LAB = round_labs, LOC_LAB = community_dictionary$longest2n))
             )
         }
         return(out)
@@ -1711,7 +1711,7 @@ plot_propofpop_of_viraemic_byagesex_stratbycommround <- function(DT, colorby = "
             scales = "free_y",
             labeller = labeller(
                 SEX_LAB = sex_dictionary2,
-                LOC_LAB = community_dictionary$longestn
+                LOC_LAB = community_dictionary$longest2n
             )
         ) +
         .scales() +
@@ -1778,7 +1778,7 @@ plot.proposed.metric <- function() {
             hjust = 0.02
         ) +
         facet_grid(ROUND_LAB ~ LOC_LAB,
-            labeller = labeller(ROUND_LAB = round_labs, LOC_LAB = community_dictionary$longest),
+            labeller = labeller(ROUND_LAB = round_labs, LOC_LAB = community_dictionary$longest2),
             scales = "free_y"
         ) +
         scale_color_manual(values = palettes$sex, labels = sex_dictionary2) +
@@ -1796,7 +1796,7 @@ plot.prevalence.by.age.group <- function(DT, round = 19) {
         geom_hline(aes(yintercept = .95^3), linetype = "dotted") +
         geom_point() +
         geom_linerange() +
-        facet_grid(LOC ~ SEX, labeller = labeller(SEX = sex_dictionary2, LOC = community_dictionary$longest)) +
+        facet_grid(LOC ~ SEX, labeller = labeller(SEX = sex_dictionary2, LOC = community_dictionary$longest2)) +
         scale_y_continuous(labels = scales::percent, limits = c(0, 1), expand = expansion(0, 0)) +
         scale_color_manual(values = palettes$sex, labels = sex_dictionary2) +
         theme_default() +
