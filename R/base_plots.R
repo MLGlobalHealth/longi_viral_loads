@@ -431,7 +431,11 @@ labs_from_dictionaries <- function(dict) {
 }
 
 my_labs <- function(..., title = waiver(), subtitle = waiver(), caption = waiver(), tag = waiver(), alt = waiver(), alt_insight = waiver()) {
-    # requires my_labs_dictionary
+    # detects the arguments passed to the main ggplot's aes call 
+    # and uses `my_labs_dictionary` to display a default label  based
+    # on the name of the variable
+    # e.g. aes(x=AGEGROUP)  + my_labs() would automatically produce a 
+    # label equivalent to labs(x="Age group")
 
     p <- ggplot_build(last_plot())
 
@@ -459,6 +463,10 @@ my_labs <- function(..., title = waiver(), subtitle = waiver(), caption = waiver
 
     args <- c(args, mapps_final)
     structure(args, class = "labels")
+}
+
+my_guides <- function(...){
+    guides(..., fill = guide_legend(override.aes = list(linetype = 0)) )
 }
 
 dfacets <- list(
