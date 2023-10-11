@@ -81,6 +81,7 @@ fetch.postprocessing.settings.from.args <- function(args=args){
     out.dir.tables <<- file.path(out.dir, "tables")
     if(!dir.exists(out.dir.figures)) dir.create(out.dir.figures)
     if(!dir.exists(out.dir.tables)) dir.create(out.dir.tables)
+    cat("set output directories `out.dir.figures` and `out.dir.tables`\n")
 }
 
 
