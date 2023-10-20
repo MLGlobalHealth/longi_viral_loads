@@ -122,7 +122,8 @@ ggsave(p, file=paste0(outfile.figures, '-mcmc-parcoord-p_predict.png'), w=8, h=8
 catn("Traceplots")
 # ________________
 
-p <- bayesplot::mcmc_trace(samples, regex_pars = c('rho_', 'alpha_')) + 
+regex_gppars <- c('rho_[0-1]', 'alpha_[0-1]')
+p <- bayesplot::mcmc_trace(samples, regex_pars = regex_gppars, facet_args = list(ncol=4)) + 
     theme_default() 
 ggsave(p, file = paste0(outfile.figures, '-mcmc-trace_plots.png'), w  = 8, h = 8)
 
@@ -160,9 +161,13 @@ catn("Pairs plot")
 
 # hyperparameters
 p <- lapply(c('00', '01', '10', '11'), function(group){
-    p <- bayesplot::mcmc_pairs(samples, regex_pars = paste0(c('rho_', 'alpha_'), group), np=bayesplot::nuts_params(fit) ) 
-})  |> 
-    ggpubr::ggarrange(plotlist=_, ncol=2, nrow=2)
+    p <- bayesplot::mcmc_pairs(
+        samples,
+        regex_pars = paste0(c('rho_', 'alpha_'), group), 
+        facet_args = list(ncol=4),
+        np=bayesplot::nuts_params(fit)
+    ) }
+)  |> ggpubr::ggarrange(plotlist=_, ncol=2, nrow=2)
 ggsave(p, file = paste0(outfile.figures, '-mcmc-pairs_plot_gphyperparams.png'), w  = 10, h = 10)
 
 #####################
