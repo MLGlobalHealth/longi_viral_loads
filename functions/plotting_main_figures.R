@@ -970,8 +970,8 @@ plot.all.maps <- function(type = "inset", delta.inset = .7, return_list = FALSE)
 
     # Map of the Rakai communities
     if (type == "inset") {
+
         naturemed_reqs()
-        # get plots
         fig1a.outer <- plot.uganda.map(zoom = "medium", maptype = "toner-lines", labs = TRUE) + nm_reqs
         fig1a.inner <- plot.rakai.map(.size = 1, labs = FALSE) +
             theme(
@@ -985,7 +985,9 @@ plot.all.maps <- function(type = "inset", delta.inset = .7, return_list = FALSE)
             fig1a.inner,
             left = 1 - delta.inset, right = 1, bottom = 0, top = delta.inset, align_to = "panel"
         )
-    } else if (type == "columns") {
+    } 
+
+    if (type == "columns") {
         fig1a.outer <- plot.uganda.map(
             zoom = "medium",
             maptype = "toner-lines",
@@ -1257,6 +1259,7 @@ plot_prevalenceandcontrid <- function(DTprev,
                 legend.spacing.x = legend.key.size,
                 plot.margin = margin(t = 0, b = 0, l = 0, r = 0, unit = "cm")
             ) +
+            my_guides() +
             REQS
     }
 
@@ -1466,7 +1469,11 @@ plot.uganda.map <- function(zoom = "medium", maptype = "toner-lite", position = 
     env_gps <- new.env()
     load(path.community.gps, envir = env_gps)
     box <- with(env_gps$comgps, {
-        data.table(top = max(latitude), left = min(longitude), bottom = min(latitude), right = max(longitude))
+        data.table(
+            top = max(latitude),
+            left = min(longitude),
+            bottom = min(latitude),
+            right = max(longitude))
     })
 
     uganda <- get_stamenmap(
