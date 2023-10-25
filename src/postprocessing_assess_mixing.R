@@ -49,7 +49,7 @@ source(file.path(gitdir, "R/paths.R"))
 # options:
 args <- args[names(args) %like% "jobname|run|out.dir|round"]
 if(interactive()){
-    args$jobname <- 'OLD_cmdstan_vl_1000_firstpart'
+    args$jobname <- 'cmdstan_alpha100sharedhyper_vl_1000'
     args$run.gp.prevl <- TRUE
     args$round <- 19
 }
@@ -107,7 +107,7 @@ catn("Extracting samples")
 
 # note samples are only really needed for WAIC and LOO here...
 
-make_convergence_diagnostics_stats(
+diagns <- make_convergence_diagnostics_stats(
     fit=fit,
     re=samples,
     exclude_rgx = 'L_cov|rho_hyper_par|_rep',

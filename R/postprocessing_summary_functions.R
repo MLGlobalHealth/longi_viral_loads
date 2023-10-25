@@ -53,7 +53,10 @@ make_convergence_diagnostics_stats <- function(fit, re, outfile.prefix, exclude_
     }else{
         summary = fit$summary() |>
             as.data.table() |>
-            setnames(c('ess_bulk', 'rhat', 'variable'), c('n_eff', 'Rhat', 'rn'))
+            setnames(
+                c('ess_bulk', 'rhat', 'variable'),
+                c('n_eff', 'Rhat', 'rn')
+            )
         time <- fit$time()
     }
 
@@ -127,12 +130,16 @@ make_convergence_diagnostics_stats <- function(fit, re, outfile.prefix, exclude_
     # save
     saveRDS2(n_eff$all, suffix = "-eff_sample_size_cum.rds")
     saveRDS2(R_hat$all, suffix =  "-Rhat_cum.rds")
-    saveRDS2(.WAIC, suffix = "-WAIC.rds")
-    saveRDS2(.LOO, suffix = "-LOO.rds")
+    saveRDS2(LOO, suffix = "-LOO.rds")
     saveRDS2(sampler_diagnostics, suffix = "-sampler_diagnostics.rds")
     saveRDS2(time, suffix = "-time_elapsed.rds")
 
-    # return(summary)
+    return(list(
+        n_eff = n_eff,
+        R_hat = R_hat,
+        sampler_diagnostics = sampler_diagnostics,
+        time = time
+    ))
 }
 
 check_all_diagnostics <- function(fit, outdir) {
