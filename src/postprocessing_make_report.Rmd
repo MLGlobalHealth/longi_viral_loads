@@ -1,5 +1,5 @@
 ---
-title: "Summary"
+title: "Postprocessing summary"
 author: "Andrea Brizzi"
 date: "`r Sys.Date()`"
 params:
@@ -41,16 +41,26 @@ dir.exists(dirs) |> all() |> stopifnot()
 
 # helpers
 aggregate_diagnostics_over_all_rounds <- function(files=NULL, dir=dirname(outfile.diagnostics), diagn='num_divergent'){
-    diagn <- match.arg(diagn, c('num_divergent', 'num_max_treedepth', 'ebfmi'))
+    diagn <- match.arg(diagn, c('num_divergent', 'num_max_treedepth', 'ebfmi', 'ess'))
     func <- sum
     if( diagn == 'ebfmi') func <- max
+
     if( is.null(files) ){
         files <- list.files(dir , pattern="diagnostics.rds$", full.names = TRUE)
     }
+
+    if(diagn == "ess"){
+        .tmp <- lapply(files, readRDS) |>
+            sapply(min) |> 
+            min()
+        return(.tmp)
+    }
+
     .tmp <- lapply(files, readRDS) |>
         lapply(getElement, diagn) |>
         sapply(func) |> 
         func()
+
     return(.tmp)
 }
 ```
@@ -147,27 +157,49 @@ dfigs_joint <- subset(dfigs_joint,  ! BASE %in% mainfigs.png)
 
 # Diagnostics {.tabset}
 
+We report diagnostic statistics for the different models.
+Note that the reported results are aggregated over chains, and rounds to avoid cluttering the document.
+
 ```{r diagnostics_rds, include=TRUE, results= 'asis'}
+
 if( jobid %like% 'shared' ){
+
     fdiagn <- .find.files(dir=joint.dir, .pattern='asses.*rds$', part="")
+
 }else{
+
     rbind( 
         .find.files(dir=all.dir, .pattern='asses.*rds$', part="all"),
         .find.files(dir=ftp.dir, .pattern='asses.*rds$', part="ftp")
     )  -> fdiagn
+
 }
+
 if(exists('ddiagn')){
+
     tab <- ddiagn[ FILE %like% "diagnostics", { 
-        tmp <- file.path(DIR,'diagnostics', FILE)
+        path_diagnostics <- file.path(DIR,'diagnostics', FILE)
         list(
-            div     =aggregate_diagnostics_over_all_rounds(files=tmp, diagn='num_divergent'),
-            maxdepth=aggregate_diagnostics_over_all_rounds(files=tmp, diagn='num_max'),
-            ebfmi   =aggregate_diagnostics_over_all_rounds(files=tmp, diagn='ebfmi')
+            div     =aggregate_diagnostics_over_all_rounds(files=path_diagnostics, diagn='num_divergent'),
+            maxdepth=aggregate_diagnostics_over_all_rounds(files=path_diagnostics, diagn='num_max'),
+            ebfmi   =aggregate_diagnostics_over_all_rounds(files=path_diagnostics, diagn='ebfmi')
         )
     }, by=.(MODEL, PART)] 
-    knitr::kable(tab, caption = "Summary of convergence diagnostics") |> print()
+
+    tab2 <- ddiagn[ FILE %like% "eff_sample_size", {
+        path_diagnostics <- file.path(DIR, "diagnostics",FILE)
+        list(
+            min_ess = round(aggregate_diagnostics_over_all_rounds(files=path_diagnostics, diagn='ess'))
+        )
+    }, by=.(MODEL, PART) ]
+
+    tab <- merge(tab, tab2, by=c("MODEL", "PART")) |> 
+        knitr::kable(caption = "Summary of convergence diagnostics") |> 
+        print()
 }
 ```
+
+Below are more details on the model-specific inferences and diagnostics, 
 
 ```{r diagnostics, echo=FALSE, results='asis', message=FALSE}
 relabel.models <- function(x){
@@ -215,7 +247,7 @@ for ( model in c("none", MODELS)){
 }
 
 # remove png shown 
-if( exists("dfigs_single")){
+if( exists("dfigs_single") ){
     dfigs_single <- subset(dfigs_single, ! BASE %like% 'assess_round' & ! BASE %like% 'gppars')
 }else{
     dfigs_joint <- subset(dfigs_joint, ! BASE %like% 'assess_round' & ! BASE %like% 'gppars')
