@@ -875,10 +875,12 @@ plot.empirical.prob.of.suppression.with.age <- function(DT = dcens) {
     )
 }
 
-plot.rakai.map <- function(.size = 3, labs = FALSE) {
-    require(ggmap)
-    require(maps)
-    require(ggsn)
+plot.rakai.map <- function(.size = 4, labs = FALSE) {
+
+    # graphics
+    .breaks <- list(NULL, waiver())[[labs + 1]]
+    .xlab <- list(NULL, "Longitude (°E)")[[labs + 1]]
+    .ylab <- list(NULL, "Latitude (°N)")[[labs + 1]]
 
     # load comm ids
     comms <- fread(path.community.idx)
@@ -907,7 +909,9 @@ plot.rakai.map <- function(.size = 3, labs = FALSE) {
     # get population sizes.
     tmp <- readRDS(path.comm.censsize)
     comms <- merge(comms, tmp, by.x = c("COMM_ID", "TYPE"), by.y = c("COMM_IDX", "TYPE"))
+    prettify_labels(comms)
 
+    # load data for box enclosig communities
     with(comms, c(
         left = min(longitude) - .05,
         right = max(longitude) + .05,
@@ -915,18 +919,21 @@ plot.rakai.map <- function(.size = 3, labs = FALSE) {
         top = max(latitude) + .05
     )) -> box
 
-    ggmap::get_stamenmap(
+    # get background map from stadia (ggmap)
+    map <- get_stadiamap(
         bbox = box,
-        maptype = "watercolor",
-        zoom = 11
-    ) -> map
+        maptype = "stamen_terrain_background",
+        zoom = 12
+    ) 
 
-    .breaks <- list(NULL, waiver())[[labs + 1]]
-    .xlab <- list(NULL, "Longitude (°E)")[[labs + 1]]
-    .ylab <- list(NULL, "Latitude (°N)")[[labs + 1]]
+    # get roads from omsdata
+    roads <- opq(bbox = box) |>
+        add_osm_feature(key = "highway", value=c("primary", "trunk", "secondary")) |>
+        osmdata_sf()
+    roads <- roads$osm_lines
 
-    prettify_labels(comms)
     p <- ggmap(map) +
+        geom_sf(data = roads, inherit.aes = FALSE, color = "black", size=3) +
         geom_point(
             data = comms,
             aes(
@@ -940,12 +947,15 @@ plot.rakai.map <- function(.size = 3, labs = FALSE) {
         scale_fill_manual(values = palettes$comm) +
         scale_y_continuous(breaks = .breaks, expand = c(0, 0)) +
         scale_x_continuous(breaks = .breaks, expand = c(0, 0)) +
+        coord_sf(xlim = box[c('left', 'right')], ylim = box[c('bottom', 'top')]) +
         my_labs(color = NULL, fill = NULL, shape = NULL, x = .xlab, y = .ylab) +
         theme(
             legend.position = c(1, 1),
             legend.justification = c(1, 1),
             legend.background = element_rect(fill = "white", color = "black"),
-            legend.direction = "horizontal"
+            legend.direction = "horizontal",
+            axis.text = element_blank(),
+            axis.ticks = element_blank()
         ) +
         ggsn::scalebar(
             x.min = box["left"] + .02,
@@ -964,48 +974,31 @@ plot.rakai.map <- function(.size = 3, labs = FALSE) {
     p
 }
 
-plot.all.maps <- function(type = "inset", delta.inset = .7, return_list = FALSE) {
-    # decide how to format
-    type <- match.arg(type, c("inset", "columns"))
-
+plot_all_maps <- function(
+    delta_inset = .72
+) {
     # Map of the Rakai communities
-    if (type == "inset") {
+    naturemed_reqs()
+    margins <- list( lon = 8.5, lat = 7, offset=0.7)
+    fig1a.outer <- plot_uganda_map( margin = margins ) # + nm_reqs
+    # fig1a.outer <- plot.uganda.map(labs = FALSEele) + nm_reqs
+    fig1a.inner <- plot.rakai.map(.size = 4, labs = FALSE) +
+        theme(
+            panel.border = element_rect(colour = "red", size = 2),
+            panel.background = element_rect( color = "red" ,fill="red"),
+            plot.margin = margin(top = 0, bottom = 0, left = 0, right = 0)
+        ) 
 
-        naturemed_reqs()
-        fig1a.outer <- plot.uganda.map(zoom = "medium", maptype = "toner-lines", labs = TRUE) + nm_reqs
-        fig1a.inner <- plot.rakai.map(.size = 1, labs = FALSE) +
-            theme(
-                panel.border = element_rect(colour = "red", size = 1),
-                plot.margin = margin(t = 0, b = 0, l = 0, r = 0, unit = "cm"),
-                legend.key.size = unit(0.01, "cm"),
-                legend.spacing.x = unit(0.01, "cm")
-            ) + nm_reqs
-        # inset format
-        pmap <- fig1a.outer + inset_element(
-            fig1a.inner,
-            left = 1 - delta.inset, right = 1, bottom = 0, top = delta.inset, align_to = "panel"
-        )
-    } 
+    # inset format
+    pmap <- fig1a.outer + patchwork::inset_element(
+        fig1a.inner,
+        left = 1 - delta_inset, 
+        right = 1.0, 
+        bottom = 0,
+        top = delta_inset, 
+        align_to = "panel"
+    ) + theme(panel.background = element_blank(fill='red'))
 
-    if (type == "columns") {
-        fig1a.outer <- plot.uganda.map(
-            zoom = "medium",
-            maptype = "toner-lines",
-            position = "center"
-        )
-        fig1a.inner <- plot.rakai.map(.size = 1, labs = TRUE) +
-            theme(
-                # panel.border = element_rect(colour = "red", size = 1),
-                plot.margin = margin(t = 0, b = 0, l = 0, r = 0, unit = "cm"),
-                legend.key.size = unit(0.01, "cm"),
-                legend.spacing.x = unit(0.01, "cm")
-            )
-        # inset format
-        if (return_list) {
-            return(list(top = fig1a.outer, bottom = fig1a.inner))
-        }
-        pmap <- fig1a.outer / fig1a.inner
-    }
     return(pmap)
 }
 
@@ -1447,7 +1440,117 @@ plot_suppandcontrib <- function(DTprev1,
     return(p)
 }
 
+plot_uganda_map <- function(labs = FALSE, margin=list()) {
+
+    .xlab <- list(NULL, "Longitude (°E)")[[labs + 1]]
+    .ylab <- list(NULL, "Latitude (°N)")[[labs + 1]]
+
+    # get the position of the Rakai Communities
+    env_gps <- new.env()
+    load(path.community.gps, envir = env_gps)
+    rakai_box <- with(env_gps$comgps, {
+        data.table(
+            top = max(latitude),
+            left = min(longitude),
+            bottom = min(latitude),
+            right = max(longitude))
+    })
+
+    # get the box containing Uganda, either according to some predefined "zooms"
+    # or "expanding" the Rakai box by some margins.
+
+    if( length(margin) ){
+
+        if( ! all( c("offset","lon","lat") %in% names(margin)))
+            stop("margin must be a list with offset, lon, lat")
+
+        box_uganda <- as.numeric(rakai_box) 
+        extensions <-  with(margin, c( 
+            top = lat * (1 - offset), left = - lon * (1 - offset), 
+            bottom = - lat * (1 + offset), right = lon * (1 + offset)
+        ))
+        box_uganda <- box_uganda + extensions
+        names(box_uganda) <- names(rakai_box)
+
+    }else{
+        # deprecated
+        box_uganda <- {
+            if ( zoom == "far" & position == "center"){
+                c(top = 6.158199, left = 24.681059, bottom = -6.314563, right = 42.125359)
+            } else if ( zoom == "medium" & position == "corner"){
+                c(top = 1.5, left = 29, bottom = -9, right = 40)
+            } else  if ( zoom == "medium" & position == "center"){
+                c(top = 4.4, bottom = -4.6, left = 26, right = 37)
+            } else if ( zoom == "close"){
+                c(top = NA_real_, left = NA_real_, bottom = NA_real_, right = NA_real_)
+            } else {
+                stop("not implemented")
+            }
+        }
+
+    }
+
+    stopifnot(
+        box_uganda['left'] < box_uganda['right'] &
+        box_uganda['bottom'] < box_uganda['top']
+    )
+
+    # colors <- c( "#186F65", "#B5CB99", "#FCE09B", "#B2533E")
+    colors <- c(  "#999966","#cccc99","#cc9966", "#cc9999",  "#669966")
+
+
+    countries <- c(
+        "Burundi" = colors[4],
+        "Central African Republic" = colors[2],
+        "Democratic Republic of the Congo" = colors[2],
+        "Ethiopia" = colors[2],
+        "Mozambique" = colors[3],
+        "Malawi" = colors[1],
+        "Kenya" = colors[3],
+        "Rwanda" = colors[3],
+        "South Sudan" = colors[1],
+        "Somalia" = colors[4],
+        "Tanzania" = colors[2],
+        "Uganda" = colors[1],
+        "Zambia" = colors[4],
+        "Zimbabwe" = colors[3]
+    )
+
+    world <- map_data("world", regions=names(countries))
+    world_labs <- as.data.table(world)[, 
+        j=.(long = mean(long, na.rm=TRUE), lat=mean(lat, na.rm=TRUE), group=group),
+        by="region"] |> 
+        unique() |>
+        subset( ! region == "Zambia")
+    lakes <- map_data("lakes")
+
+    ggplot(data=world, aes( x=long, y=lat, group=group)) +
+        geom_polygon( aes(fill=region), alpha=1) +
+        geom_path(color = "black", size = 0.5) +
+        geom_polygon(data = lakes, aes(x = long, y = lat, group = group), fill = "#99b3cc") +
+        # geom_path(data=map_data("lakes"), color = "black", size = 0.5) +
+        geom_text(data = world_labs, aes(label = region, group = group), size = 6) +
+        coord_fixed(ratio = 1, xlim = box_uganda[c('left', 'right')], ylim = box_uganda[c('bottom', 'top')]) +
+        scale_fill_manual(values=countries, na.value = "yellow") +
+        geom_rect(
+            xmin = rakai_box$left, 
+            xmax = rakai_box$right,
+            ymin = rakai_box$bottom, ymax = rakai_box$top,
+            fill = NA, color = "red"
+        ) +
+        labs(x =.xlab, y=.ylab) + 
+        theme(
+            legend.position = "none",
+            panel.background = element_rect(fill = "#99b3cc"),
+            panel.grid = element_blank(),
+            axis.text = element_blank(),
+            axis.ticks = element_blank()
+        )
+}
+
 plot.uganda.map <- function(zoom = "medium", maptype = "toner-lite", position = "corner", labs = TRUE) {
+
+    warning("plot.uganda.map is deprecated, instead use plot_uganda_map")
     require(ggmap)
 
     zoom <- match.arg(zoom, c("far", "medium", "close"))
