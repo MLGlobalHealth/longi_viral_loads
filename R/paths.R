@@ -91,5 +91,3 @@ path.stan.config <- fifelse(usr == "andrea" & interactive(),
     yes = file.path(gitdir.stan, 'binomial_gp_config_local.yml'),
     no = file.path(gitdir.stan, 'binomial_gp_config.yml'),
 )
-
-

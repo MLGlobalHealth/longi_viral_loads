@@ -50,6 +50,13 @@ p_reqs <- theme(
     axis.text = element_text(size = 7, family = "sans")
 )
 
+large_font <- theme(
+    plot.title = element_text(size = 16, family = "sans"),
+    text = element_text(size = 13, family = "sans"),
+    axis.title = element_text(size = 13, family = "sans"),
+    axis.text = element_text(size = 11, family = "sans")
+)
+
 ggsave2 <- function(p, file, w, h, LALA = vl.out.dir, u = "in") {
     if (!file %like% "pdf$") {
         stop("`ggsave2` file should end in `.pdf`")

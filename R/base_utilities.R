@@ -265,6 +265,12 @@ zathura2gthumb <- function(cmd){
     return(cmd)
 }
 
+zathura2inkscape <- function(cmd){
+    cmd <- sub("zathura", "inkscape", cmd)
+    cmd <- sub(".pdf", ".png", cmd)
+    return(cmd)
+}
+
 tex2png <- function(filename){
     gsub(".tex$", ".png", filename)
 }
