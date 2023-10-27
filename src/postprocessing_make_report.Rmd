@@ -189,12 +189,12 @@ if(exists('ddiagn')){
     tab2 <- ddiagn[ FILE %like% "eff_sample_size", {
         path_diagnostics <- file.path(DIR, "diagnostics",FILE)
         list(
-            min_ess = round(aggregate_diagnostics_over_all_rounds(files=path_diagnostics, diagn='ess'))
+            min_ess = as.integer(aggregate_diagnostics_over_all_rounds(files=path_diagnostics, diagn='ess'))
         )
     }, by=.(MODEL, PART) ]
 
-    tab <- merge(tab, tab2, by=c("MODEL", "PART")) |> 
-        knitr::kable(caption = "Summary of convergence diagnostics") |> 
+    tab <- merge(tab, tab2, by=c("MODEL", "PART"))  
+    knitr::kable(tab, caption = "Summary of convergence diagnostics") |> 
         print()
 }
 ```

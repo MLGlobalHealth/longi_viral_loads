@@ -4,15 +4,17 @@
 # DEPENDENCIES #
 ################
 
-library(data.table)
-library(ggplot2)
-library(ggtext)
-library(ggpubr)
-library(knitr)
-library(Hmisc)
-library(xtable)
-library(here)
-library(optparse)
+suppressPackageStartupMessages({
+    library(data.table)
+    library(ggplot2)
+    library(ggtext)
+    library(ggpubr)
+    library(knitr)
+    library(Hmisc)
+    library(xtable)
+    library(here)
+    library(optparse)
+})
 
 ################
 #    PATHS     #
@@ -70,8 +72,8 @@ if(make_paper_numbers)
 # output directory with rda files
 vl.out.dir.figures <- file.path(vl.out.dir, 'figures')
 vl.out.dir.tables <- file.path(vl.out.dir, 'tables')
-dir.create(vl.out.dir.tables) |> suppressWarnings()
-dir.create(vl.out.dir.figures) |> suppressWarnings()
+dir.create(vl.out.dir.tables)   |> suppressWarnings()
+dir.create(vl.out.dir.figures)  |> suppressWarnings()
 
 ################
 #     MAIN     #

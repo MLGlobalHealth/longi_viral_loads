@@ -114,7 +114,6 @@ As such we:
 
 Note that FTP is included in both analyses, as FTP are a subset of the RCCS participants.
 
-
 ```{r plot-order, echo=FALSE, hidden=TRUE, include=FALSE}
 ordered_labels <- c( 
     'fitbyftpstatus',

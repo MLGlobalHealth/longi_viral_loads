@@ -231,7 +231,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
             ylims = c(0,.75),
             ylab="HIV prevalence (95% credible intervals)"
         )
-        filenames <- paste0("hivprevalence_vs_age_by_gender_fishinland_ftp",c("", "data_"),"gp_round", round, ".pdf")
+        filenames <- paste0("hivprevalence_vs_age_by_gender_fishinland_ftp_",c("", "data_"),"gp_round", round, ".pdf")
         ggsave2(plots_ftp[[1]], file = filenames[[1]], w = 6, h = 5)
         ggsave2(plots_ftp[[2]], file = filenames[[2]], w = 6, h = 5)
 
@@ -502,7 +502,6 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan.hyper <- function(
         catn("make prevalence plot by age")
         # _________________________________
         
-
         ps <- c("CL"=.025, "IL"=.25, "M"=.5, "IU"=.75, "CU"=.975)
         cols <- names(re) %which.like% '^p_predict_'
         tmp <- re[, lapply(.SD, posterior::quantile2, probs=ps), .SDcols=cols]
@@ -686,7 +685,6 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan.hyper <- function(
 
     # Stan file locations
     file.stan <- file.path(gitdir.stan, "vl_binomial_gp_sharedhyper.stan")
-
     .fit.stan.and.plot.by.round <- function(DT) {
 
         #  DT <- copy(vla[ROUND == 16]); refit=FALSE
