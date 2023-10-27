@@ -975,18 +975,19 @@ plot.rakai.map <- function(.size = 4, labs = FALSE) {
 }
 
 plot_all_maps <- function(
-    delta_inset = .72
+    delta_inset = .72,
+    sizes = list(points=1, text=3)
 ) {
     # Map of the Rakai communities
     naturemed_reqs()
     margins <- list( lon = 8.5, lat = 7, offset=0.7)
-    fig1a.outer <- plot_uganda_map( margin = margins ) # + nm_reqs
+    fig1a.outer <- plot_uganda_map( margin = margins, text_size=sizes$text) # + nm_reqs
     # fig1a.outer <- plot.uganda.map(labs = FALSEele) + nm_reqs
-    fig1a.inner <- plot.rakai.map(.size = 4, labs = FALSE) +
+    fig1a.inner <- plot.rakai.map(.size = sizes$points, labs = FALSE) +
         theme(
             panel.border = element_rect(colour = "red", size = 2),
             panel.background = element_rect( color = "red" ,fill="red"),
-            plot.margin = margin(top = 0, bottom = 0, left = 0, right = 0)
+            plot.margin = margin(0, 0, 0, 0, "cm")
         ) 
 
     # inset format
@@ -997,7 +998,7 @@ plot_all_maps <- function(
         bottom = 0,
         top = delta_inset, 
         align_to = "panel"
-    ) + theme(panel.background = element_blank(fill='red'))
+    ) + theme(panel.background = element_rect(fill='red'))
 
     return(pmap)
 }
@@ -1440,7 +1441,7 @@ plot_suppandcontrib <- function(DTprev1,
     return(p)
 }
 
-plot_uganda_map <- function(labs = FALSE, margin=list()) {
+plot_uganda_map <- function(labs = FALSE, margin=list(), text_size=6) {
 
     .xlab <- list(NULL, "Longitude (°E)")[[labs + 1]]
     .ylab <- list(NULL, "Latitude (°N)")[[labs + 1]]
@@ -1521,7 +1522,7 @@ plot_uganda_map <- function(labs = FALSE, margin=list()) {
         j=.(long = mean(long, na.rm=TRUE), lat=mean(lat, na.rm=TRUE), group=group),
         by="region"] |> 
         unique() |>
-        subset( ! region == "Zambia")
+        subset( ! ( region == "Zambia" | region == "Democratic Republic of the Congo" ))
     lakes <- map_data("lakes")
 
     ggplot(data=world, aes( x=long, y=lat, group=group)) +
@@ -1529,7 +1530,7 @@ plot_uganda_map <- function(labs = FALSE, margin=list()) {
         geom_path(color = "black", size = 0.5) +
         geom_polygon(data = lakes, aes(x = long, y = lat, group = group), fill = "#99b3cc") +
         # geom_path(data=map_data("lakes"), color = "black", size = 0.5) +
-        geom_text(data = world_labs, aes(label = region, group = group), size = 6) +
+        geom_text(data = world_labs, aes(label = region, group = group), size = text_size) +
         coord_fixed(ratio = 1, xlim = box_uganda[c('left', 'right')], ylim = box_uganda[c('bottom', 'top')]) +
         scale_fill_manual(values=countries, na.value = "yellow") +
         geom_rect(
