@@ -13,7 +13,8 @@ cat("\nStart of:", self_relative_path, "\n")
 ################
 # DEPENDENCIES #
 ################
-{
+
+suppressPackageStartupMessages({
     library(data.table)
     library(ggplot2)
     library(ggtext)
@@ -24,7 +25,7 @@ cat("\nStart of:", self_relative_path, "\n")
     library(here)
     library(optparse)
     library(posterior)
-} |> suppressPackageStartupMessages()
+})
 
 ################
 #    PATHS     #
@@ -726,8 +727,14 @@ if (file.exists(filename_overleaf) & !overwrite) {
 }
 
 if (make_tables) {
-    paper_statements_contributions_viraemia_round(round = 16)
-    paper_statements_contributions_viraemia_round(round = 19)
+
+    paper_statements_contributions_census_eligible(agegroup = '15-24', comm="inland", sex='M', smooth=FALSE)
+    paper_statements_contributions_census_eligible(agegroup = '25-39', comm="inland", sex='M', smooth=FALSE)
+    # paper_statements_contributions_census_eligible(agegroup = '25-34', comm="inland", sex='M', smooth=FALSE)
+
+    # paper_statements_contributions_viraemia_round(round = 16)
+    paper_statements_contributions_viraemia_round(round = 19, agegroup="25-39")
+    paper_statements_contributions_viraemia_round(round = 19, agegroup="15-24")
     contrib_viraemia_custom |> plot_quantiles(x = AGEGROUP, color = SEX_LAB, facet = LOC_LAB ~ ROUND_LAB)
 }
 
@@ -1228,6 +1235,7 @@ if (file.exists(filename_rds) & !overwrite) {
 if (make_tables) {
     # paper_statements_malefemaleratio_suppression(DT = dmf_ratios, reverse = FALSE)
     tmp <- paper_statements_malefemaleratio_suppression2()
+    # paper_statements_malefemaleratio_suppression()
 
     # dmf_ratios[TYPE == "VIR" & AGEGROUP != "Total" & ROUND == 19, ] |>
     #     plot_quantiles(x=AGEGROUP, facet=.~LOC_LAB, color=LOC_LAB)

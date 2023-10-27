@@ -208,7 +208,7 @@ paper_statements_malefemaleratio_suppression <- function(DT=dmf_ratios,reverse=F
 
 paper_statements_malefemaleratio_suppression2 <- function(DT=dmf_ratios){
     dtable <- subset(DT, AGEGROUP %like% "Total" & TYPE == "VIR") 
-    dtable[  , CELL := prettify_cell(M, CL, CU, precision=2) ] |>
+    dtable[  , CELL := prettify_cell(M, CL, CU, precision=1) ] |>
         remove_quantiles() |>
         prettify_labels() |>
         remove.nonpretty() |>
@@ -216,9 +216,9 @@ paper_statements_malefemaleratio_suppression2 <- function(DT=dmf_ratios){
         setkey(LOC_LAB, ROUND_LAB)
 
     .round_lab <- drounds[ROUND == 19, END2]
-    dtable[ ROUND_LAB %like% '19' & LOC_LAB == "Inland", {
-        sprintf("In Inland communities, by %s, an estimated %s  times more men than women remained unsuppressed\n",
-            .round_lab, CELL) |> cat()
+    dtable[ ROUND_LAB %like% '19', {
+        sprintf("In %s communities, by %s, an estimated %s  times more men than women remained unsuppressed\n",
+            LOC_LAB,.round_lab, CELL) |> cat()
     }, by = c("LOC_LAB")]
     return(dtable)
 }
@@ -257,4 +257,25 @@ print_statements_half_plhiv <- function(DT=dcontrib_50p_PLHIV, DAGES=plhiv_contr
         "In %s communities, %s of %s with HIV were aged between %s and %s",
         LOC_LAB, CELL, SEX_LAB, MIN, MAX), 
     by=c("SEX_LAB", "LOC_LAB")]
+}
+
+paper_statements_contributions_census_eligible <- function(DT=dcens, comm="inland", round=19, smooth=FALSE, agegroup=NA_character_, sex=NA_character_){
+
+    sex <- match.arg(sex, c(NA_character_, "F", "M"))
+    comm <- match.arg(comm, c("inland", "fishing"))
+    n_var <- fifelse(smooth, yes="ELIGIBLE_SMOOTH", no="ELIGIBLE")
+
+    stopifnot(agegroup %like% '[0-9]{2}-[0-9]{2}')
+    tmp <- strsplit(agegroup, "-")[[1]]
+    age_min <- as.numeric(tmp[1])
+    age_max <- as.numeric(tmp[2])
+
+    contrib <- DT[ ROUND == round & LOC == comm, {
+        idx <- AGEYRS %between% c(age_min, age_max) & ( is.na(sex) | SEX == sex ) 
+        sum(.SD[idx])/sum(.SD)
+    }, .SDcols = n_var ]
+
+    sprintf(
+        "In round %s, %s aged %i %i accounted for %.1f%% of the CE population\n",
+        round, sex, age_min, age_max, contrib*100) |> cat()
 }

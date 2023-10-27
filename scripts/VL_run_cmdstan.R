@@ -27,10 +27,8 @@ if( ! interactive() )
 #    PATHS     #
 ################
 
-
 # automatically finding the github directory may be complicated 
 # if script is called outside from it.
-self_relative_path <- 'scripts/VL_run_cmdstan.R'
 if( interactive() )
 {
     here::i_am(self_relative_path)
@@ -54,7 +52,7 @@ if(interactive()){ # testing
     args$only.firstparticipants <- FALSE 
     args$run.gp.supp.pop <- TRUE
     args$round <- 19
-    args$stan.alpha <- .5
+    args$stan.alpha <- 1.00
     args$shared.hyper <- TRUE
 } 
 stopifnot(!(args$shared.hyper & args$only.firstparticipants))
