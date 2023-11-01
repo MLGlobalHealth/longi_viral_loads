@@ -84,7 +84,7 @@ make.table.Nhivpositive <- function(DT = joint_ageagrr_list$round_totals, DC = d
     return(tab)
 }
 
-make.main.table.contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup, DCONTRIB = dcontrib_agegroup, DSUPP = dsupp_agegroup, add_asterisks_unaids = TRUE, include_totals = c("SEX", "AGEGROUP"), round = 19) {
+make_main_table_contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup, DCONTRIB = dcontrib_agegroup, DSUPP = dsupp_agegroup, add_asterisks_unaids = TRUE, include_totals = c("SEX", "AGEGROUP"), round = 19) {
     include_totals <- intersect(include_totals, c("SEX", "AGEGROUP"))
     if (all(include_totals == "SEX")) {
         warning("SEX totals can only be included if AGEGROUP is. Including both...")
@@ -156,16 +156,36 @@ make.main.table.contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup
 
 
     # prettify all
-    names_comp <- c(
-        hiv = "Age composition of PLHIV",
-        unsupp = "Age composition of people\nwith unsuppressed HIV"
+    longname <- FALSE
+    `%+%` <- function(x, y){ paste0(x, y)}
+    endings <- c(
+        N = "\n\n(n, (% of total population))",
+        p = "\n\n(posterior median\nestimate, (% CrI))"
     )
-    setnames(ncen_agegroup, "ELIGIBLE_CELL", "Population in age band")
-    setnames(r19_hivprev, "CELL", "HIV prevalence in age band")
-    setnames(r19_prop_unsupp, "CELL", "Proportion of census eligible individuals\nwho are unsuppressed in age  band")
-    setnames(r19_supphiv, "CELL", "Proportion of PLHIV\nwho are unsuppressed in age band")
-    setnames(r19_comp_hiv, "CELL", names_comp["hiv"])
-    setnames(r19_comp_usnupp, "CELL", names_comp["unsupp"])
+
+    names_comp <- if(longname) {
+        c(
+            hiv = "Age composition of PLHIV",
+            unsupp = "Age composition of people\nwith unsuppressed HIV"
+        )
+    } else {
+        c(
+            hiv = "Age composition of\npeople with HIV",
+            unsupp = "Age composition of\npeople who have unsuppressed virus"
+        )
+    }
+    setnames(ncen_agegroup, "ELIGIBLE_CELL", "Census eligible\nindividuals" %+% endings$N)
+    if( longname ){
+        setnames(r19_hivprev, "CELL", "HIV prevalence in age band" %+% endings$p)
+        setnames(r19_prop_unsupp, "CELL", "Proportion of census eligible individuals\nwho are unsuppressed in age  band" %+% endings$p)
+        setnames(r19_supphiv, "CELL", "Proportion of PLHIV\nwho are unsuppressed in age band" %+% endings$p)
+    }else{
+        setnames(r19_hivprev, "CELL", "Proportion of people who\nhave HIV in each age group" %+% endings$p)
+        setnames(r19_prop_unsupp, "CELL", "Proportion of people \nwho have unsuppressed virus in each age  group")
+        setnames(r19_supphiv, "CELL", "Proportion of people with \nHIV who have unsuppressed virs")
+    }
+    setnames(r19_comp_hiv, "CELL", names_comp["hiv"] %+% endings$p)
+    setnames(r19_comp_usnupp, "CELL", names_comp["unsupp"] %+% endings$p)
     dtable <- Reduce(
         f = function(x, y) merge(x, y, all = TRUE, by = c("ROUND", "LOC", "SEX", "AGEGROUP")),
         x = list(

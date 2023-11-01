@@ -279,3 +279,16 @@ paper_statements_contributions_census_eligible <- function(DT=dcens, comm="inlan
         "In round %s, %s aged %i %i accounted for %.1f%% of the CE population\n",
         round, sex, age_min, age_max, contrib*100) |> cat()
 }
+
+paper_statements_average_participation <- function(DT=dprop){
+    fmt <- paste0(
+        "there were on average %.0f censused inds, of who on average", 
+        " %.0f  (%.1f %%) individuals participated in the RCCS"
+        )
+
+    tmp <- dprop[, 
+        .(EL = sum(ELIGIBLE), PART=sum(N_PART)),
+    by="ROUND"][, PERC := PART/EL ]
+    tmp[j=lapply(.SD, mean)][j=sprintf(fmt, EL, PART, 100*PERC)] |> cat()
+    return(tmp)
+}

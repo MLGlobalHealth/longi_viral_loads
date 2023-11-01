@@ -391,7 +391,7 @@ if (interactive()) system(zathura2gthumb(cmd))
 catn("Main table 1")
 #####################
 
-dtable1 <- make.main.table.contributions(add_asterisks_unaids = FALSE)
+dtable1 <- make_main_table_contributions(add_asterisks_unaids = FALSE)
 write.to.googlesheets(dtable1, "Table1")
 
 filename_tex <- file.path(out.dir.tables, "main_table_contributions_hiv.tex")
