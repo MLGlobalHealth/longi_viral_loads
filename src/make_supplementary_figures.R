@@ -5,10 +5,12 @@ self_relative_path <- "src/make_supplementary_figures.R"
 cat("\nStart of:", self_relative_path, "\n")
 ########################
 
-library(data.table)
-library(ggplot2)
-library(ggpubr)
-library(patchwork)
+suppressPackageStartupMessages({
+    library(data.table)
+    library(ggplot2)
+    library(ggpubr)
+    library(patchwork)
+})
 
 {
     # paths 
