@@ -313,7 +313,7 @@ shapes <- list(
     ),
     ptype = c(
         'all' = 15, 
-        "ftp" = 16
+        "ftp" = 1
     ),
     NULL
 )

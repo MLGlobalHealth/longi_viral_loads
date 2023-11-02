@@ -794,7 +794,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir. = 
             theme(legend.position = "bottom") +
             labs(
                 x = "\nage at visit (years)",
-                y = "HIV prevalence (95% credibility interval)\n",
+                y = "HIV prevalence (95% credible interval)\n",
                 colour = "gender", fill = "gender"
             )
 
@@ -881,7 +881,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir. = 
             theme_bw() +
             labs(
                 x = "\nage at visit (years)",
-                y = "female to male HIV prevalence ratio\n(95% credibility interval)\n"
+                y = "female to male HIV prevalence ratio\n(95% credible interval)\n"
             )
 
         filename <- paste0("220729_hivprevalenceratio_vs_age_by_fishinland_stan_round", round, ".pdf")
@@ -1008,7 +1008,7 @@ vl.meanviralload.by.gender.loc.age.icar <- function(DT) {
         theme_bw() +
         labs(
             x = "\nage at visit (years)",
-            y = "mean viral load\n(95% credibility interval)\n",
+            y = "mean viral load\n(95% credible interval)\n",
             colour = "gender", fill = "gender", linetype = "location"
         )
 
@@ -1090,7 +1090,7 @@ vl.meanviralload.by.gender.loc.age.icar <- function(DT) {
             theme_bw() +
             labs(
                 x = "\nage at visit (years)",
-                y = "mean viral load\n(95% credibility interval)\n",
+                y = "mean viral load\n(95% credible interval)\n",
                 colour = "gender",
                 linetype = "location"
             )
@@ -1285,7 +1285,7 @@ vl.suppofinfected.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir
             theme(legend.position = "bottom") +
             labs(
                 x = "\nage at visit (years)",
-                y = "HIV+ individuals with suppressed viral load\n(95% credibility interval)\n",
+                y = "HIV+ individuals with suppressed viral load\n(95% credible interval)\n",
                 colour = "gender", fill = "gender"
             )
 
@@ -1315,7 +1315,7 @@ vl.suppofinfected.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir
         #         theme_bw() +
         #         theme(legend.position='bottom') +
         #         labs(x='\nage at visit (years)',
-        #              y='HIV+ individuals with suppressed viral load\n(95% credibility interval)\n',
+        #              y='HIV+ individuals with suppressed viral load\n(95% credible interval)\n',
         #              colour='gender', fill='gender')
 
         # filename <- paste0('220729f_suppAmongInfected_vs_age_by_gender_fishinland_stan_v2_round',round,'.pdf')
@@ -1339,7 +1339,7 @@ vl.suppofinfected.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir
             theme(legend.position = "bottom")
         labs(
             x = "\nage at visit (years)",
-            y = "HIV+ individuals with unsuppressed viral load\n(95% credibility interval)\n",
+            y = "HIV+ individuals with unsuppressed viral load\n(95% credible interval)\n",
             colour = "gender", fill = "gender"
         )
 
@@ -1640,7 +1640,7 @@ vl.suppofinfected.by.gender.loc.age.icar <- function(DT, refit = FALSE) {
             theme_bw() +
             labs(
                 x = "\nage at visit (years)",
-                y = "HIV+ individuals with unsuppressed viral load\n(95% credibility interval)\n",
+                y = "HIV+ individuals with unsuppressed viral load\n(95% credible interval)\n",
                 colour = "gender"
             )
 
@@ -1659,7 +1659,7 @@ vl.suppofinfected.by.gender.loc.age.icar <- function(DT, refit = FALSE) {
             theme_bw() +
             labs(
                 x = "\nage at visit (years)",
-                y = "HIV+ individuals with unsuppressed viral load\n(95% credibility interval)\n",
+                y = "HIV+ individuals with unsuppressed viral load\n(95% credible interval)\n",
                 colour = "gender"
             )
 
@@ -1678,7 +1678,7 @@ vl.suppofinfected.by.gender.loc.age.icar <- function(DT, refit = FALSE) {
             theme_bw() +
             labs(
                 x = "\nage at visit (years)",
-                y = "HIV+ individuals with suppressed viral load\n(95% credibility interval)\n",
+                y = "HIV+ individuals with suppressed viral load\n(95% credible interval)\n",
                 colour = "gender"
             )
         filename <- paste0("220729d_suppAmongInfected_vs_age_by_gender_fishinland_icar_v2_round", round, ".pdf")
@@ -1697,7 +1697,7 @@ vl.suppofinfected.by.gender.loc.age.icar <- function(DT, refit = FALSE) {
             theme_bw() +
             labs(
                 x = "\nage at visit (years)",
-                y = "HIV+ individuals with unsuppressed viral load\n(95% credibility interval)\n",
+                y = "HIV+ individuals with unsuppressed viral load\n(95% credible interval)\n",
                 colour = "gender"
             )
 
@@ -1715,7 +1715,7 @@ vl.suppofinfected.by.gender.loc.age.icar <- function(DT, refit = FALSE) {
             theme_bw() +
             labs(
                 x = "\nage at visit (years)",
-                y = "HIV+ individuals with suppressed viral load\n(95% credibility interval)\n",
+                y = "HIV+ individuals with suppressed viral load\n(95% credible interval)\n",
                 colour = "gender"
             )
 
@@ -1956,7 +1956,7 @@ vl.suppofpop.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir. = v
             theme(legend.position = "bottom") +
             labs(
                 x = "\nage at visit (years)",
-                y = "population with unsuppressed viral load\n(95% credibility interval)\n",
+                y = "population with unsuppressed viral load\n(95% credible interval)\n",
                 colour = "gender", fill = "gender", linetype = "location"
             )
 
@@ -2192,7 +2192,7 @@ vl.suppofpop.by.gender.loc.age.icar <- function(DT) {
             theme_bw() +
             labs(
                 x = "\nage at visit (years)",
-                y = "individuals with unsuppressed viral load\n(95% credibility interval)\n",
+                y = "individuals with unsuppressed viral load\n(95% credible interval)\n",
                 colour = "gender"
             )
 

@@ -43,7 +43,7 @@ horizontal <- FALSE
 if(horizontal){
     facet_formula <- formula( FC_LAB ~ ROUND_LAB )
 }
-     
+
 round_labs_copy <- round_labs
 
 round_labs <- gsub(" to ", "-", round_labs) |>
@@ -63,29 +63,29 @@ p_smoothed_cens <- plot.pyramid.bysexround(
     .ylab = "",
     .facet = facet_formula,
     percent_lab = FALSE
-    ) +
-    geom_line(aes(y=ELIGIBLE_SMOOTH * (-1 + 2*as.integer(SEX == "F"))), color="purple" ) +
-    labs( x="Census Eligible individuals", y="Age") +
-    theme(legend.key.size = unit(0.5, "cm")) 
+) +
+geom_line(aes(y=ELIGIBLE_SMOOTH * (-1 + 2*as.integer(SEX == "F"))), color="purple" ) +
+labs( x="Census Eligible individuals", y="Age") +
+theme(legend.key.size = unit(0.5, "cm")) 
 
 dplot <- subset(dpart, ROUND >= 16) |>
     prettify_labels()
 
 p_smoothed_part <- ggplot(dplot, aes(x = AGEYRS, y=PARTRATE_RAW, color=SEX_LAB)) +
-    geom_point() +
-    geom_line(aes(y=PARTRATE_SMOOTH.25)) +
-    facet_grid(facet_formula, scales = "free", labeller = labeller(ROUND_LAB = round_labs, FC_LAB = community_dictionary$long)) +
-    scale_color_manual(labels=plabels$sex ,values = palettes$sex) +
-    scale_y_continuous(expand = c(0,0.01), limits=c(0,1), labels = scales::percent) +
-    theme_default() +
-    my_labs(y = "Proportion of census eligble individuals who participated") +
-    NULL
+geom_point() +
+geom_line(aes(y=PARTRATE_SMOOTH.25)) +
+facet_grid(facet_formula, scales = "free", labeller = labeller(ROUND_LAB = round_labs, FC_LAB = community_dictionary$long)) +
+scale_color_manual(labels=plabels$sex ,values = palettes$sex) +
+scale_y_continuous(expand = c(0,0.01), limits=c(0,1), labels = scales::percent) +
+theme_default() +
+my_labs(y = "Proportion of census eligble individuals who participated") +
+NULL
 
 # if(!horizontal){
 #     p <- (p_smoothed_cens + nm_reqs + theme(strip.text.y = element_blank())| p_smoothed_part + nm_reqs)
 # }else{
-    # add letters a), b)
-    p <- (p_smoothed_cens + nm_reqs + labs(y=NULL) )/ (p_smoothed_part + nm_reqs + theme(strip.text.x = element_blank())) + plot_layout(guides = 'collect') + plot_annotation(tag_levels = "a")
+# add letters a), b)
+p <- (p_smoothed_cens + nm_reqs + labs(y=NULL) )/ (p_smoothed_part + nm_reqs + theme(strip.text.x = element_blank())) + plot_layout(guides = 'collect') + plot_annotation(tag_levels = "a")
 # }
 
 if( save_figures ){
@@ -94,4 +94,3 @@ if( save_figures ){
     system(cmd)
     system(zathura2gthumb(cmd))
 }
-
