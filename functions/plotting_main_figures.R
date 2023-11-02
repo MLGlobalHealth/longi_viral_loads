@@ -1914,3 +1914,157 @@ plot.prevalence.by.age.group <- function(DT, round = 19) {
         my_labs(y = "Prevalence of viraemia among PLHIV by age group") +
         NULL
 }
+
+aggregate_posterior_fits <- function(model, filename_fmt){
+
+    .ylabs <- fcase(
+        model %like% "prevl", "HIV prevalence",
+        model %like% "supp-hiv", 
+        "HIV+ individuals with suppressed viral load\n",
+        model %like% "supp-pop", 
+        "Population with unsuppressed viral load\n"
+    )
+
+    tmp1 <- list(labs( x=NULL, y=NULL))
+    tmp2 <- list(labs( x=NULL, y=NULL), theme(strip.text=element_blank()))
+
+    fun_ftp <- function(n, strip=tmp1)
+            gg_list[[n]] + nm_reqs + strip 
+    fun_all <- function(n, strip=tmp1)
+            gg_list[[n]] + nm_reqs + strip + labs(y = paste("Round", gsub(".*([0-9][0-9]).*$","\\1",n) )) 
+
+    nms <- names(gg_list) %which.like% model
+
+    if(model =="supp-pop"){
+        gg_list[ nms %which.like% model %which.like% '18|19'] <- 
+        lapply(
+            gg_list[ nms %which.like% model %which.like% '18|19'], function(p) p + coord_cartesian(ylim = c(0, .3), expand = FALSE) 
+        )
+    }
+    nms_like_16  <- nms %which.like% '16'
+    nms_notlike_16  <- nms %which.like% '17|18|19'
+
+    unique_legend <- ggpubr::as_ggplot(ggpubr::get_legend(gg_list[[1]]+ nm_reqs)) 
+
+    p_all <- ggarrange(
+        plotlist = c(
+            lapply(nms_like_16 %which.like% 'all', fun_all, strip=tmp1 ),
+            lapply( nms_notlike_16 %which.like% 'all', fun_all, strip=tmp2 ) 
+        ),
+        common.legend = TRUE, legend = "none",
+        ncol=1, nrow=4
+    )|> annotate_figure(top = text_grob("All participants", size=8))
+    p_ftp <- ggarrange(
+        plotlist = c(
+            lapply( nms_like_16     %which.like% 'ftp', fun_ftp, strip=tmp1 ),
+            lapply( nms_notlike_16  %which.like% 'ftp', fun_ftp, strip=tmp2 ) 
+        ),
+        common.legend = TRUE, legend = "none",
+        ncol=1, nrow=4
+    ) |> annotate_figure(top = text_grob("First time participants", size=8))
+    p <- ggarrange(p_all, p_ftp, ncol=2, nrow=1, common.legend = TRUE) |>
+        annotate_figure(
+            left = text_grob(.ylabs, size = 9, rot=90), 
+            bottom= text_grob("Age at visit", size=8)
+        )
+    p <- ggarrange(p, unique_legend, ncol=1, nrow=2, heights=c(3,0.1))
+    
+    filename <- sprintf(filename_fmt, model)
+    cmd <- ggsave2(p = p, file = filename, LALA = out.dir.figures, w = 18 , h = 23, u="cm")
+
+}
+
+plot_single_posterior_fit <- function(DT=dfits, model, verbose=TRUE){
+
+    if(verbose){ print( model ) }
+
+    load_per_round <- function(round){
+
+        if(verbose){ print( round ) }
+
+        tmp <- DT[ ROUND == round & MODEL == model]
+        standata_rds         <- tmp[ RDS == 'data', F]
+        fit_rds    <- tmp[ RDS == 'fit', F]
+        fit         <- readRDS(fit_rds)
+        stan.data   <- readRDS(standata_rds)
+        re <- fit$draws(format="df") |> as.data.table()
+        names_vars <- dimnames(re)[[2]]
+
+        # reconstruct PT
+        ppDT <- .reconstruct_ppDT(standata=stan.data)
+
+        q <- c("M"=.5, "CL"=.025, "CU"=.975)
+        cols <- names(re) %which.like% '^p_predict_'
+        # tmp <- re[, lapply(.SD, posterior::quantile2, probs=q), .SDcols =cols]
+
+        indices <- data.table( columns = cols)
+        indices[, `:=` (
+            AGE_LABEL = .stan.brackets.to.age(columns, .stan.data=stan.data),
+            tmp = .stan.remove.brackets(columns)
+        )]
+        .stan.get.sex.and.loc(indices, 'tmp')
+        set(indices, j="tmp", value=NULL)
+        indices     <-  subset(indices, AGE_LABEL %% 1 == 0 )
+        indices     <-  merge(indices, group_codes)
+        indices <- merge(
+            indices,
+            ppDT[, .(SEX=as.integer(SEX_LABEL), LOC=as.integer(LOC_LABEL), AGE_LABEL, PTYPE, N, y)],
+            by=c("SEX", "LOC", "PTYPE", "AGE_LABEL")
+        )
+
+        post_predictive <- indices[ , (c("M", "CL", "CU")) := {
+            z <- re[[columns]]
+            rbinom(n=length(z), size=N, prob=z) |> quantile2(ps=q)
+        }, by=c("SEX_LABEL", "LOC_LABEL", "PTYPE", "AGE_LABEL", "y", "N")]
+
+        post_predictive[, ROUND := as.integer(round)]
+        return(post_predictive)
+    }
+
+    post_predictive <- lapply(16:19, load_per_round) |> rbindlist(use.names=TRUE)
+    post_predictive[, ROUND := as.character(ROUND)]
+    palettes$round
+
+    tmp_dict <- drounds[, setNames(LABS, ROUND)]
+    # make plot
+
+    pp_lab <- post_predictive[, sprintf( 
+        "%.2f%% of observations in 95%% CrI",
+        round(100 * mean( y <= CU & y >= CL), 2))]
+    fmt_x <- "Number of observed %s among\n%s (by round, community type, gender, age and participant type)"
+    fmt_y <- "Predicted number of %s among %s" #\n (by round, community type, gender, age and participant type)"
+
+    lab1 <- fcase(
+        model == "run-gp-prevl", "individuals\nwith HIV",
+        model =="run-gp-supp-hiv", "individuals\nwith suppressed virus",
+        model =="run-gp-supp-pop", "individuals\nwith suppressed virus"
+    )
+    lab2 <- fcase(
+        model == 'run-gp-prevl', "study participants",
+        model=='run-gp-supp-hiv', "people with HIV",
+        model=='run-gp-supp-pop', "study participants"
+    )
+
+    pd <- position_dodge(width=.9)
+    p <- ggplot(post_predictive, aes(x=y, y=M, color=ROUND, shape=PTYPE)) +
+        geom_abline(slope=1, intercept=0, color="grey", linetype="dashed") +
+        geom_linerange(aes(ymin=CL, ymax=CU), position=pd, alpha=.5) +
+        annotate(geom="text", x = 0, y=max(post_predictive$CU) - 2, label=pp_lab, hjust = "left") +
+        geom_point(position=pd) +
+        scale_color_manual(values=palettes$round, labels=tmp_dict) + 
+        scale_shape_manual(values=shapes$ptype, labels=ptype_dict) + 
+        scale_x_continuous( expand = c(0.01, .05)) +
+        scale_y_continuous( expand = c(0.01, .05)) +
+        theme_default()  +
+        labs( 
+            color=NULL, shape=NULL,
+            x=sprintf(fmt_x, lab1, lab2),
+            y=sprintf(fmt_y, lab1, lab2)
+        ) + nm_reqs
+    p
+
+    force(p)
+    gg_list_pp[[model]] <<- p
+
+    return(p)
+}

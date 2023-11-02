@@ -41,7 +41,16 @@ if (interactive()) {
     cmd <- cmd[cmd %like% "file"]
     gitdir <- gsub(paste0(".*--file=(.*)/", self_relative_path, "$"), "\\1", cmd)
 }
-source(file.path(gitdir, "R/paths.R"))
+
+{
+    source(file.path(gitdir, "R/paths.R"))
+    source(file.path(gitdir.functions, "plotting_main_figures.R"))
+    source(file.path(gitdir.functions, "postprocessing_helpers.R"))
+    source(file.path(gitdir.functions, "postprocessing_tables.R"))
+    source(file.path(gitdir.functions, "phsc_vl_helpers.R"))
+    source(file.path(gitdir.functions, "paper_statements.R"))
+    naturemed_reqs()
+}
 
 file.exists(
     path.hivstatusvl.r1520,
@@ -69,12 +78,6 @@ if (interactive()) {
     args$shared.hyper <- TRUE
 }
 print(args)
-source(file.path(gitdir.functions, "plotting_main_figures.R"))
-source(file.path(gitdir.functions, "postprocessing_helpers.R"))
-source(file.path(gitdir.functions, "postprocessing_tables.R"))
-source(file.path(gitdir.functions, "phsc_vl_helpers.R"))
-source(file.path(gitdir.functions, "paper_statements.R"))
-naturemed_reqs()
 
 overwrite <- !interactive()
 make_plots <- make_tables <- TRUE
@@ -1250,3 +1253,70 @@ if (make_tables) {
 #####################
 catn("End of script")
 #####################
+
+
+
+######################
+catn("Posterior fits")
+######################
+
+
+
+
+###################
+catn("Assess fits")
+###################
+
+# necessary for later...
+source(file.path(gitdir.functions,"phsc_vl_cmdstan_helpers.R"))
+group_codes <- expand.grid( SEX=0:1, LOC=0:1)
+setDT(group_codes)
+group_codes[, `:=`( 
+    SEX_LABEL=stan_dicts$INTtoSEX[as.character(SEX)], 
+    LOC_LABEL=stan_dicts$INTtoLOC[as.character(LOC)] )]
+
+# Locate rds files for model fits and data
+dirs <- list.files(args$out.dir.exact, pattern="^run-gp", full.names = TRUE) 
+tmp <-  list.files(dirs , pattern = "rds$", full.names = TRUE)
+dfits <- data.table(
+    F=tmp,
+    RDS = fifelse( basename(tmp) %like% "standata.rds", yes ="data" , no="fit"),
+    ROUND = as.integer( basename(tmp) |> stringr::str_extract("(?<=round)\\d+")),
+    MODEL = basename(dirname(tmp))
+)
+
+gg_list <- list()
+out <- dfits[, {
+    sprintf( "Model: %s, round: %s\n", MODEL[1], ROUND[1]) |> cat()
+    plot_single_posterior_fit(
+        fit_rds = F[RDS == 'fit'],
+        standata_rds = F[RDS == 'data'],
+        model=MODEL[1],
+        round=ROUND[1]
+    )
+}, by = c("MODEL", "ROUND")]
+
+cmds <- lapply(
+    c('prevl', 'supp-hiv', 'supp-pop'),
+    aggregate_posterior_fits,
+    filename_fmt = "suppfig_all_posteriors_vs_data_%s.pdf"
+)
+
+
+# posterior predictive
+
+gg_list_pp <- list()
+out <- lapply( 
+    c("run-gp-prevl","run-gp-supp-hiv","run-gp-supp-pop"),
+    plot_single_posterior_fit,
+    DT=dfits
+)
+p_pp <- ggarrange(
+    plotlist = gg_list_pp,
+    ncol=1, nrow=3,
+    common.legend = TRUE, legend='bottom',
+    labels = "auto"
+) + nm_reqs
+filename <- paste0("suppfig_all_ppchecks.pdf")
+cmd <- ggsave2(p = p_pp, file = filename, LALA = out.dir.figures, w = 18 , h = 24, u="cm")
+system(cmd)

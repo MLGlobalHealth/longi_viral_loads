@@ -280,6 +280,18 @@ palettes <- list(
         "#000000",
         "#DF8F44"
     ),
+    # round = c(
+    #     `16`="#219C90",
+    #     `17`="#E9B824",
+    #     `18`="#EE9322",
+    #     `19`="#D83F31"
+    # ),
+    round = c(
+        "#FF0000",
+        "#00A08A",
+        "#F2AD00",
+        "#F98400"
+    ),
 
     # minimal3 = c("#FAE48BFF","#FB6467FF"),
     minimal3 = c("purple", "darkgreen"),
@@ -298,6 +310,10 @@ shapes <- list(
     comm = c(
         `inland` = 21, `Inland` = 21,
         `fishing` = 25, `Fishing` = 25
+    ),
+    ptype = c(
+        'all' = 15, 
+        "ftp" = 16
     ),
     NULL
 )

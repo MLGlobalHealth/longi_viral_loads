@@ -315,7 +315,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
 
         p <- .plot.stan.fit.ratio(
             prevratio.hiv.by.loc.age[variable == "PR_FM"],
-            ylab = "female to male HIV prevalence ratio\n(95% credibility interval)\n"
+            ylab = "female to male HIV prevalence ratio\n(95% credible interval)\n"
         ) + facet_grid( LOC_LABEL ~ PTYPE, scales="free_y")
         filename <- paste0("fit_hivprevalenceratio_vs_age_by_fishinland_stan_round", round, ".pdf")
         ggsave2(p, file = filename, w = 8, h = 8)
@@ -520,7 +520,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan.hyper <- function(
             nsinf.by.age[PTYPE == "ftp"],
             DT2=ppDT[PTYPE == "ftp"],
             ylims = c(0,1),
-            ylab = "HIV+ individuals with suppressed viral load\n(95% credibility interval)\n"
+            ylab = "HIV+ individuals with suppressed viral load\n(95% credible interval)\n"
         )
         filenames <- paste0("suppAmongInfected_vs_age_by_gender_fishinland_ftp_",c("", "data_"),"gp_round", round, ".pdf")
         ggsave2(plots_ftp[[1]], file = filenames[[1]], w = 6, h = 5)
@@ -530,7 +530,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan.hyper <- function(
             nsinf.by.age[PTYPE == "all"],
             DT2=ppDT[PTYPE == "all"],
             ylims = c(0,1),
-            ylab = "HIV+ individuals with suppressed viral load\n(95% credibility interval)\n"
+            ylab = "HIV+ individuals with suppressed viral load\n(95% credible interval)\n"
         )
         filenames <- paste0("suppAmongInfected_vs_age_by_gender_fishinland_all_",c("", "data_"),"gp_round", round, ".pdf")
         ggsave2(plots_all[[1]], file = filenames[[1]], w = 6, h = 5)
@@ -553,7 +553,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan.hyper <- function(
 
         draws_wholepop <- get.draws.wholepop(DRAWS=draws, DPART=dpartrates[ROUND==round])
         quants_wholepop <- draws_wholepop[, quantile2(P), by=c("AGE_LABEL", "SEX_LABEL", "LOC_LABEL")] 
-        p <- plot.quantiles.wholepop(quants_wholepop, ylim=1,ylab="HIV+ individuals with suppressed viral load\n(95% credibility interval)\n")
+        p <- plot.quantiles.wholepop(quants_wholepop, ylim=1,ylab="HIV+ individuals with suppressed viral load\n(95% credible interval)\n")
         filename <- paste0("suppAmongInfected_vs_age_by_gender_fishinland_joint_round", round, ".pdf")
         cmd <- ggsave2(p, file = filename, w = 9, h = 6)
 
@@ -787,7 +787,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan.hyper <- function(
             nspop.byage.ptype[PTYPE == "ftp"],
             DT2=ppDT[PTYPE == "ftp"],
             ylims = c(0,.4),
-            ylab = "population with unsuppressed viral load\n(95% credibility interval)\n"
+            ylab = "population with unsuppressed viral load\n(95% credible interval)\n"
         )
 
         filenames <- paste0("notsuppAmongPop_vs_age_by_gender_fishinland_ftp_",c("", "data_"),"gp_round", round, ".pdf")
@@ -798,7 +798,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan.hyper <- function(
             nspop.byage.ptype[PTYPE == "all"],
             DT2=ppDT[PTYPE == "all"],
             ylims = c(0,.4),
-            ylab = "population with unsuppressed viral load\n(95% credibility interval)\n"
+            ylab = "population with unsuppressed viral load\n(95% credible interval)\n"
         )
         filenames <- paste0("notsuppAmongPop_vs_age_by_gender_fishinland_all_",c("", "data_"),"gp_round", round, ".pdf")
         ggsave2(plots_all[[1]], file = filenames[[1]], w = 6, h = 5)
@@ -818,7 +818,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan.hyper <- function(
 
         draws_wholepop <- get.draws.wholepop(DRAWS=draws, DPART=dpartrates[ROUND==round])
         quants_wholepop <- draws_wholepop[, quantile2(P), by=c("AGE_LABEL", "SEX_LABEL", "LOC_LABEL")] 
-        p <- plot.quantiles.wholepop(quants_wholepop, ylim=.4,ylab="population with unsuppressed viral load\n(95% credibility interval)\n")
+        p <- plot.quantiles.wholepop(quants_wholepop, ylim=.4,ylab="population with unsuppressed viral load\n(95% credible interval)\n")
         filename <- paste0("notsuppAmongPop_vs_age_by_gender_fishinland_joint_round", round, ".pdf")
         cmd <- ggsave2(p, file = filename, w = 9, h = 6)
 

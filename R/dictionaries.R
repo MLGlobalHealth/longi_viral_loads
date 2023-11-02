@@ -136,6 +136,12 @@ community_dictionary <- list(
     # I would probably try "Fishing communities with high HIV prevalence", "Inland communities with typical/more moderate HIV prevalence"
 )
 
+
+ptype_dict = c(
+    "all" = "All participants",
+    "ftp" = "First time participants"
+)
+
 sex_dictionary <- c(M = "Male", F = "Female", `0` = "Female", `1` = "Male", `Total`="Total")
 
 sex_dictionary2 <- c(M="Men", F="Women", Male="Men", Female="Women", `0`="Women", `1`="Men", `Total`= "Total")

@@ -206,10 +206,16 @@ extract.stan.hyperparams.rho <- function(re, encoding){
     p
 }
 
-.plot.stan.fit <- function(DT, DT2=ppDT, ylab, ylims=NA) {
+.plot.stan.fit <- function(DT, DT2=ppDT, ylab, ylims=NA, round=NA) {
 
     tmp <- prettify_labels(DT)
     tmp2 <- prettify_labels(DT2)
+
+    if( is.na(round) ){
+        facet.formula <- formula( . ~ .  )
+    }else{
+        facet.formula <- formula( ROUND ~ . )
+    }
 
     ALPHA = .3
 
@@ -220,7 +226,7 @@ extract.stan.hyperparams.rho <- function(re, encoding){
         scale_y_continuous(labels = scales:::percent, expand = c(0, 0)) +
         scale_colour_manual(values = palettes$sex, labels=sex_dictionary2 ) + 
         scale_fill_manual(values = palettes$sex, labels=sex_dictionary2 ) +
-        # coord_cartesian(ylim = ylims, expand = FALSE) +
+        coord_cartesian(ylim = ylims, expand = FALSE) +
         facet_wrap(~LOC_LAB, ncol = 2) +
         theme_default() +
         my_labs(
@@ -592,7 +598,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
 
         p <- .plot.stan.fit.ratio(
             prevratio.hiv.by.loc.age[variable == "PR_FM"],
-            ylab = "female to male HIV prevalence ratio\n(95% credibility interval)\n"
+            ylab = "female to male HIV prevalence ratio\n(95% credible interval)\n"
         )
 
         filename <- paste0("fit_hivprevalenceratio_vs_age_by_fishinland_stan_round", round, ".pdf")
@@ -844,7 +850,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
             nsinf.by.age,
             DT2=ppDT,
             ylims = c(0,1),
-            ylab = "HIV+ individuals with suppressed viral load\n(95% credibility interval)\n"
+            ylab = "HIV+ individuals with suppressed viral load\n(95% credible interval)\n"
         )
 
         filenames <- paste0("suppAmongInfected_vs_age_by_gender_fishinland_",c("", "data_"),"gp_round", round, ".pdf")
@@ -1094,7 +1100,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
             nspop.by.age, 
             DT2=ppDT,
             ylims = c(0,.4),
-            ylab = "population with unsuppressed viral load\n(95% credibility interval)\n")
+            ylab = "population with unsuppressed viral load\n(95% credible interval)\n")
 
         filenames <- paste0("hivprevalence_vs_age_by_gender_fishinland_",c("", "data_"),"gp_round", round, ".pdf")
 
@@ -1935,4 +1941,86 @@ plot.first.participant.estimates <- function(type="supp-pop"){
         facet_grid(FC_LAB ~ ROUND_LAB) +
         scale_color_manual(values=palettes$sex, labels=sex_dictionary2) +
         my_labs(y=.ylab)
+}
+
+
+.reconstruct_ppDT <- function(standata){
+    nms <- which(lapply(standata, length) == 35) |> names()
+    DT <- as.data.table(standata[nms])
+    DT[, `:=` (AGE_LABEL = observed_idx/2 + 14, observed_idx = NULL)]
+    DT <- melt(DT, id.vars="AGE_LABEL")
+    DT[, `:=` (
+        TYPE = fifelse(variable %like% "y_observed", yes="y", no="N"),
+        PTYPE = fifelse(variable %like% "ftp", yes="ftp", no="all"),
+        SEX_LABEL = sub("^.*([0-1])([0-1]).*$", "\\1", variable),
+        LOC_LABEL = sub("^.*([0-1])([0-1]).*$", "\\2", variable),
+        variable = NULL
+    )]
+    DT <- dcast(DT, AGE_LABEL + SEX_LABEL + LOC_LABEL + PTYPE ~ TYPE, value.var = "value" )
+
+    cols <- c("M", "CU", "CL")
+    return(DT[, (cols) := binconf(y, N, return.df = T)])
+}
+
+plot_single_posterior_fit <- function(fit_rds, standata_rds, model, round){
+
+    fit <- readRDS(fit_rds)
+    stan.data <- readRDS(standata_rds)
+
+    re <- fit$draws(format="df") |> as.data.table()
+    names_vars <- dimnames(re)[[2]]
+
+    # reconstruct PT
+    ppDT <- .reconstruct_ppDT(standata=stan.data)
+
+    # make plots
+
+    q <- c("M"=.5, "CL"=.025, "CU"=.975)
+    cols <- names(re) %which.like% '^p_predict_'
+    tmp <- re[, lapply(.SD, posterior::quantile2, probs=q), .SDcols =cols]
+    tmp[, quantile := names(q)]
+    tmp <- melt( tmp, id.vars = "quantile")
+
+    prop.by.age.sex.loc.type <- dcast.data.table(tmp, variable ~ quantile, value.var = "value")
+    prop.by.age.sex.loc.type[ , `:=` (
+        AGE_LABEL = .stan.brackets.to.age(variable, .stan.data=stan.data),
+        variable = .stan.remove.brackets(variable)
+    ) ]
+    tmp1 <- .stan.get.sex.and.loc(prop.by.age.sex.loc.type, 'variable')
+
+    prop.by.age.sex.loc.type <- merge(x=tmp1, y=group_codes, by=c('SEX', 'LOC'))
+    # .stan.get.sex.and.loc(prop.by.age.sex.loc.type, 'variable', codes=unique(group_codes[, -"PTYPE"]))
+    # prop.by.age.sex.loc.type <- .stan.get.sex.and.loc(nspop.byage.ptype, 'variable', codes=group_codes)
+
+    # plot settings specific to model type
+    .ylims <- if(model %like% "prevl"){
+        c(0, .75) 
+    }else if (model %like% "supp-hiv"){
+        c(0, 1)
+    } else {
+        c(0,.5)
+    }
+
+    prettify_labels(ppDT)
+    prettify_labels(prop.by.age.sex.loc.type)
+
+    plot_ftp <- .plot.stan.fit(
+        prop.by.age.sex.loc.type[PTYPE == "ftp"],
+        DT2=ppDT[PTYPE == "ftp"],
+        ylims = .ylims,
+        ylab = NULL
+    )[[2]]
+    plot_all <- .plot.stan.fit(
+        prop.by.age.sex.loc.type[PTYPE == "all"],
+        DT2=ppDT[PTYPE == "all"],
+        ylims = .ylims,
+        ylab = NULL
+    )[[2]]
+
+    force(plot_ftp); force(plot_all)
+    gg_list[[paste0(model, "_", round, "_ftp")]] <- plot_ftp
+    gg_list[[paste0(model, "_", round, "_all")]] <- plot_all
+    gg_list <<- gg_list
+
+    list(ftp=plot_ftp, all=plot_all)
 }

@@ -243,6 +243,7 @@ extract.p_predict <- function(fit, lab=NA_character_){
 }
 
 get.weighted.average.p_predict <- function(fit1, fit2, fit_all, round, expression_prereturn = {}, uniqueRDS=args$shared.hyper) {
+
     .optional.thinning <- function(DT){
         if(! interactive()) return(DT) 
         posterior::thin_draws(DT, thin=5)
