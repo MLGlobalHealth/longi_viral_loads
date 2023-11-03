@@ -1,6 +1,6 @@
 #!/bin/Rscript
 
-self_relative_path <- "src/make_paper_figures.R"
+self_relative_path <- "scripts/VL_make_paper_figures.R"
 
 ########################
 cat("\nStart of: ", self_relative_path, "\n")
