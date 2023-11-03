@@ -102,15 +102,17 @@ stopifnot(check_more_elig_than_part)
 
 # paths
 .fp <- function(x) file.path(out.dir.tables, x)
-filename_rds_contrib <- .fp("fullpop_allcontributions.rds")
-filename_rds_prevalence <- .fp("fullpop_posteriorquantiles_by_agesexround.rds")
-filename_rds_prevalence_agegroup <- .fp("posterior_quantiles_agegroups.rds")
-filename_rds_contrib_agegroup <- .fp("fullpop_allcontributions_byagegroup.rds")
-filename_rds_supphiv_agegroup <- .fp("posterior_quantiles_suppression_agegroup.rds")
+filename_rds_contrib                 <- .fp("fullpop_allcontributions.rds")
+filename_rds_prevalence              <- .fp("fullpop_posteriorquantiles_by_agesexround.rds")
+filename_rds_prevalence_agegroup     <- .fp("posterior_quantiles_agegroups.rds")
+filename_rds_contrib_agegroup        <- .fp("fullpop_allcontributions_byagegroup.rds")
+filename_rds_supphiv_agegroup        <- .fp("posterior_quantiles_suppression_agegroup.rds")
+filename_rds_supphiv_agegroup_custom <- .fp("posterior_quantiles_suppression_agegroup_custom.rds")
 
-djoint_agegroup <- readRDS(filename_rds_prevalence_agegroup)
-dcontrib_agegroup <- readRDS(filename_rds_contrib_agegroup)
-dsupp_agegroup <- readRDS(filename_rds_supphiv_agegroup)
+djoint_agegroup         <- readRDS(filename_rds_prevalence_agegroup)
+dcontrib_agegroup       <- readRDS(filename_rds_contrib_agegroup)
+dsupp_agegroup          <- readRDS(filename_rds_supphiv_agegroup)
+dsupp_agegroup_custom   <- readRDS(filename_rds_supphiv_agegroup_custom)
 
 ######################
 # Google drive stuff #
@@ -211,7 +213,7 @@ if (system.file(package = "ggsn") != "" && usr == "andrea") {
     # system(zathura2gthumb(cmd))
     upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
 
-}
+# }
 
 
 # Statment in section 1.
@@ -233,27 +235,23 @@ djoint <- {
     file.path(out.dir.tables, "fullpop_posteriorquantiles_by_agesexround.rds") |>
         readRDS()
 }
-# fig2a <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-hiv")
-tmp <- paper_statements_suppression_above_959595(djoint)
+.null <- paper_statements_suppression_above_959595(djoint)
+.yl <- function() scale_y_continuous(limits=c(0, 1), expand=expansion(c(0,0)), labels=scales::label_percent() )
 
-# fig2b <- {
-#     file.path(out.dir.figures, "posterior_suppressionincrease_vsround16.rds") |>
-#     readRDS()
-# } |> plot.relative.suppression.vs.round16.ratio()
-# filename <- paste0('main_figure_changesinsuppression.pdf')
-# ggsave_nature(p=fig1, filename=filename, LALA=out.dir.figures, w=21, h=16)
+fig2a <- list(
+    plot.main.suppression.among.plhiv(DT=dplot[LOC=='inland'] ,m=-5,joint=TRUE) + .yl() + labs(tag = "a"),
+    plot.main.suppression.among.plhiv(DT=dplot[LOC=='fishing'],m=-5,joint=TRUE)+ .yl() + labs(tag = "b")
+) |> ggarrange( plotlist=_, ncol=1, legend="bottom", common.legend = TRUE  )
+fig2b <- list(
+    hist_prevalence_by_age_group_custom(dsupp_agegroup_custom[ LOC == 'inland']) + .yl() + labs(y=NULL) + nm_reqs,
+    hist_prevalence_by_age_group_custom(dsupp_agegroup_custom[ LOC == 'fishing']) + .yl() + labs(y=NULL) + nm_reqs
+) |> ggarrange(plotlist=_,ncol=1, legend="bottom", common.legend = TRUE)
 
-# fig2b
-
-fig2 <- plot.main.suppression.among.plhiv(DT = djoint, type = "point", unaids = TRUE, rev = TRUE, m = -9)
-
-# fig2 <- plot.main.suppression.among.plhiv(DT = djoint, rev = TRUE, m = -9)
-fig2a <- plot.main.suppression.among.plhiv(DT = djoint[LOC=="inland"]) + labs(tag = "a")
-fig2b <- plot.main.suppression.among.plhiv(DT = djoint[LOC=="fishing"]) +labs(tag = "b")
-fig2 <- ggarrange(fig2a, fig2b, ncol=1, legend="bottom", common.legend = TRUE)
+fig2new <- ggarrange(fig2a, fig2b, ncol=2, widths = c(1.4, 1))
 
 filename <- paste0("main_figure_suppression_plhiv_r1619.pdf")
-cmd <- ggsave_nature(p = fig2, filename = filename, LALA = out.dir.figures, w = 17, h = 16)
+cmd <- ggsave_nature(p = fig2new, filename = filename, LALA = out.dir.figures, w = 19, h = 16)
+system(zathura2gthumb(cmd))
 if(interactive()) upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
 
 ########################

@@ -144,7 +144,19 @@ ptype_dict = c(
 
 sex_dictionary <- c(M = "Male", F = "Female", `0` = "Female", `1` = "Male", `Total`="Total")
 
-sex_dictionary2 <- c(M="Men", F="Women", Male="Men", Female="Women", `0`="Women", `1`="Men", `Total`= "Total")
+sex_dictionary2 <- c(
+    M="Men",
+    F="Women",
+    Male="Men",
+    Female="Women",
+    `0`="Women",
+    `1`="Men",
+    `Total`= "Total",
+    `Round 16 Male` = "Men, Round 16" ,
+    `Round 19 Male` = "Men, Round 19" ,
+    `Round 16 Female` =  "Women, Round 16",
+    `Round 19 Female` = "Women, Round 19",
+)
 
 loc_dictionary <- c(
     inland = "Inland",

@@ -198,7 +198,11 @@ palettes <- list(
         Women = "#F4B5BD",
         Men = "#9ac0cd",
         Female = "#F4B5BD",
-        Male = "#9ac0cd"
+        Male = "#9ac0cd",
+        `Round 16, Male` = "#9ac0cd", # "#ADD8E6" ,
+        `Round 19, Male` = "#9ac0cd", #"#00008B" ,
+        `Round 16, Female` = "#F4B5BD",
+        `Round 19, Female` = "#F4B5BD" #"#AA336A"
     ),
     comm = c(
         fishing = "#9ac0cd",
@@ -305,7 +309,11 @@ palettes <- list(
 shapes <- list(
     sex = c(
         `M` = 15, `Male` = 15, `Men` = 15,
-        `F` = 17, `Female` = 17, `Women` = 17
+        `F` = 17, `Female` = 17, `Women` = 17,
+        `Round 16, Male` =  15,
+        `Round 19, Male` = 15,
+        `Round 16, Female` = 16, 
+        `Round 19, Female` = 16
     ),
     comm = c(
         `inland` = 21, `Inland` = 21,

@@ -1669,10 +1669,9 @@ plot.comparison.prevalence.fishinginland.oneround <- function(DT, model, round, 
         my_labs(y = model_dictionary[model])
 }
 
-plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaids = TRUE, rev = TRUE, m = 0) {
-    .ALPHA <- .3
-    .LINEWIDTH <- .2
-    .margin <- m
+plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaids = TRUE, rev = TRUE, m = 0, joint=FALSE) {
+
+    .ALPHA <- .3; .LINEWIDTH <- .2; .margin <- m
 
     type <- match.arg(type, c("hist", "line", "point"))
     .ylab <- fifelse(rev,
@@ -1685,9 +1684,7 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
             setnames("AGEGROUP", "AGEYRS")
     }
     dplot <- prettify_labels(dplot)
-    if (rev) {
-        dplot[, `:=`(M = 1 - M, CL = 1 - CU, CU = 1 - CL)]
-    }
+    if (rev) reverse_quantiles(dplot)
 
     .main <- function(.hist = hist, .unaids = unaids) {
         .pd <- position_dodge(width = 1)
@@ -1714,6 +1711,9 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
             if (type == "point") {
                 scale_shape_manual(values = shapes$sex, labels = sex_dictionary2)
             },
+            if( joint ){
+                scale_alpha_manual(values=alphas, labels = sex_dictionary2)
+            },
             if (unaids) {
                 geom_hline(
                     yintercept = .yint,
@@ -1732,24 +1732,47 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
         one_comm_bool <- dplot[, uniqueN(LOC) == 1]
         if (one_comm_bool) {
             # add \n to y label
+            form <- if(joint){ formula(.~.)} else{formula(~ROUND_LAB)}
             .ylab <<- gsub("group who", "group\nwho", .ylab)
             .ylab <<- gsub("suppression in", "suppression\nin", .ylab)
             out <- list(
-                facet_grid(~ROUND_LAB, labeller = labeller(ROUND_LAB = round_labs2)),
+                facet_grid(form, labeller = labeller(ROUND_LAB = round_labs2)),
                 labs(subtitle = community_dictionary$longest2[unique(dplot$LOC)])
             )
         } else {
+            form <- if(joint){ formula(LOC_LAB~.)} else{formula(LOC_LAB~ROUND_LAB)}
             out <- list(
-                facet_grid(LOC_LAB ~ ROUND_LAB, labeller = labeller(ROUND_LAB = round_labs, LOC_LAB = community_dictionary$longest2n))
+                facet_grid(form, labeller = labeller(ROUND_LAB = round_labs, LOC_LAB = community_dictionary$longest2n))
             )
         }
         return(out)
     }
 
-    ggplot(
-        dplot,
-        aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = SEX_LAB, color = SEX_LAB, pch = SEX_LAB)
-    ) +
+    base <- ggplot( dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = SEX_LAB, color = SEX_LAB, pch = SEX_LAB)) 
+    col_lab <- "Gender"; shape_lab <- alpha_lab <- NULL
+
+    if( joint ){ 
+
+        dplot[, ROUNDSEX_LAB := paste(ROUND_LAB, SEX_LAB, sep=', ') ] 
+        alphas <- c(
+            `Round 16, Male` =  .4,
+            `Round 19, Male` = 1,
+            `Round 16, Female` = .4, 
+            `Round 19, Female` = 1
+        )
+
+        base <- ggplot( dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = ROUNDSEX_LAB, color = ROUNDSEX_LAB, pch = ROUNDSEX_LAB, alpha=ROUNDSEX_LAB))
+        col_lab <- shape_lab <- alpha_lab <- "Round, Gender"
+    }
+        alphas <- c(
+            `Round 16, Male` =  .4,
+            `Round 19, Male` = 1,
+            `Round 16, Female` = .4, 
+            `Round 19, Female` = 1
+        )
+
+
+    base + 
         .main() +
         .facet() +
         scale_y_percentagef(.02) +
@@ -1760,7 +1783,7 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
         my_labs(
             y = .ylab,
             x = "Age",
-            fill = "Gender", color = "Gender"
+            fill = col_lab, color = col_lab, shape=shape_lab, alpha=alpha_lab
         ) +
         nm_reqs
 }
@@ -1915,7 +1938,7 @@ plot.prevalence.by.age.group <- function(DT, round = 19) {
         NULL
 }
 
-hist_prevalence_by_age_group_custom <- function(DT,reverse=TRUE, round = 19) {
+hist_prevalence_by_age_group_custom <- function(DT,reverse=TRUE, round = 19, m=-5) {
 
     dplot <- subset(DT, ROUND == round)
     if(reverse) dplot <- reverse_quantiles(dplot) 
@@ -1928,17 +1951,25 @@ hist_prevalence_by_age_group_custom <- function(DT,reverse=TRUE, round = 19) {
 
     pd=position_dodge(width=.9)
 
+
+    form <- if ( uniqueN(dplot$LOC) > 1 ){
+        formula(LOC ~ .)
+    }else{
+        formula(. ~ LOC)
+    }
+
+
     ggplot(dplot,aes(x = AGEGROUP, y = M, ymin = CL, ymax = CU,fill=SEX)) +
         # geom_point() +
         geom_col(position=pd) +
         geom_hline(aes(yintercept = c(.95^3, 1-.95^3)[reverse + 1]), linetype = "dotted") +
         geom_linerange(position=pd) +
-        facet_grid(LOC ~ ., labeller = labeller(SEX = sex_dictionary2, LOC = community_dictionary$longest2)) +
+        facet_grid( form, labeller = labeller(SEX = sex_dictionary2, LOC = community_dictionary$longest2)) +
         scale_y_continuous(labels = scales::percent, limits = c(0, .ylim), expand = expansion(0, 0)) +
         # scale_color_manual(values = palettes$sex, labels = sex_dictionary2) +
         scale_fill_manual(values = palettes$sex, labels = sex_dictionary2) +
-        theme_default() +
-        my_labs(y = .ylab, x=NULL) +
+        theme_default(legend.box.margin = margin(t = m, l = 0, r = 0, b = m)) +
+        my_labs(y = .ylab) +
         NULL
 }
 
