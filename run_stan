@@ -1,4 +1,5 @@
 #!/bin/bash
+
 ABSOLUTE_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 ABSOLUTE_PATH="$(dirname $ABSOLUTE_PATH)"
 
@@ -8,9 +9,9 @@ if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "--help" ]]; then
     echo "OPTIONs:"
     echo "    VL : viremic viral load threshold             [default: 1000]"
     echo "    FTP: subset to first time participants or not [default: FALSE]"
-    echo "    STANWAY : either (r)stan or cmdstan           [default: stan]"
+    echo "    STANWAY : either (r)stan or cmdstan           [default: cmdstan]"
     echo "    ALPHA : sd for alpha prior in GP              [default: 1]"
-    echo "    SHARE : share hyperpars for FTP and ALL?      [default: FALSE]"
+    echo "    SHARE : share hyperpars for FTP and ALL?      [default: TRUE]"
     echo "    INDIR : directory where github directory is located"
     echo "    OUTDIR : directory where output will be saved"
     echo "    REFIT : if FALSE, will use previously fitted model, good for debugging "
@@ -31,7 +32,7 @@ done
 VL="${VL:-1000}" 
 FTP="${FTP:-FALSE}"
 ALPHA="${ALPHA:-1}"
-SHARE="${SHARE:-FALSE}"
+SHARE="${SHARE:-TRUE}"
 REFIT="${FTP:-TRUE}"
 STANWAY="${STANWAY:-cmdstan}"
 INDIR="${INDIR:-$ABSOLUTE_PATH}"
@@ -207,8 +208,6 @@ Rscript \$INDIR/scripts/VL_jointpostprocessing.R \\
 EOF
 
 done
-
-
 
 cd $OUTDIR
 

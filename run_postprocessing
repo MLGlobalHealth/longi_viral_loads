@@ -6,12 +6,12 @@ if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "--help" ]]; then
     echo "Usage: ./run_postprocessing OPTION1=value1 OPTION2=value2 ..."
     echo "OPTIONs:"
     echo "    VL : viremic viral load threshold             [default: 1000]"
-    echo "    STANWAY : either (r)stan or cmdstan           [default: stan]"
-    echo "    INDIR : directory where github directory is located"
-    echo "    OUTDIR : directory where output will be saved"
+    echo "    STANWAY : either (r)stan or cmdstan           [default: cmdstan]"
     echo "    ALPHA : sd for alpha prior in GP              [default: 1]"
     echo "    SHARE : whether gp hyper needs sharing        [default: TRUE]"
     echo "    DEPENDS : list of queue id this job depends on [default: ]"
+    echo "    INDIR : directory where github directory is located"
+    echo "    OUTDIR : directory where output will be saved"
     exit 0
 fi
 
@@ -32,7 +32,7 @@ FTP="${FTP:-FALSE}"
 ALPHA="${ALPHA:-1}"
 SHARE="${SHARE:-FALSE}"
 STANWAY="${STANWAY:-cmdstan}"
-INDIR="${INDIR:-/rds/general/user/ab1820/home/git/longi_viral_loads}"
+INDIR="${INDIR:-$ABSOLUTE_PATH}"
 OUTDIR="${OUTDIR:-/rds/general/user/ab1820/home/projects/2022/longvl}"
 
 
