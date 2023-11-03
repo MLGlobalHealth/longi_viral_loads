@@ -144,7 +144,7 @@ echo "-------------"
 echo "ASSESS MIXING"
 echo "-------------"
 
-Rscript \$INDIR/src/postprocessing_assess_mixing.R \\
+Rscript \$INDIR/scripts/VL_postprocessing_assess_mixing.R \\
     --outdir-prefix $OUTDIR \\
     --jobname $JOBNAME  \\
     --$MODEL TRUE \\

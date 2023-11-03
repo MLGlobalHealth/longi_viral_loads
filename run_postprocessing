@@ -104,7 +104,7 @@ Rscript \$INDIR/scripts/VL_jointpostprocessing.R \\
     --indir \$OUTDIR \\
     --shared-hyper $SHARE
 
-Rscript \$INDIR/src/make_paper_figures.R \\
+Rscript \$INDIR/scripts/VL_make_paper_figures.R \\
     --viremic-viral-load $VL \\
     --jobname \$JOBNAME \\
     --outdir \$OUTDIR/\${JOBNAME_JOINT} \\
@@ -113,7 +113,7 @@ Rscript \$INDIR/src/make_paper_figures.R \\
 
 Rscript -e "
 rmarkdown::render(
-    '\$INDIR/src/postprocessing_make_report.Rmd',
+    '\$INDIR/scripts/VL_postprocessing_make_report.Rmd',
     params=list(indir='\$OUTDIR', jobid='\$JOBNAME'),
     output_dir='\$OUTDIR/\${JOBNAME_JOINT}')
 "
