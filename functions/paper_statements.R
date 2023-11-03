@@ -292,3 +292,19 @@ paper_statements_average_participation <- function(DT=dprop){
     tmp[j=lapply(.SD, mean)][j=sprintf(fmt, EL, PART, 100*PERC)] |> cat()
     return(tmp)
 }
+
+paper_statements_prevalence_viraemia_maximum <- function(DT, round = 19){
+    
+    # DT <- dsupp_agegroup_custom ; round <- 19
+    fmt <- "In %s living %s communities, prevalence of viraemia was highest in %s yo [ %s ]\n"
+    dtable <- subset(DT, ROUND == round) |> 
+        reverse_quantiles() |> 
+        prettify_labels() 
+    dtable[, CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE)]
+    dtable[, {
+        idx <- which.max(M)
+        sprintf( fmt, unique(SEX_LAB), unique(LOC_LAB), AGEGROUP[idx], CELL[idx]) |> 
+        cat()
+    }, by=.(LOC_LAB, SEX_LAB)]
+
+}

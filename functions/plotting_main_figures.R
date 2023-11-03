@@ -1915,6 +1915,33 @@ plot.prevalence.by.age.group <- function(DT, round = 19) {
         NULL
 }
 
+hist_prevalence_by_age_group_custom <- function(DT,reverse=TRUE, round = 19) {
+
+    dplot <- subset(DT, ROUND == round)
+    if(reverse) dplot <- reverse_quantiles(dplot) 
+
+    .ylab <- fifelse(reverse, 
+        yes="Proportion of PLHIV in each age group\nwho have unsuppressed virus",
+        no="Prevalence of viraemia among PLHIV by age group"
+    )
+    .ylim <- fifelse(reverse, yes=.63, no=1)
+
+    pd=position_dodge(width=.9)
+
+    ggplot(dplot,aes(x = AGEGROUP, y = M, ymin = CL, ymax = CU,fill=SEX)) +
+        # geom_point() +
+        geom_col(position=pd) +
+        geom_hline(aes(yintercept = c(.95^3, 1-.95^3)[reverse + 1]), linetype = "dotted") +
+        geom_linerange(position=pd) +
+        facet_grid(LOC ~ ., labeller = labeller(SEX = sex_dictionary2, LOC = community_dictionary$longest2)) +
+        scale_y_continuous(labels = scales::percent, limits = c(0, .ylim), expand = expansion(0, 0)) +
+        # scale_color_manual(values = palettes$sex, labels = sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels = sex_dictionary2) +
+        theme_default() +
+        my_labs(y = .ylab, x=NULL) +
+        NULL
+}
+
 aggregate_posterior_fits <- function(model, filename_fmt){
 
     .ylabs <- fcase(

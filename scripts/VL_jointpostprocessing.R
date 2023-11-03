@@ -493,9 +493,9 @@ if (make_plots & FALSE) {
     .h <- 14
     p_list <- lapply(c(16:19), plot.prevalence.by.age.group, DT = dsupp_agegroup)
     filenames <- paste0("plot_suppofhiv_by_agegroup_round", c(16:19), ".pdf")
-    for (i in 1:length(p_list)) {
-        # ggsave2(p=p_list[[i]], file=filenames[i], LALA=out.dir.figures, .w, .h)
-    }
+    # for (i in 1:length(p_list)) {
+    #     # ggsave2(p=p_list[[i]], file=filenames[i], LALA=out.dir.figures, .w, .h)
+    # }
 }
 
 if (make_tables) {
@@ -503,7 +503,93 @@ if (make_tables) {
     .null <- paper_statements_suppression_PLHIV_aggregated(reverse = TRUE, round = 19)
 }
 
+catn("Get quantiles for population prevalences by custom age group")
+# __________________________________________________________________
+
+filename_rds <- file.path(out.dir.tables, "posterior_quantiles_suppression_agegroup_custom.rds")
+
+dcens_custom <- copy(dcens)
+dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, 18, 23, 28, 33, 38, 43, 44, 50))]
+
+if (file.exists(filename_rds) & !overwrite) {
+    dsupp_agegroup_custom <- readRDS(filename_rds)
+} else {
+    dsupp_agegroup_custom <- dfiles_rds[,
+        {
+            paths <- file.path(D, F)
+            .check <- function(x) {
+                stopifnot(length(x) == 1 | args$shared.hyper)
+                return(x)
+            }
+            idx.hivprev <- which(MODEL == "run-gp-prevl")
+            idx.hivprev.all <- which(FTP == FALSE & MODEL == "run-gp-prevl") |> .check()
+            idx.hivprev.ftp <- which(FTP == TRUE & MODEL == "run-gp-prevl") |> .check()
+            idx.supphiv <- which(MODEL == "run-gp-supp-hiv")
+            idx.supphiv.all <- which(FTP == FALSE & MODEL == "run-gp-supp-hiv") |> .check()
+            idx.supphiv.ftp <- which(FTP == TRUE & MODEL == "run-gp-supp-hiv") |> .check()
+            cat("Round ", unique(ROUND), "\n")
+            draws_prev <- get.weighted.average.p_predict(
+                fit1 = readRDS(paths[idx.hivprev.all]),
+                fit2 = readRDS(paths[idx.hivprev.ftp]),
+                fit_all = readRDS(paths[idx.hivprev]),
+                round = unique(ROUND),
+                expression_prereturn = {
+                    # find composition of prevalnce by age group
+                    by_cols <- c(dot.cols, "LOC", "SEX", "AGEGROUP")
+                    tmp <- merge(draws_all, dcens_custom, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
+                    tmp <- tmp[, N_HIV := joint * ELIGIBLE_SMOOTH] |>
+                        subset(select = c(dot.cols, "LOC", "SEX", "AGEGROUP", "AGEYRS", "N_HIV"))
+                    return(tmp)
+                }
+            )
+            cat("prevalence done\n")
+            draws_supp <- get.weighted.average.p_predict(
+                fit1 = readRDS(paths[idx.supphiv.all]),
+                fit2 = readRDS(paths[idx.supphiv.ftp]),
+                fit_all = readRDS(paths[idx.supphiv]),
+                round = unique(ROUND),
+                expression_prereturn = {
+                    draws_all
+                }
+            )
+            cat("suppression done\n")
+            dot.cols <- c(".chain", ".iteration", ".draw")
+            tmp <- merge(draws_supp, draws_prev, by = c(dot.cols, "LOC", "SEX", "AGEYRS"))
+            .aggr.hiv.prev <- function(DT, by_cols) {
+                DT[, .(S = sum(joint * proportions(N_HIV))), by = c(dot.cols, by_cols)][, quantile2(S), by = by_cols]
+            }
+            list(
+                .aggr.hiv.prev(tmp, by_cols = c("LOC", "SEX", "AGEGROUP"))
+            ) |> rbindlist(use.names = TRUE)
+        },
+        by = c("ROUND")
+    ]
+    saveRDS(object = dsupp_agegroup_custom, filename_rds)
+}
+
+# I would then need to get a round 19 histogram...
+if (make_plots & TRUE) {
+    .w <- 12; .h <- 18
+    # p_list <- lapply(c(16:19), plot.prevalence.by.age.group, DT = dsupp_agegroup)
+    p <- hist_prevalence_by_age_group_custom(dsupp_agegroup_custom)
+    filename <- "hist_suppofhiv_by_agegroup_custom_round19.pdf"
+    cmd <- ggsave2(p=p, file=filename, LALA=out.dir.figures, .w, .h, u="cm")
+    system(cmd)
+}
+
+if ( make_tables ){
+    .null <- paper_statements_prevalence_viraemia_maximum (dsupp_agegroup_custom)
+}
+
+
+statements_prevalence_viraemia_maximum(dsupp_agegroup_custom )
+
+dtable <- subset(DT == round)
+dsupp_agegroup_custom[ ROUND == 19, , by=c(LOC, SEX) ]
+
+
 catn("Get quantiles for contributions by age")
+    
 # _____________________________________________
 
 filename_rds <- file.path(out.dir.tables, "fullpop_allcontributions.rds")
