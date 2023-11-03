@@ -13,9 +13,9 @@
 - [Acknowledgments](#acknowledgments)
 - [Funding](#funding)
 - [Quick Start](#quick-start)
-    - [System Requirements](system-requirements)
-    - [Installation](installation)
-    - [Reproducing our Analyses](reproducing-our-analyses)
+    - [System Requirements](#system-requirements)
+    - [Installation](#installation)
+    - [Reproducing our Analyses](#reproducing-our-analyses)
 
 
 ## License 
@@ -47,7 +47,7 @@ TOCOPY FROM PAPER.
 
 - UNIX or MacOs, the code was developed on Ubuntu 22.04 LTS.
 - [R](https://www.r-project.org/) version `≥4.1.2`.
-- [cmdstan](https://mc-stan.org/users/interfaces/cmdstan) version TODO....
+- [cmdstan](https://mc-stan.org/users/interfaces/cmdstan) version `2.27.0`.
 
 We additionally [conda]() or [miniconda]() to reproduce our package environment.
 
@@ -58,7 +58,7 @@ You can follow the steps below to clone our codebase locally and rerun the analy
 1. Clone the github repository in a directory of your choice.
 2. Install the dependencies by running `sh dependencies_cmdstan.sh`.
  
-> ** Note ** A common error with new installations of `cmdstanr` is the inability to compile stan files due to a `need to set TBB_CXX_TYPE` (see [here](https://bytemeta.vip/repo/stan-dev/cmdstanpy/issues/374?page=1) for a solution).
+>  **Note** A common error with new installations of `cmdstanr` is the inability to compile stan files due to a `need to set TBB_CXX_TYPE` (see [here](https://bytemeta.vip/repo/stan-dev/cmdstanpy/issues/374?page=1) for a solution).
 
 ### Reproducing our Analyses
 
