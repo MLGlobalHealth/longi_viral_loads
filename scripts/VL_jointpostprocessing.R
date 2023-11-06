@@ -402,29 +402,6 @@ if (file.exists(filename_rds) & !overwrite) {
     rm(djoint_ageaggr)
 }
 
-if (make_tables) {
-    ## age-aggregated HIV prevalence by sex, round, loc
-    # tab <- make.table.Nhivpositive (DT=joint_ageagrr_list$round_totals, DC=dcens)
-    # filename_overleaf <- file.path(out.dir.tables, "overleaf_ageaggr_hivprev.rds")
-
-    .dict <- dict_table_names$percent_reduction
-    tab_eligible <- dcens[, .(N_ELIGIBLE = sum(ELIGIBLE)), by = c("ROUND", "LOC", "SEX")] |>
-        prettify_labels() |>
-        remove.nonpretty()
-    tab_hiv <- tablify.posterior.Nunsuppressed(joint_ageagrr_list, CELLname = "HIV", model = "run-gp-prevl")
-    tab_unsupp <- tablify.posterior.Nunsuppressed(joint_ageagrr_list, CELLname = "UNSUPP", model = "run-gp-supp-pop")
-    tab_merge <- merge(tab_eligible, tab_hiv) |>
-        merge(tab_unsupp, by = c("LOC_LAB", "SEX_LAB", "ROUND_LAB"))
-    tab_merge[, SEX_LAB := sex_dictionary2[SEX_LAB]]
-    tab_merge <- delete.repeated.table.values(tab_merge) |>
-        setnames(names(.dict), unname(.dict), skip_absent = TRUE)
-    if (interactive()) {
-        write.to.googlesheets(tab_merge, sheet = "Table2")
-    }
-    filename_table <- file.path(out.dir.tables, "table_reductionHIVandUNSUPP.rds")
-    saveRDS(tab_merge, file = filename_table)
-}
-
 catn("Get quantiles for suppression levels in agegroups")
 # _______________________________________________________
 
@@ -568,7 +545,7 @@ if (file.exists(filename_rds) & !overwrite) {
 }
 
 # I would then need to get a round 19 histogram...
-if (make_plots & TRUE) {
+if (make_plots) {
     .w <- 12; .h <- 18
     # p_list <- lapply(c(16:19), plot.prevalence.by.age.group, DT = dsupp_agegroup)
     p <- hist_prevalence_by_age_group_custom(dsupp_agegroup_custom)
@@ -740,15 +717,16 @@ if (file.exists(filename_rds) & !overwrite) {
                 round = unique(ROUND),
                 expression_prereturn = {
                     tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
+                    # Not sure if valid way to compute the posterior "mode"...
                     tmp1 <- tmp[
                         j = .(
+                            AGEMODE = AGEYRS[which.max(joint * ELIGIBLE_SMOOTH )],
                             AGEMEAN = Hmisc::wtd.mean(AGEYRS, joint * ELIGIBLE_SMOOTH),
                             AGESTD = Hmisc::wtd.var(AGEYRS, joint * ELIGIBLE_SMOOTH) |> sqrt()
                         ),
                         by = c(dot.cols, "LOC", "ROUND", "SEX")
-                    ] |>
-                        melt.data.table(
-                            measure.vars = c("AGEMEAN", "AGESTD"),
+                    ] |> melt.data.table(
+                            measure.vars = c("AGEMEAN", "AGESTD", "AGEMODE"),
                             variable.name = "TYPE",
                             value.name = "value"
                         )
@@ -761,11 +739,14 @@ if (file.exists(filename_rds) & !overwrite) {
     saveRDS(object = dmeanage, file = filename_rds)
 }
 
+# TODO! (check that this worked.)
 if (make_tables) {
-    tmp <- rbind(
-        paper_statements_meanage_population(DT = dmeanage, label = "run-gp-supp-pop", type = "AGEMEAN"),
-        paper_statements_meanage_population(DT = dmeanage, label = "run-gp-supp-pop", type = "AGESTD")
+    dt <- subset(dmeanage, select=-AGEMODE)
+    tmp1 <- rbind(
+        paper_statements_meanage_population(DT = dt, label = "run-gp-supp-pop", type = "AGEMEAN"),
+        paper_statements_meanage_population(DT = dt, label = "run-gp-supp-pop", type = "AGESTD")
     )
+    rm(dt, tmp1)
 }
 
 catn("Other contribution to viraemia quantiles for text")
@@ -774,7 +755,7 @@ catn("Other contribution to viraemia quantiles for text")
 filename_overleaf <- file.path(out.dir.tables, "overleaf_viraemiacontribution_custom.rds")
 
 dcens_custom <- copy(dcens)
-dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, 25, 40, 50))]
+dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, 25, 35 ,40, 50))]
 
 if (file.exists(filename_overleaf) & !overwrite) {
     contrib_viraemia_custom <- readRDS(filename_overleaf)
@@ -808,11 +789,14 @@ if (file.exists(filename_overleaf) & !overwrite) {
         },
         by = c("MODEL", "ROUND")
     ]
+
+
     # save
     saveRDS(object = contrib_viraemia_custom, file = filename_overleaf)
 
     # paper_statements_contributions_viraemia_round(round=16, agegroup="15-24")
     # paper_statements_contributions_viraemia_round(round=19, agegroup="15-24")
+    paper_statements_contributions_viraemia_round(round=19, agegroup="25-34")
 }
 
 if (make_tables) {
@@ -1305,11 +1289,17 @@ if (file.exists(filename_rds) & !overwrite) {
                 .formula <- as.formula(paste0(".draw +", paste(by_cols_nosex, collapse = " + "), " ~ SEX"))
                 tmp1 <- tmp[, .(S = sum(joint * proportions(N_HIV))), by = c(dot.cols, by_cols)] |>
                     dcast.data.table(.formula, value.var = "S", drop = TRUE)
-                tmp1[, `:=`(RATIO_MF_SUPP = M / F, RATIO_MF_VIR = (1 - M) / (1 - F))]
-                rbind(
+                tmp1[, `:=`(
+                    RATIO_MF_SUPP = M / F,
+                    RATIO_MF_VIR = (1 - M) / (1 - F),
+                    DIFF_MF_SUPP = F - M
+                )]
+                out <- rbind(
                     cbind(tmp1[, quantile2(RATIO_MF_SUPP), by = by_cols_nosex], TYPE = "SUP"),
-                    cbind(tmp1[, quantile2(RATIO_MF_VIR), by = by_cols_nosex], TYPE = "VIR")
+                    cbind(tmp1[, quantile2(RATIO_MF_VIR), by = by_cols_nosex], TYPE = "VIR"),
+                    cbind(tmp1[, quantile2(DIFF_MF_SUPP), by = by_cols_nosex], TYPE = "SUP-DIFF")
                 )
+                return(out)
             }
             list(
                 .take.supp.ratio(tmp, by_cols = c("LOC", "SEX", "AGEGROUP")),
@@ -1324,6 +1314,8 @@ if (file.exists(filename_rds) & !overwrite) {
 if (make_tables) {
     # paper_statements_malefemaleratio_suppression(DT = dmf_ratios, reverse = FALSE)
     tmp <- paper_statements_malefemaleratio_suppression2()
+
+    
     # paper_statements_malefemaleratio_suppression()
 
     # dmf_ratios[TYPE == "VIR" & AGEGROUP != "Total" & ROUND == 19, ] |>
@@ -1335,17 +1327,39 @@ if (make_tables) {
     #     plot_quantiles(x=AGEYRS, facet=ROUND~LOC_LAB, color=SEX_LAB)
 }
 
+if (make_tables) {
+    ## age-aggregated HIV prevalence by sex, round, loc
+    # tab <- make.table.Nhivpositive (DT=joint_ageagrr_list$round_totals, DC=dcens)
+    # filename_overleaf <- file.path(out.dir.tables, "overleaf_ageaggr_hivprev.rds")
+    tab_mf_diffs <- make.table.malefemale.diff.viraemia(DT = dmf_ratios)
 
-#####################
-catn("End of script")
-#####################
+    .dict <- dict_table_names$percent_reduction
+    tab_eligible <- dcens[, .(N_ELIGIBLE = sum(ELIGIBLE)), by = c("ROUND", "LOC", "SEX")] |>
+        prettify_labels() |>
+        remove.nonpretty()
+    tab_hiv <- tablify.posterior.Nunsuppressed(joint_ageagrr_list, CELLname = "HIV", model = "run-gp-prevl")
+    tab_unsupp <- tablify.posterior.Nunsuppressed(joint_ageagrr_list, CELLname = "UNSUPP", model = "run-gp-supp-pop")
+
+    by_cols <- c("LOC_LAB", "SEX_LAB", "ROUND_LAB")
+    tab_merge <- merge(tab_eligible, tab_hiv) |>
+        merge(tab_unsupp, by=by_cols) |>
+        merge(tab_mf_diffs, by=by_cols)
+    tab_merge[, SEX_LAB := unname(sex_dictionary2[SEX_LAB])]
+    tab_merge <- delete.repeated.table.values(tab_merge) |>
+        setnames(names(.dict), unname(.dict), skip_absent = TRUE)
+
+    tab_merge <- subset(tab_merge, select = - CELL_HIV_P)
+    .sd <- names(tab_merge)[-(1:2)]
+    tab_merge[, (.sd) := lapply(.SD, function(x) { x[x == "" | is.na(x)] <- "--"; x}), .SDcols = .sd]
 
 
 
-######################
-catn("Posterior fits")
-######################
-
+    if (interactive()) {
+        write.to.googlesheets(tab_merge, sheet = "Table2")
+    }
+    filename_table <- file.path(out.dir.tables, "table_reductionHIVandUNSUPP.rds")
+    saveRDS(tab_merge, file = filename_table)
+}
 
 
 
@@ -1406,3 +1420,7 @@ p_pp <- ggarrange(
 filename <- paste0("suppfig_all_ppchecks.pdf")
 cmd <- ggsave2(p = p_pp, file = filename, LALA = out.dir.figures, w = 18 , h = 24, u="cm")
 system(cmd)
+
+#####################
+catn("End of script")
+#####################

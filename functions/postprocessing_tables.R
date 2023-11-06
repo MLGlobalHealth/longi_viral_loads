@@ -248,3 +248,17 @@ make.supp.table.meanage <- function(DT=dmeanage, label=NA_character_){
     setcolorder(tab, unname(dict_table_names$mean_ages))
     return(tab)
 }
+
+make.table.malefemale.diff.viraemia <- function(DT){
+
+    dtable <- subset(DT, TYPE == "SUP-DIFF" & AGEGROUP == "Total")
+    prettify_labels(dtable)
+    cols <- c("M", "CL", "CU")
+    dtable[, (cols) := lapply(.SD, function(x) x * 100), .SDcols=cols, by=c("LOC_LAB", "ROUND_LAB")]
+    dtable[, CELL_MF_GAP := sprintf("%.1f%% (%.1f, %.1f)", M, CL, CU)]
+    dtable[, SEX_LAB := "Male"]
+    tmp0 <- subset(dtable, select=c("LOC_LAB","SEX_LAB","ROUND_LAB", "CELL_MF_GAP"))
+    tmp1 <- copy(tmp0)[, `:=` (SEX_LAB = "Female", CELL_MF_GAP = "--")]
+    return( rbind(tmp0, tmp1) )
+}
+

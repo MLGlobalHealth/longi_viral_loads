@@ -155,7 +155,7 @@ sex_dictionary2 <- c(
     `Round 16 Male` = "Men, Round 16" ,
     `Round 19 Male` = "Men, Round 19" ,
     `Round 16 Female` =  "Women, Round 16",
-    `Round 19 Female` = "Women, Round 19",
+    `Round 19 Female` = "Women, Round 19"
 )
 
 loc_dictionary <- c(
@@ -324,7 +324,7 @@ plabels <- list(
 )
 
 dict_table_names <- list(
-    percent_reduction = c(
+    percent_reduction_old = c(
         LOC_LAB = "Community type",
         SEX_LAB = "Gender",
         ROUND_LAB = "Round",
@@ -337,6 +337,17 @@ dict_table_names <- list(
         N_UNSUPP = "Number of unsuppressed (ftp)",
         P_HIV_REDUCTION = "Percent reduction\nin number of PLHIV (ftp)",
         P_UNSUPP_REDUCTION = "Percent reduction\nin number of unsuppressed (ftp)"
+    ),
+
+    percent_reduction = c(
+        LOC_LAB = "Community\ntype\n\n\n\n\n",
+        SEX_LAB = "Gender\n\n\n\n\n\n",
+        ROUND_LAB = "Round\n\n\n\n\n\n",
+        N_ELIGIBLE = "Census eligible\nindividuals\n\n\n\n(n)\n",
+        CELL_HIV_N = "People with HIV in the\npopulation\n\n\n\n(posterior median\nestimate, (95%CrI))",
+        CELL_UNSUPP_N = "People with HIV who have\nunsuppressed virus\n\n\n\n(posterior median estimate,\n(95%CrI)) ",
+        CELL_UNSUPP_P = "Percent reduction In the number \nof people with HIV who have\nunsuppressed virus relative to\nround 16\n\n(posterior median estimate,\n(95%CrI))",
+        CELL_MF_GAP = "Men-Women Gap in the\nproportion of individuals\nwith unsuppressed virus\n\n\n(posterior median estimate,\n(95%CrI))"
     ),
 
     mean_ages = c(
