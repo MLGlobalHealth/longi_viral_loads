@@ -4,41 +4,24 @@
 
 
 **Hello!** This repository contains the code for the analyses presented in the paper *TITLE* by A Brizzi et al.
+(I would put the citation here)
 
 ## Table of contents
  
 - [License](#license)
-- [Warranty](#warranty)
-- [Citation](#citation)
-- [Acknowledgments](#acknowledgments)
-- [Funding](#funding)
 - [Quick Start](#quick-start)
     - [System Requirements](#system-requirements)
     - [Installation](#installation)
     - [Reproducing our Analyses](#reproducing-our-analyses)
+- [Warranty](#warranty)
+- [Citation](#citation)
+- [Acknowledgments](#acknowledgments)
+- [Funding](#funding)
 
 
 ## License 
 
 The code in this repository is licensed under [CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg).
-
-## Warranty 
-
-Imperial makes no representation or warranty about the accuracy or completeness of the data nor that the results will not constitute in infringement of third-party rights. Imperial accepts no liability or responsibility for any use which may be made of any results, for the results, nor for any reliance which may be placed on any such work or results.
-
-## Citation:
-
-Please cite this work as *TODO* (leave a citation.bib in the repo?)
-
-## Acknowledgments
-
-We thank all contributors, program staff and participants to the Rakai Community Cohort Study; all members of the PANGEA-HIV consortium, the [Rakai Health Sciences Program](https://www.rhsp.org/index.php).
-
-We also extend our gratitude to the [Imperial College Research Computing Service](https://doi.org/10.14469/hpc/2232) for providing the computational resources to perform this study. 
-
-## Funding
-
-TOCOPY FROM PAPER.
 
 
 ## Quick Start
@@ -81,3 +64,20 @@ Once all jobs are run, it is possible to run our postprocessing code, involving 
 ./run_postprocessing OUTDIR="path/to/desired/output/directory"
 ```
 
+## Warranty 
+
+Imperial makes no representation or warranty about the accuracy or completeness of the data nor that the results will not constitute in infringement of third-party rights. Imperial accepts no liability or responsibility for any use which may be made of any results, for the results, nor for any reliance which may be placed on any such work or results.
+
+## Citation:
+
+Please cite this work as *TODO* (leave a citation.bib in the repo?)
+
+## Acknowledgments
+
+We thank all contributors, program staff and participants to the Rakai Community Cohort Study; all members of the PANGEA-HIV consortium, the [Rakai Health Sciences Program](https://www.rhsp.org/index.php).
+
+We also extend our gratitude to the [Imperial College Research Computing Service](https://doi.org/10.14469/hpc/2232) for providing the computational resources to perform this study. 
+
+## Funding
+
+TOCOPY FROM PAPER.

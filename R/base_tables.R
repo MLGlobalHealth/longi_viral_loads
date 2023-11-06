@@ -100,7 +100,7 @@ write.to.tex <- function(DT, file){
 
 write.to.googlesheets <- function(DT, sheet=NA_character_){
 
-    if( ! local() ){
+    if( ! interactive() ){
         print("`write.to.googlesheets()` function is meant to be used locally.Skipping")
         return()
     }
