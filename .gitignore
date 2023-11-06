@@ -1,3 +1,25 @@
 TODO.md
 
 *un~
+
+tags
+
+*pdf
+*png
+*bib
+*Rproj
+
+# dirs
+data/
+misc/
+notes/
+pprz/
+
+# files
+main_figures.md
+open_mainfigures
+
+
+slides/*
+
+*parallel_log*
