@@ -239,19 +239,21 @@ djoint <- {
 .yl <- function() scale_y_continuous(limits=c(0, 1), expand=expansion(c(0,0)), labels=scales::label_percent() )
 
 fig2a <- list(
-    plot.main.suppression.among.plhiv(DT=dplot[LOC=='inland'] ,m=-5,joint=TRUE) + .yl() + labs(tag = "a"),
-    plot.main.suppression.among.plhiv(DT=dplot[LOC=='fishing'],m=-5,joint=TRUE)+ .yl() + labs(tag = "b")
+    plot.main.suppression.among.plhiv(DT=djoint[LOC=='inland'] ,m=-5,joint=TRUE) + .yl() + labs(tag = "a"),
+    plot.main.suppression.among.plhiv(DT=djoint[LOC=='fishing'],m=-5,joint=TRUE)+ .yl() + labs(tag = "b")
 ) |> ggarrange( plotlist=_, ncol=1, legend="bottom", common.legend = TRUE  )
 fig2b <- list(
-    hist_prevalence_by_age_group_custom(dsupp_agegroup_custom[ LOC == 'inland']) + .yl() + labs(y=NULL) + nm_reqs,
-    hist_prevalence_by_age_group_custom(dsupp_agegroup_custom[ LOC == 'fishing']) + .yl() + labs(y=NULL) + nm_reqs
+    hist_prevalence_by_age_group_custom(dsupp_agegroup_custom[ LOC == 'inland']) +
+        theme(strip.text.x=element_text(color="white")) + .yl() + labs(y=NULL) + nm_reqs,
+    hist_prevalence_by_age_group_custom(dsupp_agegroup_custom[ LOC == 'fishing']) + 
+        theme(strip.text.x=element_text(color="white")) + .yl() + labs(y=NULL) + nm_reqs
 ) |> ggarrange(plotlist=_,ncol=1, legend="bottom", common.legend = TRUE)
 
 fig2new <- ggarrange(fig2a, fig2b, ncol=2, widths = c(1.4, 1))
 
 filename <- paste0("main_figure_suppression_plhiv_r1619.pdf")
 cmd <- ggsave_nature(p = fig2new, filename = filename, LALA = out.dir.figures, w = 19, h = 16)
-system(zathura2gthumb(cmd))
+# system(cmd)
 if(interactive()) upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
 
 ########################

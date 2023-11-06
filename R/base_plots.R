@@ -199,10 +199,10 @@ palettes <- list(
         Men = "#9ac0cd",
         Female = "#F4B5BD",
         Male = "#9ac0cd",
-        `Round 16, Male` = "#9ac0cd", # "#ADD8E6" ,
-        `Round 19, Male` = "#9ac0cd", #"#00008B" ,
-        `Round 16, Female` = "#F4B5BD",
-        `Round 19, Female` = "#F4B5BD" #"#AA336A"
+        `Round 16, Male` = "#0056E0",
+        `Round 19, Male` = "#9ac0cd", #
+        `Round 16, Female` = "salmon",
+        `Round 19, Female` = "#F4B5BD" 
     ),
     comm = c(
         fishing = "#9ac0cd",

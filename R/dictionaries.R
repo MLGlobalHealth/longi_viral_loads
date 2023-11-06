@@ -152,10 +152,10 @@ sex_dictionary2 <- c(
     `0`="Women",
     `1`="Men",
     `Total`= "Total",
-    `Round 16 Male` = "Men, Round 16" ,
-    `Round 19 Male` = "Men, Round 19" ,
-    `Round 16 Female` =  "Women, Round 16",
-    `Round 19 Female` = "Women, Round 19"
+    `Round 16, Male` = "Men, Round 16\nJul 2013 to Jan 2015" ,
+    `Round 19, Male` = "Men, Round 19\nJun 2018 to May 2019" ,
+    `Round 16, Female` = "Women, Round 16\nJul 2013 to Jan 2015",
+    `Round 19, Female` = "Women, Round 19\nJun 2018 to May 2019"
 )
 
 loc_dictionary <- c(

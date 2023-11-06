@@ -1703,7 +1703,7 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
                 geom_linerange(position = .pd, color = "grey40")
             },
             if (type == "point") {
-                geom_linerange(position = .pd)
+                geom_linerange(position = .pd, alpha=.35)
             },
             if (type == "point") {
                 geom_point(position = .pd)
@@ -1755,19 +1755,19 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
 
         dplot[, ROUNDSEX_LAB := paste(ROUND_LAB, SEX_LAB, sep=', ') ] 
         alphas <- c(
-            `Round 16, Male` =  .4,
+            `Round 16, Male` =  1,
             `Round 19, Male` = 1,
-            `Round 16, Female` = .4, 
+            `Round 16, Female` = 1, 
             `Round 19, Female` = 1
         )
 
         base <- ggplot( dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = ROUNDSEX_LAB, color = ROUNDSEX_LAB, pch = ROUNDSEX_LAB, alpha=ROUNDSEX_LAB))
-        col_lab <- shape_lab <- alpha_lab <- "Round, Gender"
+        col_lab <- shape_lab <- alpha_lab <- "Gender, Round"
     }
         alphas <- c(
-            `Round 16, Male` =  .4,
+            `Round 16, Male` =  1,
             `Round 19, Male` = 1,
-            `Round 16, Female` = .4, 
+            `Round 16, Female` = 1, 
             `Round 19, Female` = 1
         )
 
