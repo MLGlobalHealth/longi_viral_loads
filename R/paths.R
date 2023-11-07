@@ -75,6 +75,7 @@ path.viralloads.processed.r1520 <- file.path(indir.deepdata.r1520, 'viral_loads_
 # processed files: 
 path.processed.hivstatus.r0920 <- file.path(indir.deepdata.r1520,"RCCS_processed_participants_hivstatus_230328.rds")
 path.processed.testing.r1519 <- file.path(indir.deepdata.r1520,"RCCS_processed_participants_testing_230328.rds")
+path.aggregated.nums.denoms.r1619 <- file.path(indir.deepdata.r1520,"RCCS_aggregated_nums_denoms.csv")
 
 # I believe this comes from melodie?
 # path.census.eligible <- file.path(gitdir.data, 'RCCS_census_eligible_individuals_221209.csv')

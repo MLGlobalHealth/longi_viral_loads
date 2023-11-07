@@ -682,14 +682,10 @@ vl.vlprops.by.comm.gender.loc <- function(DT, write.csv = FALSE) {
     list(DT = vlc, p_among_pop = p_pop, p_among_inf = p_inf)
 }
 
-vl.prevalence.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir. = vl.out.dir) {
+vl.prevalence.by.gender.loc.age.gp <- function(DT=vla, refit = FALSE, vl.out.dir. = vl.out.dir) {
     cat("\n\n--- Analysing HIV+ Prevalence ---\n\n")
 
-    # DT <- copy(dall); refit=FALSE
-    DT <- .preprocess.ds.oli(DT)
-
-    tmp <- c("N", "HIV_N", "VLNS_N", "ARV_N")
-    vla <- .preprocess.make.vla(DT, select = tmp)
+    vla <- copy(DT)
 
     # Stan file locations
     file.stan <- file.path(gitdir.stan, "vl_binomial_gp.stan")
@@ -1122,13 +1118,10 @@ vl.meanviralload.by.gender.loc.age.icar <- function(DT) {
     }
 }
 
-vl.suppofinfected.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir. = vl.out.dir) {
+vl.suppofinfected.by.gender.loc.age.gp <- function(DT=vla, refit = FALSE, vl.out.dir. = vl.out.dir) {
     cat("\n\n--- Analyse suppressed among infected ---\n\n")
 
-    # DT <- copy(dall); refit=FALSE; vl.out.dir.=vl.out.dir
-    DT <- .preprocess.ds.oli(DT)
-    vla <- .preprocess.make.vla(DT, select = c("N", "HIV_N", "VLNS_N", "ARV_N"))
-    # NOTE: ARV_N == 0
+    vla <- copy(DT)
 
     file.stan.1 <- file.path(gitdir.stan, "vl_binomial_gp.stan")
 
@@ -1850,14 +1843,10 @@ vl.suppofinfected.by.gender.loc.age.icar <- function(DT, refit = FALSE) {
     return(tmp)
 }
 
-vl.suppofpop.by.gender.loc.age.gp <- function(DT, refit = FALSE, vl.out.dir. = vl.out.dir) {
+vl.suppofpop.by.gender.loc.age.gp <- function(DT=vla, refit = FALSE, vl.out.dir. = vl.out.dir) {
     cat("\n\n--- Analyse suppression among participants ---\n\n")
 
-    # DT <- copy(dall); refit=FALSE
-    DT <- .preprocess.ds.oli(DT)
-
-    tmp <- c("N", "HIV_N", "VLNS_N", "ARV_N")
-    vla <- .preprocess.make.vla(DT, select = tmp)
+    vla <- copy(DT)
 
     # Stan file locations
     file.stan <- file.path(gitdir.stan, "vl_binomial_gp.stan")

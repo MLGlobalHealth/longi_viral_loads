@@ -106,20 +106,14 @@ plot.quantiles.wholepop <- function(DQUANT, ylim=NA, ylab){
 }
 
 vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
-    DT, 
+    DT=vla, 
     refit = FALSE,
     vl.out.dir. = vl.out.dir,
     alpha_hyper = .75
 ) {
 
     cat("\n\n--- Analysing HIV+ Prevalence ---\n\n")
-
-    # DT <- copy(dall); refit=FALSE
-    DT <- .preprocess.ds.oli(DT)
-    cols <- c("N", "HIV_N", "VLNS_N", "ARV_N")
-    vla_all <- .preprocess.make.vla(DT, select = cols )
-    vla_ftp <- .preprocess.make.vla(DT[FIRST_PARTICIPATION == 1], select = cols )
-    vla <- rbind(vla_all[, PTYPE := "all"], vla_ftp[, PTYPE := "ftp"])
+    vla <- copy(DT)
 
     # Stan file locations
     file.stan <- file.path(gitdir.stan, "vl_binomial_gp_sharedhyper.stan")
@@ -346,35 +340,6 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
             file = file.path(vl.out.dir., filename)
         )
 
-        # catn("make table version suppressed")
-
-        # # prev.hiv.by.age[, LABEL := .p1(M, CL, CU)]
-        # prev.hiv.by.age[, LABEL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE) ]
-        # prevratio.hiv.by.loc.age[, LABEL2 := prettify_cell(M, CL, CU)]
-
-        # vec_ages <- c(20.5, 25.5, 30.5, 35.5, 40.5, 45.5)
-
-        # dt <- subset(prev.hiv.by.age, AGE_LABEL %in% vec_ages) |> 
-        #     dcast.data.table(
-        #         LOC_LABEL + PTYPE + AGE_LABEL ~ SEX_LABEL,
-        #         value.var = "LABEL" )
-
-        # .f <- function(var){
-        #     tmp <- subset( prevratio.hiv.by.loc.age,
-        #         variable == var & AGE_LABEL %in% vec_ages,
-        #         select=c('LOC_LABEL', 'AGE_LABEL', 'LABEL2')
-        #     )
-        #     tmp <- setnames(tmp, "LABEL2", var)
-        #     tmp
-        # }
-        # tmp_fm <- .f("PR_FM"); tmp_mf <- .f("PR_MF")
-
-        # dt <- merge(dt, tmp_fm, by = c("LOC_LABEL", "AGE_LABEL"))
-        # dt <- merge(dt, tmp_mf, by = c("LOC_LABEL", "AGE_LABEL"))
-
-        # filename <- file.path(vl.out.dir., paste0("tab_hivprevalence_round", round, ".csv"))
-        # fwrite(dt, row.names = FALSE, file = filename)
-
         cat("Round", round, ": done.\n")
         return(TRUE)
     }
@@ -398,7 +363,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
 }
 
 vl.suppofinfected.by.gender.loc.age.gp.cmdstan.hyper <- function(
-    DT,
+    DT=vla,
     refit = FALSE,
     vl.out.dir. = vl.out.dir,
     alpha_hyper = .75
@@ -407,11 +372,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan.hyper <- function(
     cat("\n\n--- Analyse suppressed among infected ---\n\n")
 
     # DT <- copy(dall); refit=FALSE; vl.out.dir.=vl.out.dir
-    DT <- .preprocess.ds.oli(DT)
-    cols <- c("N", "HIV_N", "VLNS_N", "ARV_N")
-    vla_all <- .preprocess.make.vla(DT, select = cols )
-    vla_ftp <- .preprocess.make.vla(DT[FIRST_PARTICIPATION == 1], select = cols )
-    vla <- rbind(vla_all[, PTYPE := "all"], vla_ftp[, PTYPE := "ftp"])
+    vla <- copy(DT)
 
     # Stan file locations
     file.stan <- file.path(gitdir.stan, "vl_binomial_gp_sharedhyper.stan")
@@ -667,7 +628,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan.hyper <- function(
 
 
 vl.suppofpop.by.gender.loc.age.gp.cmdstan.hyper <- function(
-    DT, 
+    DT=vla, 
     refit = FALSE,
     vl.out.dir. = vl.out.dir,
     alpha_hyper = .75
@@ -675,13 +636,7 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan.hyper <- function(
 {
 
     cat("\n\n--- Analyse suppression among participants ---\n\n")
-
-    # DT <- copy(dall); refit=FALSE
-    DT <- .preprocess.ds.oli(DT)
-    cols <- c("N", "HIV_N", "VLNS_N", "ARV_N")
-    vla_all <- .preprocess.make.vla(DT, select = cols )
-    vla_ftp <- .preprocess.make.vla(DT[FIRST_PARTICIPATION == 1], select = cols )
-    vla <- rbind(vla_all[, PTYPE := "all"], vla_ftp[, PTYPE := "ftp"])
+    vla <- copy(DT)
 
     # Stan file locations
     file.stan <- file.path(gitdir.stan, "vl_binomial_gp_sharedhyper.stan")

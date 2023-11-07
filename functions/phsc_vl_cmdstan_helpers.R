@@ -419,7 +419,7 @@ vl.vlprops.by.comm.gender.loc <- function(DT, write.csv = FALSE) {
 }
 
 vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
-    DT, 
+    DT=vla, 
     refit = FALSE,
     vl.out.dir. = vl.out.dir,
     alpha_hyper = .75
@@ -427,10 +427,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
 
     cat("\n\n--- Analysing HIV+ Prevalence ---\n\n")
 
-    # DT <- copy(dall); refit=FALSE
-    DT <- .preprocess.ds.oli(DT)
-    cols <- c("N", "HIV_N", "VLNS_N", "ARV_N")
-    vla <- .preprocess.make.vla(DT, select = cols)
+    vla <- copy(DT)
 
     # Stan file locations
     file.stan <- file.path(gitdir.stan, "vl_binomial_gp2.stan")
@@ -682,7 +679,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
 }
 
 vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
-    DT,
+    DT=vla,
     refit = FALSE,
     vl.out.dir. = vl.out.dir,
     alpha_hyper = .75
@@ -690,10 +687,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
 
     cat("\n\n--- Analyse suppressed among infected ---\n\n")
 
-    # DT <- copy(dall); refit=FALSE; vl.out.dir.=vl.out.dir
-    DT <- .preprocess.ds.oli(DT)
-    cols <- c("N", "HIV_N", "VLNS_N", "ARV_N")
-    vla <- .preprocess.make.vla(DT, select = cols )
+    vla <- copy(DT)
 
     file.stan <- file.path(gitdir.stan, "vl_binomial_gp2.stan")
 
