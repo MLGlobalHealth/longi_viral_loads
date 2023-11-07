@@ -14,14 +14,14 @@ if( ! interactive() )
 # - adapt older code from Oli to multi-round, longitudinal settings
 # TODO: discuss: we are removing individuals with missing VLs: they are very little
 
-{
-    library(data.table) |> suppressPackageStartupMessages()
-    library(ggplot2)    |> suppressPackageStartupMessages()
-    library(Hmisc)      |> suppressPackageStartupMessages()
-    library(cmdstanr)   |> suppressPackageStartupMessages()
-    library(optparse)   |> suppressPackageStartupMessages()
-    library(here)       |> suppressPackageStartupMessages()
-}
+suppressPackageStartupMessages({
+    library(data.table)
+    library(ggplot2)
+    library(Hmisc)
+    library(cmdstanr)
+    library(optparse)
+    library(here)
+})
 
 ################
 #    PATHS     #
