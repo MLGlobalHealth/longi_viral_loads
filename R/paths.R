@@ -83,6 +83,11 @@ if ( exists("indir.deepdata") && dir.exists(indir.deepdata) ){
 
     path.census.eligible <- file.path(gitdir.data, 'census_eligible_individuals_230514.csv')
 
+    # OLD NAMES
+    # path.aggregated.nums.denoms.r1619 <- file.path(indir.deepdata.r1520,"RCCS_aggregated_nums_denoms.csv")
+    # path.participation.rates <- file.path(gitdir.data, "participation_rates_230517.rds")
+    # path.census.eligible.aggregated <- file.path(gitdir.data, "RCCS_census_eligible_aggregated.csv")
+    # path.comm.censsize <- file.path(gitdir.data, 'censsize_by_community.rds')
 }
 
 
@@ -93,21 +98,16 @@ if ( exists("indir.deepdata") && dir.exists(indir.deepdata) ){
 indir.zenodo.data <- file.path(indir.zenodo, 'data')
 indir.zenodo.results <- file.path(indir.zenodo, 'results')
 
-# path.aggregated.nums.denoms.r1619 <- file.path(indir.deepdata.r1520,"RCCS_aggregated_nums_denoms.csv")
-path.aggregated.nums.denoms.r1619 <- file.path(zenodo.data, "RCCS_aggregated_nums_denoms.csv")
-# path.participation.rates <- file.path(gitdir.data, "participation_rates_230517.rds")
-path.participation.rates <- file.path(zenodo.data,  "participation_rates_230517.rds")
-# path.census.eligible.aggregated <- file.path(gitdir.data, "RCCS_census_eligible_aggregated.csv")
-path.census.eligible.aggregated <- file.path(zenodo.data,  "RCCS_census_eligible_aggregated.csv")
-# path.comm.censsize <- file.path(gitdir.data, 'censsize_by_community.rds')
-path.comm.censsize <- file.path(zenodo.data,  'censsize_by_community.rds')
+path.aggregated.nums.denoms.r1619 <- file.path(indir.zenodo.data, "RCCS_aggregated_nums_denoms.csv")
+path.participation.rates <- file.path(indir.zenodo.data,  "participation_rates_230517.rds")
+path.census.eligible.aggregated <- file.path(indir.zenodo.data,  "RCCS_census_eligible_aggregated.csv")
+path.comm.censsize <- file.path(indir.zenodo.data,  'censsize_by_community.rds')
 
 #####################
 #     stan args     #
 #####################
 
 path.stan.config <- file.path(gitdir.stan, 'binomial_gp_config.yml')
-
 path.stan.config <- fifelse(usr == "andrea" & interactive(),
     yes = file.path(gitdir.stan, 'binomial_gp_config_local.yml'),
     no = file.path(gitdir.stan, 'binomial_gp_config.yml'),
