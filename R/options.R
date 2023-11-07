@@ -133,7 +133,16 @@ option_list <- list(
         default = FALSE,
         help = "Use shared GP kernel hyperparameters across participant type",
         dest = "shared.hyper"
+    ),
+    make_option(
+        "--confidential",
+        type = "logical",
+        default = TRUE,
+        help = "Use confidential data. If FALSE, aggregated data are used instead",
+        dest = "confidential"
     )
 )
+
+# for ease, I could let default be NA, if username is familiar, then set to TRUE, else FALSE...?
 
 args <-  parse_args(OptionParser(option_list = option_list))

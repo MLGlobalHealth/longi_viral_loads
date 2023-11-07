@@ -211,7 +211,7 @@ generated quantities {
   // 
   for (i in 1 : N_observed) {
     log_lik_00[i] = binomial_logit_lpmf(y_observed_00[i] | total_observed_00[i], logit_p_predict_00[i]);
-    log_lik_01[i] = binomial_logit_lpmf(y_observed_01 i] | total_observed_01[i], logit_p_predict_01[i]);
+    log_lik_01[i] = binomial_logit_lpmf(y_observed_01[i] | total_observed_01[i], logit_p_predict_01[i]);
     log_lik_10[i] = binomial_logit_lpmf(y_observed_10[i] | total_observed_10[i], logit_p_predict_10[i]);
     log_lik_11[i] = binomial_logit_lpmf(y_observed_11[i] | total_observed_11[i], logit_p_predict_11[i]);
   //   
