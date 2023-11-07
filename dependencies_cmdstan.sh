@@ -1,16 +1,19 @@
 #!/bin/sh
 
+ANACONDA_PATH="$HOME/anaconda3"
+
 # load Anaconda
-if [ -d $HOME/anaconda3 ]; then
-    echo -e "\nanaconda3/personal already installed\n\n";
+if [ -d $ANACONDA_PATH ]; then
+    echo -e "\nanaconda already installed\n\n";
 else
+    # authomatic installation of anaconda on Imperial HPC.
     echo -e "\ninstalling anaconda3/personal\n\n";
     anaconda-setup
 fi
 
 
 # Create new conda environment called "longivl_cmdstan"
-if [ -d $HOME/anaconda3/envs/longivl_cmdstan ]; then
+if [ -d $ANACONDA_PATH/envs/longivl_cmdstan ]; then
     echo "###############################################"
     echo -e "\nlongivl_cmdstan conda environment is already present"
     echo -e "\nIf you wish you re-install please remove the conda environment first with:"

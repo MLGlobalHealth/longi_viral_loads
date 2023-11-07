@@ -128,8 +128,10 @@ if(args$shared.hyper){
 
 if (args$run.gp.prevl) {
     if(args$shared.hyper){
+        stopifnot("args$only.firstparticipants must not be TRUE"= ! args$only.firstparticipants)
         vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper(vla, refit = args$refit, alpha_hyper = args$stan.alpha)
     }else{
+        vla <- if(args$only.firstparticipants){vla[PTYPE == "ftp"]}else{vla[PTYPE=="all"]}
         vl.prevalence.by.gender.loc.age.gp.cmdstan(vla, refit = args$refit, alpha_hyper = args$stan.alpha)
     }
 }
@@ -139,8 +141,10 @@ if (args$run.gp.prevl) {
 
 if (args$run.gp.supp.hiv) { # Among HIV positive
     if(args$shared.hyper){
+        stopifnot("args$only.firstparticipants must not be TRUE"= ! args$only.firstparticipants)
         vl.suppofinfected.by.gender.loc.age.gp.cmdstan.hyper(vla, refit = args$refit, alpha_hyper = args$stan.alpha)
     }else{
+        vla <- if(args$only.firstparticipants){vla[PTYPE == "ftp"]}else{vla[PTYPE=="all"]}
         vl.suppofinfected.by.gender.loc.age.gp.cmdstan(vla, refit = args$refit, alpha_hyper = args$stan.alpha)
     }
 }
@@ -148,8 +152,10 @@ if (args$run.gp.supp.hiv) { # Among HIV positive
 
 if (args$run.gp.supp.pop) { # Among Entire population
     if(args$shared.hyper){
+        stopifnot("args$only.firstparticipants must not be TRUE"= ! args$only.firstparticipants)
         vl.suppofpop.by.gender.loc.age.gp.cmdstan.hyper(vla, refit = args$refit, alpha_hyper = args$stan.alpha)
     }else{
+        vla <- if(args$only.firstparticipants){vla[PTYPE == "ftp"]}else{vla[PTYPE=="all"]}
         vl.suppofpop.by.gender.loc.age.gp.cmdstan(vla, refit = args$refit, alpha_hyper = args$stan.alpha)
     }
 }

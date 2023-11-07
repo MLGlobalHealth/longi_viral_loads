@@ -40,6 +40,7 @@ You can follow the steps below to clone our codebase locally and rerun the analy
 
 1. Clone the github repository in a directory of your choice.
 2. Install the dependencies by running `sh dependencies_cmdstan.sh`.
+3. Download the data necessary to run the analyses from TODO and specify the path to that directory in TODO . 
  
 >  **Note** A common error with new installations of `cmdstanr` is the inability to compile stan files due to a `need to set TBB_CXX_TYPE` (see [here](https://bytemeta.vip/repo/stan-dev/cmdstanpy/issues/374?page=1) for a solution).
 
@@ -50,18 +51,19 @@ To run the code with the same settings as in our paper, run from the root direct
 
 ```{sh}
 # Run ./run_stan -h for more help on the available flags
-./run_stan OUTDIR="path/to/desired/output/directory"
+./run_stan OUTDIR="path/to/desired/output/directory" ROUND=19 MODELS="run-gp-prevl" LOCAL=TRUE
 ```
 
-[ MAYBE ADD FLAGS `ROUND` `MODEL` AND `LOCAL` TO NOT RUN TOO MANY THINGS AT ONCE??? ]
-The above prepares a different bash job for every combination of the three prevalence measures of interest and each of the four survey rounds. The resulting `.pbs` files are saved in the `OUTDIR` and can be either submitted through a `PBS` job scheduler, or they can be run as bash scripts individually.
-Note that running the script redirects you to the specified `OUTDIR`.
+> **Note on flags**
+> * `LOCAL`: indicates we want to run jobs locally, instead of submitting them to a job scheduler with `qsub`.
+> * `MODELS` indicates which models we want to run, and can be one, or a combination of, the following: `run-gp-prevl`, `run-gp-supp-pop`, `run-gp-supp-hiv`.
+> * `ROUND` flag indicates the survey round for which we want to run our analyses
 
 Once all jobs are run, it is possible to run our postprocessing code, involving reproducibility of figures, tables and an `html` report summarising the runs.
 
 ```{sh}
 # Run ./run_postprocessing -h for more help on the available flags
-./run_postprocessing OUTDIR="path/to/desired/output/directory"
+./run_postprocessing OUTDIR="path/to/desired/output/directory" LOCAL=TRUE
 ```
 
 ## Warranty 
