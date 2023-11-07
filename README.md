@@ -64,6 +64,8 @@ Once all jobs are run, it is possible to run our postprocessing code, involving 
 ./run_postprocessing OUTDIR="$ZENODO_DIR/results" LOCAL=TRUE
 ```
 
+All the `R` scripts called by the two executable can be found in the [`scripts`](scripts).
+
 > **Note on flags.** The two executables [`run_stan`](run_stan) and [`run_postprocessing`](run_postprocessing) take a number of flags whose documentation can be read through the `-h` flag (eg: `./run_stan -h`). The most important are:
 > * `OUTDIR`: indicates the directory where we want to save the results of our runs.
 > * `LOCAL`: indicates we want to run jobs locally, instead of submitting them to a job scheduler with `qsub`.
