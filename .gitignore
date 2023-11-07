@@ -5,9 +5,14 @@ TODO.md
 tags
 
 *pdf
+*svg
 *png
 *bib
+*html
 *Rproj
+*.RData
+*.RDataTmp
+*.Rhistory
 
 # dirs
 data/
@@ -23,3 +28,19 @@ open_mainfigures
 slides/*
 
 *parallel_log*
+
+
+.Rproj.user/
+R/local_cores_parallelisation.R
+R/test_palettes.R
+docs/
+
+functions/compare_reported_arv.R
+functions/find_incidence_cases_Andrea.R
+functions/incidence_rate_estimation_functions.R
+functions/misc.R
+outdir/
+submission/
+tests/
+
+reports/deprecated/
