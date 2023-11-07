@@ -27,7 +27,7 @@
 - [R](https://www.r-project.org/) version `≥4.1.2`.
 - [cmdstan](https://mc-stan.org/users/interfaces/cmdstan) version `2.27.0`.
 
-We additionally [conda]() or [miniconda]() to reproduce our package environment.
+We additionally suggests [conda or miniconda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) to reproduce our package environment.
 
 ### Installation
 
