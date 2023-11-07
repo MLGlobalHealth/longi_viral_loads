@@ -51,13 +51,16 @@ As such, we suggest to define the following environment variable on the command 
 ZENODO_DIR="PATH-TO-DOWNLOADED-ZENODO-DATA"
 ```
 
-To run the code with the same settings as in our paper, we then run from the root directory of the repository the [`run_stan`](run_stan) executable.
+To run the code with the same settings as in our paper, we then run from the root directory of the repository the [`run_stan`](run_stan) executable. 
 
 ```{sh}
 ./run_stan OUTDIR="$ZENODO_DIR/results" ROUND=19 MODELS="run-gp-prevl" LOCAL=TRUE
 ```
 
-Note that alternative output directories can be used, and the above can also be run as a bash script through `bash run_stan ...`.
+Note that: 
+1. alternative output directories can be used, and the above can also be run as a bash script through `bash run_stan ...`.
+2. stan settings can be updated in the [`stan/binomial_gp_config.yml`](stan/binomial_gp_config.yml) file.
+ 
 Once all jobs are run, it is possible to run our postprocessing code, involving reproducibility of figures, tables and an `html` report summarising the runs.
 
 ```{sh}
