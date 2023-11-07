@@ -51,7 +51,7 @@ As such, we suggest to define the following environment variable on the command 
 ZENODO_DIR="PATH-TO-DOWNLOADED-ZENODO-DATA"
 ```
 
-To run the code with the same settings as in our paper, we then run from the root directory of the repository the `run_stan` executable.
+To run the code with the same settings as in our paper, we then run from the root directory of the repository the [`run_stan`](run_stan) executable.
 
 ```{sh}
 ./run_stan OUTDIR="$ZENODO_DIR/results" ROUND=19 MODELS="run-gp-prevl" LOCAL=TRUE
@@ -64,7 +64,7 @@ Once all jobs are run, it is possible to run our postprocessing code, involving 
 ./run_postprocessing OUTDIR="$ZENODO_DIR/results" LOCAL=TRUE
 ```
 
-> **Note on flags.** The two executables `run_stan` and `run_postprocessing` take a number of flags whose documentation can be read through the `-h` flag (eg: `./run_stan -h`). The most important are:
+> **Note on flags.** The two executables [`run_stan`](run_stan) and [`run_postprocessing`](run_postprocessing) take a number of flags whose documentation can be read through the `-h` flag (eg: `./run_stan -h`). The most important are:
 > * `OUTDIR`: indicates the directory where we want to save the results of our runs.
 > * `LOCAL`: indicates we want to run jobs locally, instead of submitting them to a job scheduler with `qsub`.
 > * `MODELS` indicates which models we want to run, and can be one, or a combination of, the following: `run-gp-prevl`, `run-gp-supp-pop`, `run-gp-supp-hiv`.
