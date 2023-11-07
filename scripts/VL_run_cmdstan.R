@@ -10,10 +10,6 @@ cat("\nStart of:", self_relative_path, "\n")
 if( ! interactive() )
     options(error=dump.frames)
 
-# AIMS:
-# - adapt older code from Oli to multi-round, longitudinal settings
-# TODO: discuss: we are removing individuals with missing VLs: they are very little
-
 suppressPackageStartupMessages({
     library(data.table)
     library(ggplot2)
@@ -106,6 +102,8 @@ if( args$confidential ){
     vla_all <- .preprocess.make.vla(tmp, select = cols )
     vla_ftp <- .preprocess.make.vla(tmp[FIRST_PARTICIPATION == 1], select = cols )
     vla <- rbind(vla_all[, PTYPE := "all"], vla_ftp[, PTYPE := "ftp"])
+    setkeyv(vla, c("ROUND", "LOC_LABEL", "SEX_LABEL", "PTYPE", "AGE_LABEL"))
+
     if( ! file.exists( path.aggregated.nums.denoms.r1619) ){
         sprintf( "Saving file: %s\n", path.aggregated.nums.denoms.r1619) |> cat()
         fwrite(x=vla, file=path.aggregated.nums.denoms.r1619 )
