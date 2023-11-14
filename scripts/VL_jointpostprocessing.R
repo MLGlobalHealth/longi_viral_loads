@@ -466,8 +466,7 @@ if (file.exists(filename_rds) & !overwrite) {
 }
 
 if (make_plots & FALSE) {
-    .w <- 14
-    .h <- 14
+    .w <- 14; .h <- 14
     p_list <- lapply(c(16:19), plot.prevalence.by.age.group, DT = dsupp_agegroup)
     filenames <- paste0("plot_suppofhiv_by_agegroup_round", c(16:19), ".pdf")
     # for (i in 1:length(p_list)) {
@@ -557,12 +556,6 @@ if (make_plots) {
 if ( make_tables ){
     .null <- paper_statements_prevalence_viraemia_maximum (dsupp_agegroup_custom)
 }
-
-
-statements_prevalence_viraemia_maximum(dsupp_agegroup_custom )
-
-dtable <- subset(DT == round)
-dsupp_agegroup_custom[ ROUND == 19, , by=c(LOC, SEX) ]
 
 
 catn("Get quantiles for contributions by age")
@@ -707,6 +700,14 @@ filename_rds <- file.path(out.dir.tables, "mean_ages_plhiv_viraemic.rds")
 if (file.exists(filename_rds) & !overwrite) {
     dmeanage <- readRDS(filename_rds)
 } else {
+
+    .linearly_interpolate <- function(value, y, x){
+        idx <- which(y >= value)[1]
+        gradient = y[idx] - y[idx - 1]
+        b = ( y[idx] - value ) / gradient
+        return(x[idx] - b )
+    }
+
     dmeanage <- dfiles_rds[MODEL %in% c("run-gp-prevl", "run-gp-supp-pop"),
         {
             eval(expr_setup_ftp_all)
@@ -718,25 +719,32 @@ if (file.exists(filename_rds) & !overwrite) {
                 expression_prereturn = {
                     tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
                     # Not sure if valid way to compute the posterior "mode"...
+                    tmp[, cum_cdf := cumsum(joint * ELIGIBLE_SMOOTH) / sum(joint * ELIGIBLE_SMOOTH),
+                        by = c(dot.cols, "LOC", "ROUND", "SEX")]
                     tmp1 <- tmp[
                         j = .(
                             AGEMODE = AGEYRS[which.max(joint * ELIGIBLE_SMOOTH )],
                             AGEMEAN = Hmisc::wtd.mean(AGEYRS, joint * ELIGIBLE_SMOOTH),
-                            AGESTD = Hmisc::wtd.var(AGEYRS, joint * ELIGIBLE_SMOOTH) |> sqrt()
+                            AGESTD = Hmisc::wtd.var(AGEYRS, joint * ELIGIBLE_SMOOTH) |> sqrt(),
+                            AGE25 =  .linearly_interpolate(.25, y=cum_cdf, x=AGEYRS),
+                            AGE50 =  .linearly_interpolate(.50, y=cum_cdf, x=AGEYRS),
+                            AGE75 =  .linearly_interpolate(.75, y=cum_cdf, x=AGEYRS)
                         ),
                         by = c(dot.cols, "LOC", "ROUND", "SEX")
                     ] |> melt.data.table(
-                            measure.vars = c("AGEMEAN", "AGESTD", "AGEMODE"),
+                            measure.vars = c("AGEMEAN", "AGESTD", "AGEMODE", "AGE25", "AGE50", "AGE75"),
                             variable.name = "TYPE",
                             value.name = "value"
                         )
-                    tmp1[j = quantile2(value), by = c("SEX", "LOC", "TYPE")]
+                    tmp1[,j = quantile2(value), by = c("SEX", "LOC", "TYPE")]
                 }
             )
         },
         by = c("MODEL", "ROUND")
     ]
     saveRDS(object = dmeanage, file = filename_rds)
+
+    rm(.linearly_interpolate)
 }
 
 # TODO! (check that this worked.)
@@ -747,6 +755,8 @@ if (make_tables) {
         paper_statements_meanage_population(DT = dt, label = "run-gp-supp-pop", type = "AGESTD")
     )
     rm(dt, tmp1)
+
+    tab <- make.supp.table.meanage()
 }
 
 catn("Other contribution to viraemia quantiles for text")

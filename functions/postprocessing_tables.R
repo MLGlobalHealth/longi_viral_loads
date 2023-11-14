@@ -224,11 +224,9 @@ make_main_table_contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup
 
 make.supp.table.meanage <- function(DT=dmeanage, label=NA_character_){
 
-    if(! is.na(label)){
-        tab <- subset(DT,  MODEL == label )
-    }else{
-        tab <- copy(DT)
-    }
+    tab <- if(! is.na(label)){
+        subset(DT,  MODEL == label)
+    }else{ subset(DT) } |> subset(TYPE %like% "AGE[0-9]{2}")
 
     # get entries
     tab <- tab[, CELL := prettify_cell(M, IL, IU)] |>
@@ -245,7 +243,9 @@ make.supp.table.meanage <- function(DT=dmeanage, label=NA_character_){
         skip_absent = TRUE)
 
     # sort colnames
-    setcolorder(tab, unname(dict_table_names$mean_ages))
+    order <- intersect(unname(dict_table_names$mean_ages), names(tab))
+    setcolorder(tab, order)
+    xtable(tab)
     return(tab)
 }
 
