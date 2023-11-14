@@ -2101,7 +2101,7 @@ plot_single_posterior_fit <- function(DT = dfits, model, verbose = TRUE) {
     lab1 <- fcase(
         model == "run-gp-prevl", "individuals\nwith HIV",
         model == "run-gp-supp-hiv", "individuals\nwith suppressed virus",
-        model == "run-gp-supp-pop", "individuals\nwith suppressed virus"
+        model == "run-gp-supp-pop", "individuals\nwith unsuppressed virus"
     )
     lab2 <- fcase(
         model == "run-gp-prevl", "study participants",
@@ -2122,12 +2122,12 @@ plot_single_posterior_fit <- function(DT = dfits, model, verbose = TRUE) {
         theme_default() +
         labs(
             color = NULL, shape = NULL,
-            x = sprintf(fmt_x, lab1, lab2),
+            x = sprintf(fmt_x, gsub("\\n", " ", lab1), lab2),
             y = sprintf(fmt_y, lab1, lab2)
         ) +
-        nm_reqs
-    p
-
+        guides(shape = guide_legend(nrow = 2, byrow=TRUE)) +
+        nm_reqs +
+        theme(legend.spacing.y = unit(-6, "pt"))
     force(p)
     gg_list_pp[[model]] <<- p
 

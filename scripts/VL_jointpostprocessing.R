@@ -1402,12 +1402,7 @@ cmds <- lapply(
     filename_fmt = "suppfig_all_posteriors_vs_data_%s.pdf"
 )
 
-# lapply( cmds, function(x){
-#     out <- gsub("zathura", "cp", x)
-#     out <- gsub("\\&", "/extraspace/latex/overleaf/vl_suppression/figures/", out)
-#     system(out)
-#     TRUE
-# })
+# lapply( cmds, cmd2overleaf)
 
 # posterior predictive
 
@@ -1417,15 +1412,22 @@ out <- lapply(
     plot_single_posterior_fit,
     DT=dfits
 )
+
+gg_list_pp <- lapply(gg_list_pp, function(p) p + theme(legend.margin = margin(r=0,l=-10, t = 0, b=0, unit = "pt")) )
+
 p_pp <- ggarrange(
     plotlist = gg_list_pp,
     ncol=1, nrow=3,
     common.legend = TRUE, legend='bottom',
-    labels = "auto"
-) + nm_reqs
+    labels = "auto",
+    font.label = list(size = 10, color = "black", face = "bold", family = NULL)
+) + nm_reqs 
+p_pp
+
 filename <- paste0("suppfig_all_ppchecks.pdf")
 cmd <- ggsave2(p = p_pp, file = filename, LALA = out.dir.figures, w = 18 , h = 24, u="cm")
-system(cmd)
+# system(cmd)
+# cmd2overleaf(cmd)
 
 #####################
 catn("End of script")
