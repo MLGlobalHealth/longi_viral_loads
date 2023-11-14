@@ -238,7 +238,7 @@ extract.stan.hyperparams.rho <- function(re, encoding){
         geom_point(data = DT2, aes(y = M, shape = SEX_LAB, size = N)) +
         scale_size(range = c(0, 3)) +
         scale_shape_manual(values=shapes$sex, labels=sex_dictionary2) + 
-        labs(pch = "Gender", size = "Population size")
+        labs(pch = "Gender", size = "Number of individuals")
 
     return(list(p_without, p_with))
 }

@@ -216,8 +216,8 @@ dall_dictionaries <- list(
 
 postproc_dictionaries <- list(
     VIR_STATUS = c(
-        "UNSUPP" = "unsuppressed viral load",
-        "SUPP" = "suppressed viral load",
+        "UNSUPP" = "unsuppressed virus",
+        "SUPP" = "suppressed virus",
         "NEG" = "HIV negative"
     ),
     PARTICIPATION_STATUS = c(

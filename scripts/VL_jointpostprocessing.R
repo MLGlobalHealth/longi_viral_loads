@@ -1402,6 +1402,12 @@ cmds <- lapply(
     filename_fmt = "suppfig_all_posteriors_vs_data_%s.pdf"
 )
 
+# lapply( cmds, function(x){
+#     out <- gsub("zathura", "cp", x)
+#     out <- gsub("\\&", "/extraspace/latex/overleaf/vl_suppression/figures/", out)
+#     system(out)
+#     TRUE
+# })
 
 # posterior predictive
 

@@ -89,7 +89,7 @@ plot.all.gps <- function(loc = "fishing") {
             theme_default() +
             labs(
                 x = "\nage at visit (years)",
-                y = "HIV+ individuals with suppressed viral load\n(95% credible interval)\n",
+                y = "HIV+ individuals with suppressed virus\n(95% credible interval)\n",
                 colour = "gender", fill = "gender",
                 pch = "gender",
                 size = "population size"
@@ -120,7 +120,7 @@ plot.all.gps <- function(loc = "fishing") {
             theme_default() +
             labs(
                 x = "\nage at visit (years)",
-                y = "population with unsuppressed viral load\n(95% credible interval)\n",
+                y = "population with unsuppressed virus\n(95% credible interval)\n",
                 pch = "gender", colour = "gender", fill = "gender",
                 size = "population size"
             )
@@ -618,10 +618,10 @@ make.unaids.plots <- function(DT) {
 
     # relabelling
     .rl1 <- function(x) {
-        lvls <- c("HIV negative", "suppressed viral load", "unsuppressed viral load")
+        lvls <- c("HIV negative", "suppressed virus", "unsuppressed virus")
         out <- fcase(
-            x %like% "UNSUPP", "unsuppressed viral load",
-            x %like% "^SUPP", "suppressed viral load",
+            x %like% "UNSUPP", "unsuppressed virus",
+            x %like% "^SUPP", "suppressed virus",
             x %like% "NEG", "HIV negative"
         )
         out <- ordered(out, levels = rev(lvls))
@@ -876,7 +876,6 @@ plot.empirical.prob.of.suppression.with.age <- function(DT = dcens) {
 }
 
 plot.rakai.map <- function(.size = 4, labs = FALSE) {
-
     # graphics
     .breaks <- list(NULL, waiver())[[labs + 1]]
     .xlab <- list(NULL, "Longitude (°E)")[[labs + 1]]
@@ -924,16 +923,16 @@ plot.rakai.map <- function(.size = 4, labs = FALSE) {
         bbox = box,
         maptype = "stamen_terrain_background",
         zoom = 12
-    ) 
+    )
 
     # get roads from omsdata
     roads <- opq(bbox = box) |>
-        add_osm_feature(key = "highway", value=c("primary", "trunk", "secondary")) |>
+        add_osm_feature(key = "highway", value = c("primary", "trunk", "secondary")) |>
         osmdata_sf()
     roads <- roads$osm_lines
 
     p <- ggmap(map) +
-        geom_sf(data = roads, inherit.aes = FALSE, color = "black", size=3) +
+        geom_sf(data = roads, inherit.aes = FALSE, color = "black", size = 3) +
         geom_point(
             data = comms,
             aes(
@@ -947,7 +946,7 @@ plot.rakai.map <- function(.size = 4, labs = FALSE) {
         scale_fill_manual(values = palettes$comm) +
         scale_y_continuous(breaks = .breaks, expand = c(0, 0)) +
         scale_x_continuous(breaks = .breaks, expand = c(0, 0)) +
-        coord_sf(xlim = box[c('left', 'right')], ylim = box[c('bottom', 'top')]) +
+        coord_sf(xlim = box[c("left", "right")], ylim = box[c("bottom", "top")]) +
         my_labs(color = NULL, fill = NULL, shape = NULL, x = .xlab, y = .ylab) +
         theme(
             legend.position = c(1, 1),
@@ -974,31 +973,29 @@ plot.rakai.map <- function(.size = 4, labs = FALSE) {
     p
 }
 
-plot_all_maps <- function(
-    delta_inset = .72,
-    sizes = list(points=1, text=3)
-) {
+plot_all_maps <- function(delta_inset = .72,
+                          sizes = list(points = 1, text = 3)) {
     # Map of the Rakai communities
     naturemed_reqs()
-    margins <- list( lon = 8.5, lat = 7, offset=0.7)
-    fig1a.outer <- plot_uganda_map( margin = margins, text_size=sizes$text) # + nm_reqs
+    margins <- list(lon = 8.5, lat = 7, offset = 0.7)
+    fig1a.outer <- plot_uganda_map(margin = margins, text_size = sizes$text) # + nm_reqs
     # fig1a.outer <- plot.uganda.map(labs = FALSEele) + nm_reqs
     fig1a.inner <- plot.rakai.map(.size = sizes$points, labs = FALSE) +
         theme(
             panel.border = element_rect(colour = "red", size = 2),
-            panel.background = element_rect( color = "red" ,fill="red"),
+            panel.background = element_rect(color = "red", fill = "red"),
             plot.margin = margin(0, 0, 0, 0, "cm")
-        ) 
+        )
 
     # inset format
     pmap <- fig1a.outer + patchwork::inset_element(
         fig1a.inner,
-        left = 1 - delta_inset, 
-        right = 1.0, 
+        left = 1 - delta_inset,
+        right = 1.0,
         bottom = 0,
-        top = delta_inset, 
+        top = delta_inset,
         align_to = "panel"
-    ) + theme(panel.background = element_rect(fill='red'))
+    ) + theme(panel.background = element_rect(fill = "red"))
 
     return(pmap)
 }
@@ -1306,7 +1303,6 @@ plot_suppandcontrib <- function(DTprev1,
                                 slides = FALSE,
                                 CrI = TRUE,
                                 UNAIDS = TRUE) {
-
     ALPHA <- .5
     DODGE <- 1
 
@@ -1441,8 +1437,7 @@ plot_suppandcontrib <- function(DTprev1,
     return(p)
 }
 
-plot_uganda_map <- function(labs = FALSE, margin=list(), text_size=6) {
-
+plot_uganda_map <- function(labs = FALSE, margin = list(), text_size = 6) {
     .xlab <- list(NULL, "Longitude (°E)")[[labs + 1]]
     .ylab <- list(NULL, "Latitude (°N)")[[labs + 1]]
 
@@ -1454,50 +1449,49 @@ plot_uganda_map <- function(labs = FALSE, margin=list(), text_size=6) {
             top = max(latitude),
             left = min(longitude),
             bottom = min(latitude),
-            right = max(longitude))
+            right = max(longitude)
+        )
     })
 
     # get the box containing Uganda, either according to some predefined "zooms"
     # or "expanding" the Rakai box by some margins.
 
-    if( length(margin) ){
-
-        if( ! all( c("offset","lon","lat") %in% names(margin)))
+    if (length(margin)) {
+        if (!all(c("offset", "lon", "lat") %in% names(margin))) {
             stop("margin must be a list with offset, lon, lat")
+        }
 
-        box_uganda <- as.numeric(rakai_box) 
-        extensions <-  with(margin, c( 
-            top = lat * (1 - offset), left = - lon * (1 - offset), 
-            bottom = - lat * (1 + offset), right = lon * (1 + offset)
+        box_uganda <- as.numeric(rakai_box)
+        extensions <- with(margin, c(
+            top = lat * (1 - offset), left = -lon * (1 - offset),
+            bottom = -lat * (1 + offset), right = lon * (1 + offset)
         ))
         box_uganda <- box_uganda + extensions
         names(box_uganda) <- names(rakai_box)
-
-    }else{
+    } else {
         # deprecated
         box_uganda <- {
-            if ( zoom == "far" & position == "center"){
+            if (zoom == "far" & position == "center") {
                 c(top = 6.158199, left = 24.681059, bottom = -6.314563, right = 42.125359)
-            } else if ( zoom == "medium" & position == "corner"){
+            } else if (zoom == "medium" & position == "corner") {
                 c(top = 1.5, left = 29, bottom = -9, right = 40)
-            } else  if ( zoom == "medium" & position == "center"){
+            } else if (zoom == "medium" & position == "center") {
                 c(top = 4.4, bottom = -4.6, left = 26, right = 37)
-            } else if ( zoom == "close"){
+            } else if (zoom == "close") {
                 c(top = NA_real_, left = NA_real_, bottom = NA_real_, right = NA_real_)
             } else {
                 stop("not implemented")
             }
         }
-
     }
 
     stopifnot(
-        box_uganda['left'] < box_uganda['right'] &
-        box_uganda['bottom'] < box_uganda['top']
+        box_uganda["left"] < box_uganda["right"] &
+            box_uganda["bottom"] < box_uganda["top"]
     )
 
     # colors <- c( "#186F65", "#B5CB99", "#FCE09B", "#B2533E")
-    colors <- c(  "#999966","#cccc99","#cc9966", "#cc9999",  "#669966")
+    colors <- c("#999966", "#cccc99", "#cc9966", "#cc9999", "#669966")
 
 
     countries <- c(
@@ -1517,29 +1511,30 @@ plot_uganda_map <- function(labs = FALSE, margin=list(), text_size=6) {
         "Zimbabwe" = colors[3]
     )
 
-    world <- map_data("world", regions=names(countries))
-    world_labs <- as.data.table(world)[, 
-        j=.(long = mean(long, na.rm=TRUE), lat=mean(lat, na.rm=TRUE), group=group),
-        by="region"] |> 
+    world <- map_data("world", regions = names(countries))
+    world_labs <- as.data.table(world)[,
+        j = .(long = mean(long, na.rm = TRUE), lat = mean(lat, na.rm = TRUE), group = group),
+        by = "region"
+    ] |>
         unique() |>
-        subset( ! ( region == "Zambia" | region == "Democratic Republic of the Congo" ))
+        subset(!(region == "Zambia" | region == "Democratic Republic of the Congo"))
     lakes <- map_data("lakes")
 
-    ggplot(data=world, aes( x=long, y=lat, group=group)) +
-        geom_polygon( aes(fill=region), alpha=1) +
+    ggplot(data = world, aes(x = long, y = lat, group = group)) +
+        geom_polygon(aes(fill = region), alpha = 1) +
         geom_path(color = "black", size = 0.5) +
         geom_polygon(data = lakes, aes(x = long, y = lat, group = group), fill = "#99b3cc") +
         # geom_path(data=map_data("lakes"), color = "black", size = 0.5) +
         geom_text(data = world_labs, aes(label = region, group = group), size = text_size) +
-        coord_fixed(ratio = 1, xlim = box_uganda[c('left', 'right')], ylim = box_uganda[c('bottom', 'top')]) +
-        scale_fill_manual(values=countries, na.value = "yellow") +
+        coord_fixed(ratio = 1, xlim = box_uganda[c("left", "right")], ylim = box_uganda[c("bottom", "top")]) +
+        scale_fill_manual(values = countries, na.value = "yellow") +
         geom_rect(
-            xmin = rakai_box$left, 
+            xmin = rakai_box$left,
             xmax = rakai_box$right,
             ymin = rakai_box$bottom, ymax = rakai_box$top,
             fill = NA, color = "red"
         ) +
-        labs(x =.xlab, y=.ylab) + 
+        labs(x = .xlab, y = .ylab) +
         theme(
             legend.position = "none",
             panel.background = element_rect(fill = "#99b3cc"),
@@ -1550,7 +1545,6 @@ plot_uganda_map <- function(labs = FALSE, margin=list(), text_size=6) {
 }
 
 plot.uganda.map <- function(zoom = "medium", maptype = "toner-lite", position = "corner", labs = TRUE) {
-
     warning("plot.uganda.map is deprecated, instead use plot_uganda_map")
     require(ggmap)
 
@@ -1577,7 +1571,8 @@ plot.uganda.map <- function(zoom = "medium", maptype = "toner-lite", position = 
             top = max(latitude),
             left = min(longitude),
             bottom = min(latitude),
-            right = max(longitude))
+            right = max(longitude)
+        )
     })
 
     uganda <- get_stamenmap(
@@ -1669,9 +1664,10 @@ plot.comparison.prevalence.fishinginland.oneround <- function(DT, model, round, 
         my_labs(y = model_dictionary[model])
 }
 
-plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaids = TRUE, rev = TRUE, m = 0, joint=FALSE) {
-
-    .ALPHA <- .3; .LINEWIDTH <- .2; .margin <- m
+plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaids = TRUE, rev = TRUE, m = 0, joint = FALSE) {
+    .ALPHA <- .3
+    .LINEWIDTH <- .2
+    .margin <- m
 
     type <- match.arg(type, c("hist", "line", "point"))
     .ylab <- fifelse(rev,
@@ -1703,7 +1699,7 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
                 geom_linerange(position = .pd, color = "grey40")
             },
             if (type == "point") {
-                geom_linerange(position = .pd, alpha=.35)
+                geom_linerange(position = .pd, alpha = .35)
             },
             if (type == "point") {
                 geom_point(position = .pd)
@@ -1711,8 +1707,8 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
             if (type == "point") {
                 scale_shape_manual(values = shapes$sex, labels = sex_dictionary2)
             },
-            if( joint ){
-                scale_alpha_manual(values=alphas, labels = sex_dictionary2)
+            if (joint) {
+                scale_alpha_manual(values = alphas, labels = sex_dictionary2)
             },
             if (unaids) {
                 geom_hline(
@@ -1732,7 +1728,11 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
         one_comm_bool <- dplot[, uniqueN(LOC) == 1]
         if (one_comm_bool) {
             # add \n to y label
-            form <- if(joint){ formula(.~.)} else{formula(~ROUND_LAB)}
+            form <- if (joint) {
+                formula(. ~ .)
+            } else {
+                formula(~ROUND_LAB)
+            }
             .ylab <<- gsub("group who", "group\nwho", .ylab)
             .ylab <<- gsub("suppression in", "suppression\nin", .ylab)
             out <- list(
@@ -1740,7 +1740,11 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
                 labs(subtitle = community_dictionary$longest2[unique(dplot$LOC)])
             )
         } else {
-            form <- if(joint){ formula(LOC_LAB~.)} else{formula(LOC_LAB~ROUND_LAB)}
+            form <- if (joint) {
+                formula(LOC_LAB ~ .)
+            } else {
+                formula(LOC_LAB ~ ROUND_LAB)
+            }
             out <- list(
                 facet_grid(form, labeller = labeller(ROUND_LAB = round_labs, LOC_LAB = community_dictionary$longest2n))
             )
@@ -1748,31 +1752,31 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
         return(out)
     }
 
-    base <- ggplot( dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = SEX_LAB, color = SEX_LAB, pch = SEX_LAB)) 
-    col_lab <- "Gender"; shape_lab <- alpha_lab <- NULL
+    base <- ggplot(dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = SEX_LAB, color = SEX_LAB, pch = SEX_LAB))
+    col_lab <- "Gender"
+    shape_lab <- alpha_lab <- NULL
 
-    if( joint ){ 
-
-        dplot[, ROUNDSEX_LAB := paste(ROUND_LAB, SEX_LAB, sep=', ') ] 
+    if (joint) {
+        dplot[, ROUNDSEX_LAB := paste(ROUND_LAB, SEX_LAB, sep = ", ")]
         alphas <- c(
-            `Round 16, Male` =  1,
+            `Round 16, Male` = 1,
             `Round 19, Male` = 1,
-            `Round 16, Female` = 1, 
+            `Round 16, Female` = 1,
             `Round 19, Female` = 1
         )
 
-        base <- ggplot( dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = ROUNDSEX_LAB, color = ROUNDSEX_LAB, pch = ROUNDSEX_LAB, alpha=ROUNDSEX_LAB))
+        base <- ggplot(dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = ROUNDSEX_LAB, color = ROUNDSEX_LAB, pch = ROUNDSEX_LAB, alpha = ROUNDSEX_LAB))
         col_lab <- shape_lab <- alpha_lab <- "Gender, Round"
     }
-        alphas <- c(
-            `Round 16, Male` =  1,
-            `Round 19, Male` = 1,
-            `Round 16, Female` = 1, 
-            `Round 19, Female` = 1
-        )
+    alphas <- c(
+        `Round 16, Male` = 1,
+        `Round 19, Male` = 1,
+        `Round 16, Female` = 1,
+        `Round 19, Female` = 1
+    )
 
 
-    base + 
+    base +
         .main() +
         .facet() +
         scale_y_percentagef(.02) +
@@ -1783,7 +1787,7 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
         my_labs(
             y = .ylab,
             x = "Age",
-            fill = col_lab, color = col_lab, shape=shape_lab, alpha=alpha_lab
+            fill = col_lab, color = col_lab, shape = shape_lab, alpha = alpha_lab
         ) +
         nm_reqs
 }
@@ -1938,33 +1942,32 @@ plot.prevalence.by.age.group <- function(DT, round = 19) {
         NULL
 }
 
-hist_prevalence_by_age_group_custom <- function(DT,reverse=TRUE, round = 19, m=-5) {
-
+hist_prevalence_by_age_group_custom <- function(DT, reverse = TRUE, round = 19, m = -5) {
     dplot <- subset(DT, ROUND == round)
-    if(reverse) dplot <- reverse_quantiles(dplot) 
+    if (reverse) dplot <- reverse_quantiles(dplot)
 
-    .ylab <- fifelse(reverse, 
-        yes="Proportion of PLHIV in each age group\nwho have unsuppressed virus",
-        no="Prevalence of viraemia among PLHIV by age group"
+    .ylab <- fifelse(reverse,
+        yes = "Proportion of PLHIV in each age group\nwho have unsuppressed virus",
+        no = "Prevalence of viraemia among PLHIV by age group"
     )
-    .ylim <- fifelse(reverse, yes=.63, no=1)
+    .ylim <- fifelse(reverse, yes = .63, no = 1)
 
-    pd=position_dodge(width=.9)
+    pd <- position_dodge(width = .9)
 
 
-    form <- if ( uniqueN(dplot$LOC) > 1 ){
+    form <- if (uniqueN(dplot$LOC) > 1) {
         formula(LOC ~ .)
-    }else{
+    } else {
         formula(. ~ LOC)
     }
 
 
-    ggplot(dplot,aes(x = AGEGROUP, y = M, ymin = CL, ymax = CU,fill=SEX)) +
+    ggplot(dplot, aes(x = AGEGROUP, y = M, ymin = CL, ymax = CU, fill = SEX)) +
         # geom_point() +
-        geom_col(position=pd) +
-        geom_hline(aes(yintercept = c(.95^3, 1-.95^3)[reverse + 1]), linetype = "dotted") +
-        geom_linerange(position=pd) +
-        facet_grid( form, labeller = labeller(SEX = sex_dictionary2, LOC = community_dictionary$longest2)) +
+        geom_col(position = pd) +
+        geom_hline(aes(yintercept = c(.95^3, 1 - .95^3)[reverse + 1]), linetype = "dotted") +
+        geom_linerange(position = pd) +
+        facet_grid(form, labeller = labeller(SEX = sex_dictionary2, LOC = community_dictionary$longest2)) +
         scale_y_continuous(labels = scales::percent, limits = c(0, .ylim), expand = expansion(0, 0)) +
         # scale_color_manual(values = palettes$sex, labels = sex_dictionary2) +
         scale_fill_manual(values = palettes$sex, labels = sex_dictionary2) +
@@ -1973,152 +1976,156 @@ hist_prevalence_by_age_group_custom <- function(DT,reverse=TRUE, round = 19, m=-
         NULL
 }
 
-aggregate_posterior_fits <- function(model, filename_fmt){
-
+aggregate_posterior_fits <- function(model, filename_fmt) {
     .ylabs <- fcase(
         model %like% "prevl", "HIV prevalence",
-        model %like% "supp-hiv", 
-        "HIV+ individuals with suppressed viral load\n",
-        model %like% "supp-pop", 
-        "Population with unsuppressed viral load\n"
+        model %like% "supp-hiv",
+        "HIV+ individuals who have suppressed virus\n",
+        model %like% "supp-pop",
+        "Population who have unsuppressed virus\n"
     )
 
-    tmp1 <- list(labs( x=NULL, y=NULL))
-    tmp2 <- list(labs( x=NULL, y=NULL), theme(strip.text=element_blank()))
+    tmp1 <- list(labs(x = NULL, y = NULL))
+    tmp2 <- list(labs(x = NULL, y = NULL), theme(strip.text = element_blank()))
 
-    fun_ftp <- function(n, strip=tmp1)
-            gg_list[[n]] + nm_reqs + strip 
-    fun_all <- function(n, strip=tmp1)
-            gg_list[[n]] + nm_reqs + strip + labs(y = paste("Round", gsub(".*([0-9][0-9]).*$","\\1",n) )) 
+    fun_ftp <- function(n, strip = tmp1) {
+        gg_list[[n]] + nm_reqs + strip
+    }
+    fun_all <- function(n, strip = tmp1) {
+        gg_list[[n]] + nm_reqs + strip + labs(y = paste("Round", gsub(".*([0-9][0-9]).*$", "\\1", n)))
+    }
 
     nms <- names(gg_list) %which.like% model
 
-    if(model =="supp-pop"){
-        gg_list[ nms %which.like% model %which.like% '18|19'] <- 
-        lapply(
-            gg_list[ nms %which.like% model %which.like% '18|19'], function(p) p + coord_cartesian(ylim = c(0, .3), expand = FALSE) 
-        )
+    if (model == "supp-pop") {
+        gg_list[nms %which.like% model %which.like% "18|19"] <-
+            lapply(
+                gg_list[nms %which.like% model %which.like% "18|19"], function(p) p + coord_cartesian(ylim = c(0, .3), expand = FALSE)
+            )
     }
-    nms_like_16  <- nms %which.like% '16'
-    nms_notlike_16  <- nms %which.like% '17|18|19'
+    nms_like_16 <- nms %which.like% "16"
+    nms_notlike_16 <- nms %which.like% "17|18|19"
 
-    unique_legend <- ggpubr::as_ggplot(ggpubr::get_legend(gg_list[[1]]+ nm_reqs)) 
+    unique_legend <- ggpubr::as_ggplot(ggpubr::get_legend(gg_list[[1]] + nm_reqs))
 
     p_all <- ggarrange(
         plotlist = c(
-            lapply(nms_like_16 %which.like% 'all', fun_all, strip=tmp1 ),
-            lapply( nms_notlike_16 %which.like% 'all', fun_all, strip=tmp2 ) 
+            lapply(nms_like_16 %which.like% "all", fun_all, strip = tmp1),
+            lapply(nms_notlike_16 %which.like% "all", fun_all, strip = tmp2)
         ),
         common.legend = TRUE, legend = "none",
-        ncol=1, nrow=4
-    )|> annotate_figure(top = text_grob("All participants", size=8))
+        ncol = 1, nrow = 4
+    ) |> annotate_figure(top = text_grob("All participants", size = 8))
     p_ftp <- ggarrange(
         plotlist = c(
-            lapply( nms_like_16     %which.like% 'ftp', fun_ftp, strip=tmp1 ),
-            lapply( nms_notlike_16  %which.like% 'ftp', fun_ftp, strip=tmp2 ) 
+            lapply(nms_like_16 %which.like% "ftp", fun_ftp, strip = tmp1),
+            lapply(nms_notlike_16 %which.like% "ftp", fun_ftp, strip = tmp2)
         ),
         common.legend = TRUE, legend = "none",
-        ncol=1, nrow=4
-    ) |> annotate_figure(top = text_grob("First time participants", size=8))
-    p <- ggarrange(p_all, p_ftp, ncol=2, nrow=1, common.legend = TRUE) |>
+        ncol = 1, nrow = 4
+    ) |> annotate_figure(top = text_grob("First time participants", size = 8))
+    p <- ggarrange(p_all, p_ftp, ncol = 2, nrow = 1, common.legend = TRUE) |>
         annotate_figure(
-            left = text_grob(.ylabs, size = 9, rot=90), 
-            bottom= text_grob("Age at visit", size=8)
+            left = text_grob(.ylabs, size = 9, rot = 90),
+            bottom = text_grob("Age at visit", size = 8)
         )
-    p <- ggarrange(p, unique_legend, ncol=1, nrow=2, heights=c(3,0.1))
-    
-    filename <- sprintf(filename_fmt, model)
-    cmd <- ggsave2(p = p, file = filename, LALA = out.dir.figures, w = 18 , h = 23, u="cm")
+    p <- ggarrange(p, unique_legend, ncol = 1, nrow = 2, heights = c(3, 0.1))
 
+    filename <- sprintf(filename_fmt, model)
+    cmd <- ggsave2(p = p, file = filename, LALA = out.dir.figures, w = 18, h = 23, u = "cm")
 }
 
-plot_single_posterior_fit <- function(DT=dfits, model, verbose=TRUE){
+plot_single_posterior_fit <- function(DT = dfits, model, verbose = TRUE) {
+    if (verbose) {
+        print(model)
+    }
 
-    if(verbose){ print( model ) }
+    load_per_round <- function(round) {
+        if (verbose) {
+            print(round)
+        }
 
-    load_per_round <- function(round){
-
-        if(verbose){ print( round ) }
-
-        tmp <- DT[ ROUND == round & MODEL == model]
-        standata_rds         <- tmp[ RDS == 'data', F]
-        fit_rds    <- tmp[ RDS == 'fit', F]
-        fit         <- readRDS(fit_rds)
-        stan.data   <- readRDS(standata_rds)
-        re <- fit$draws(format="df") |> as.data.table()
+        tmp <- DT[ROUND == round & MODEL == model]
+        standata_rds <- tmp[RDS == "data", F]
+        fit_rds <- tmp[RDS == "fit", F]
+        fit <- readRDS(fit_rds)
+        stan.data <- readRDS(standata_rds)
+        re <- fit$draws(format = "df") |> as.data.table()
         names_vars <- dimnames(re)[[2]]
 
         # reconstruct PT
-        ppDT <- .reconstruct_ppDT(standata=stan.data)
+        ppDT <- .reconstruct_ppDT(standata = stan.data)
 
-        q <- c("M"=.5, "CL"=.025, "CU"=.975)
-        cols <- names(re) %which.like% '^p_predict_'
+        q <- c("M" = .5, "CL" = .025, "CU" = .975)
+        cols <- names(re) %which.like% "^p_predict_"
         # tmp <- re[, lapply(.SD, posterior::quantile2, probs=q), .SDcols =cols]
 
-        indices <- data.table( columns = cols)
-        indices[, `:=` (
-            AGE_LABEL = .stan.brackets.to.age(columns, .stan.data=stan.data),
+        indices <- data.table(columns = cols)
+        indices[, `:=`(
+            AGE_LABEL = .stan.brackets.to.age(columns, .stan.data = stan.data),
             tmp = .stan.remove.brackets(columns)
         )]
-        .stan.get.sex.and.loc(indices, 'tmp')
-        set(indices, j="tmp", value=NULL)
-        indices     <-  subset(indices, AGE_LABEL %% 1 == 0 )
-        indices     <-  merge(indices, group_codes)
+        .stan.get.sex.and.loc(indices, "tmp")
+        set(indices, j = "tmp", value = NULL)
+        indices <- subset(indices, AGE_LABEL %% 1 == 0)
+        indices <- merge(indices, group_codes)
         indices <- merge(
             indices,
-            ppDT[, .(SEX=as.integer(SEX_LABEL), LOC=as.integer(LOC_LABEL), AGE_LABEL, PTYPE, N, y)],
-            by=c("SEX", "LOC", "PTYPE", "AGE_LABEL")
+            ppDT[, .(SEX = as.integer(SEX_LABEL), LOC = as.integer(LOC_LABEL), AGE_LABEL, PTYPE, N, y)],
+            by = c("SEX", "LOC", "PTYPE", "AGE_LABEL")
         )
 
-        post_predictive <- indices[ , (c("M", "CL", "CU")) := {
+        post_predictive <- indices[, (c("M", "CL", "CU")) := {
             z <- re[[columns]]
-            rbinom(n=length(z), size=N, prob=z) |> quantile2(ps=q)
-        }, by=c("SEX_LABEL", "LOC_LABEL", "PTYPE", "AGE_LABEL", "y", "N")]
+            rbinom(n = length(z), size = N, prob = z) |> quantile2(ps = q)
+        }, by = c("SEX_LABEL", "LOC_LABEL", "PTYPE", "AGE_LABEL", "y", "N")]
 
         post_predictive[, ROUND := as.integer(round)]
         return(post_predictive)
     }
 
-    post_predictive <- lapply(16:19, load_per_round) |> rbindlist(use.names=TRUE)
+    post_predictive <- lapply(16:19, load_per_round) |> rbindlist(use.names = TRUE)
     post_predictive[, ROUND := as.character(ROUND)]
     palettes$round
 
     tmp_dict <- drounds[, setNames(LABS, ROUND)]
     # make plot
 
-    pp_lab <- post_predictive[, sprintf( 
+    pp_lab <- post_predictive[, sprintf(
         "%.2f%% of observations in 95%% CrI",
-        round(100 * mean( y <= CU & y >= CL), 2))]
+        round(100 * mean(y <= CU & y >= CL), 2)
+    )]
     fmt_x <- "Number of observed %s among\n%s (by round, community type, gender, age and participant type)"
-    fmt_y <- "Predicted number of %s among %s" #\n (by round, community type, gender, age and participant type)"
+    fmt_y <- "Predicted number of %s among %s" # \n (by round, community type, gender, age and participant type)"
 
     lab1 <- fcase(
         model == "run-gp-prevl", "individuals\nwith HIV",
-        model =="run-gp-supp-hiv", "individuals\nwith suppressed virus",
-        model =="run-gp-supp-pop", "individuals\nwith suppressed virus"
+        model == "run-gp-supp-hiv", "individuals\nwith suppressed virus",
+        model == "run-gp-supp-pop", "individuals\nwith suppressed virus"
     )
     lab2 <- fcase(
-        model == 'run-gp-prevl', "study participants",
-        model=='run-gp-supp-hiv', "people with HIV",
-        model=='run-gp-supp-pop', "study participants"
+        model == "run-gp-prevl", "study participants",
+        model == "run-gp-supp-hiv", "people with HIV",
+        model == "run-gp-supp-pop", "study participants"
     )
 
-    pd <- position_dodge(width=.9)
-    p <- ggplot(post_predictive, aes(x=y, y=M, color=ROUND, shape=PTYPE)) +
-        geom_abline(slope=1, intercept=0, color="grey", linetype="dashed") +
-        geom_linerange(aes(ymin=CL, ymax=CU), position=pd, alpha=.5) +
-        annotate(geom="text", x = 0, y=max(post_predictive$CU) - 2, label=pp_lab, hjust = "left") +
-        geom_point(position=pd) +
-        scale_color_manual(values=palettes$round, labels=tmp_dict) + 
-        scale_shape_manual(values=shapes$ptype, labels=ptype_dict) + 
-        scale_x_continuous( expand = c(0.01, .05)) +
-        scale_y_continuous( expand = c(0.01, .05)) +
-        theme_default()  +
-        labs( 
-            color=NULL, shape=NULL,
-            x=sprintf(fmt_x, lab1, lab2),
-            y=sprintf(fmt_y, lab1, lab2)
-        ) + nm_reqs
+    pd <- position_dodge(width = .9)
+    p <- ggplot(post_predictive, aes(x = y, y = M, color = ROUND, shape = PTYPE)) +
+        geom_abline(slope = 1, intercept = 0, color = "grey", linetype = "dashed") +
+        geom_linerange(aes(ymin = CL, ymax = CU), position = pd, alpha = .5) +
+        annotate(geom = "text", x = 0, y = max(post_predictive$CU) - 2, label = pp_lab, hjust = "left") +
+        geom_point(position = pd) +
+        scale_color_manual(values = palettes$round, labels = tmp_dict) +
+        scale_shape_manual(values = shapes$ptype, labels = ptype_dict) +
+        scale_x_continuous(expand = c(0.01, .05)) +
+        scale_y_continuous(expand = c(0.01, .05)) +
+        theme_default() +
+        labs(
+            color = NULL, shape = NULL,
+            x = sprintf(fmt_x, lab1, lab2),
+            y = sprintf(fmt_y, lab1, lab2)
+        ) +
+        nm_reqs
     p
 
     force(p)
