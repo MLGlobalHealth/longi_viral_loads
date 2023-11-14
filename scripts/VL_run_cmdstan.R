@@ -91,11 +91,12 @@ stopifnot(dir.exists(vl.out.dir))
 if( args$confidential ){
 
     dall <- get.dall(path = path.hivstatusvl.r1520, only_firstpart = args$only.firstparticipants)
-    dall <- subset(dall, ROUND %in% args$round)
     # if(local()){
     #     tmp <- make.table.firstparticipant.NPhiv.NPunsupp(dall)
+    #     tmp
     #     write.to.googlesheets(tmp, sheet='SuppTable1')
     # }
+    dall <- subset(dall, ROUND %in% args$round)
 
     tmp <- .preprocess.ds.oli(dall)
     cols <- c("N", "HIV_N", "VLNS_N", "ARV_N")
