@@ -85,12 +85,21 @@ NULL
 #     p <- (p_smoothed_cens + nm_reqs + theme(strip.text.y = element_blank())| p_smoothed_part + nm_reqs)
 # }else{
 # add letters a), b)
-p <- (p_smoothed_cens + nm_reqs + labs(y=NULL) )/ (p_smoothed_part + nm_reqs + theme(strip.text.x = element_blank())) + plot_layout(guides = 'collect') + plot_annotation(tag_levels = "a")
 # }
+
+p <- {
+    (
+        p_smoothed_cens + nm_reqs + labs(y=NULL) 
+    ) / (
+        p_smoothed_part + nm_reqs + theme(strip.text.x = element_blank()) + theme(legend.position="none")
+    ) + plot_layout(guides = 'collect') + plot_annotation(tag_levels = "a")
+}
+p
 
 if( save_figures ){
     filename <- "suppfig_smoothedcens_smoothedpart.pdf"
     cmd <- ggsave_nature(p, filename=filename, LALA=outdir.figures, w=18, h=24.5)
-    system(cmd)
-    system(zathura2gthumb(cmd))
+    # system(cmd)
+    # system(zathura2gthumb(cmd))
+    cmd2overleaf(cmd)
 }

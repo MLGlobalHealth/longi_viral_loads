@@ -297,3 +297,10 @@ negate.percent.quantiles <- function(DT){
     }
     return(DT)
 }
+
+cmd2overleaf <- function(x){
+     out <- gsub("zathura", "cp", x)
+     out <- gsub("\\&", "/extraspace/latex/overleaf/vl_suppression/figures/", out)
+     system(out)
+     TRUE
+}
