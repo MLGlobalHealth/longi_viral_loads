@@ -1980,9 +1980,9 @@ aggregate_posterior_fits <- function(model, filename_fmt) {
     .ylabs <- fcase(
         model %like% "prevl", "HIV prevalence",
         model %like% "supp-hiv",
-        "HIV+ individuals who have suppressed virus\n",
+        "Proportion of individuals living with HIV who have suppressed virus\n",
         model %like% "supp-pop",
-        "Population who have unsuppressed virus\n"
+        "Proportion of census-eligilbe individuals who have unsuppressed virus\n"
     )
 
     tmp1 <- list(labs(x = NULL, y = NULL))
@@ -1998,10 +1998,10 @@ aggregate_posterior_fits <- function(model, filename_fmt) {
     nms <- names(gg_list) %which.like% model
 
     if (model == "supp-pop") {
-        gg_list[nms %which.like% model %which.like% "18|19"] <-
-            lapply(
-                gg_list[nms %which.like% model %which.like% "18|19"], function(p) p + coord_cartesian(ylim = c(0, .3), expand = FALSE)
-            )
+        gg_list[nms %which.like% model %which.like% "18|19"] <- lapply(
+            gg_list[nms %which.like% model %which.like% "18|19"], 
+            function(p) p + coord_cartesian(ylim = c(0, .3), expand = FALSE)
+        )
     }
     nms_like_16 <- nms %which.like% "16"
     nms_notlike_16 <- nms %which.like% "17|18|19"
