@@ -261,7 +261,7 @@ make.table.unaids.goals <- function(age_group_width = 5) {
     dprev <- load.summarised.draws.from.rdafiles("prevalence", files = dfiles, include.raw = FALSE)
     dsuppinf <- load.summarised.draws.from.rdafiles("suppAmongInfected", files = dfiles, include.raw = FALSE)
 
-    # Merge with census eligible
+    # Merge with census-eligible
     # __________________________
     # to get participants ratio
 
@@ -433,7 +433,7 @@ make.unaids.plots <- function(DT) {
             viridis::scale_fill_viridis(
                 discrete = TRUE, option = "A", begin = .4, end = .8,
                 labels = c(
-                    "homogeneous among census eligible",
+                    "homogeneous among census-eligible",
                     "half-prevalence of suppression out-of-study",
                     "no out-of-study-suppression"
                 )
@@ -441,7 +441,7 @@ make.unaids.plots <- function(DT) {
             scale_y_continuous(expand = expansion(mult = c(0, .15))) +
             theme(legend.position = "bottom", legend.direction = "vertical") +
             labs(
-                x = "Age", y = "HIV positive among census eligible population",
+                x = "Age", y = "HIV positive among census-eligible population",
                 fill = "Suppression assumptions",
                 title = "Estimated suppression among HIV positive",
                 subtitle = "(Under different assumptions on non-participants)"
@@ -526,7 +526,7 @@ make.unaids.plots <- function(DT) {
         guides(fill = guide_legend(ncol = 7, nrow = 2, byrow = TRUE, key_width = .5, key_height = .5)) +
         labs(
             x = "Interview Round",
-            y = "Estimated Number of unsuppressed census eligible individuals",
+            y = "Estimated Number of unsuppressed census-eligible individuals",
             fill = "Gender and age group"
         ) +
         nm_reqs +
@@ -659,10 +659,10 @@ make.unaids.plots <- function(DT) {
         guides(fill = guide_legend(override.aes = list(colour = NULL))) +
         labs(
             x = "Age",
-            y = "Census Eligible Population",
+            y = "Census-Eligible Population",
             fill = "HIV status", color = "HIV status",
             alpha = "Participation status",
-            title = "Participants among Census Eligibles Population",
+            title = "Participants among Census-Eligibles Population",
             subtitle = "(assuming homogeneous population)"
         ) +
         nm_reqs
@@ -919,7 +919,7 @@ plot.rakai.map <- function(.size = 4, labs = FALSE) {
     )) -> box
 
     # get background map from stadia (ggmap)
-    map <- get_stadiamap(
+    map <- ggmap::get_stadiamap(
         bbox = box,
         maptype = "stamen_terrain_background",
         zoom = 12
@@ -1002,7 +1002,7 @@ plot_all_maps <- function(delta_inset = .72,
 
 plot_paper_population_pyramid <- function(layout = "horizontal", return_list = FALSE) {
     layout <- match.arg(layout, c("horizontal", "vertical"))
-    # pyramid of census eligible, participants, and smooth
+    # pyramid of census-eligible, participants, and smooth
     .plot.pyr <- function(DT, ylim = NA, commdict = "long") {
         extra <- list(
             geom_hline(yintercept = 0, color = "black"),
@@ -1011,7 +1011,7 @@ plot_paper_population_pyramid <- function(layout = "horizontal", return_list = F
             theme(legend.position = "none")
         )
         plot.pyramid.bysexround(DT,
-            .ylab = "Number of census eligible individuals",
+            .ylab = "Number of census-eligible individuals",
             .ylim = ylim,
             NUM = NULL,
             DEN = "ELIGIBLE",
@@ -1029,7 +1029,7 @@ plot_paper_population_pyramid <- function(layout = "horizontal", return_list = F
         }
         return(p_top / p_pottom)
     } else if (layout == "horizontal") {
-        .plot.pyr(dprop[ROUND %in% c(19)]) + labs(x = "Age", y = "Number of census eligible individuals")
+        .plot.pyr(dprop[ROUND %in% c(19)]) + labs(x = "Age", y = "Number of census-eligible individuals")
     }
 }
 
@@ -2023,7 +2023,7 @@ aggregate_posterior_fits <- function(model, filename_fmt) {
         ),
         common.legend = TRUE, legend = "none",
         ncol = 1, nrow = 4
-    ) |> annotate_figure(top = text_grob("First time participants", size = 8))
+    ) |> annotate_figure(top = text_grob("First-time participants", size = 8))
     p <- ggarrange(p_all, p_ftp, ncol = 2, nrow = 1, common.legend = TRUE) |>
         annotate_figure(
             left = text_grob(.ylabs, size = 9, rot = 90),
@@ -2105,7 +2105,7 @@ plot_single_posterior_fit <- function(DT = dfits, model, verbose = TRUE) {
     )
     lab2 <- fcase(
         model == "run-gp-prevl", "study participants",
-        model == "run-gp-supp-hiv", "people with HIV",
+        model == "run-gp-supp-hiv", "participants with HIV",
         model == "run-gp-supp-pop", "study participants"
     )
 

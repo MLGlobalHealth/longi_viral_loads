@@ -91,7 +91,7 @@ make_main_table_contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup
         include_totals <- c("SEX", "AGEGROUP")
     }
 
-    # get info for census eligible pop size
+    # get info for census-eligible pop size
     DTPOP[, AGEGROUP := split.agegroup(AGEYRS)]
     ncen_agegroup <- DTPOP[ROUND == 19, list(ELIGIBLE = sum(ELIGIBLE)), by = c("ROUND", "FC", "SEX", "AGEGROUP")] |> setnames("FC", "LOC")
     # get totals
@@ -174,10 +174,10 @@ make_main_table_contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup
             unsupp = "Age composition of\npeople who have unsuppressed virus"
         )
     }
-    setnames(ncen_agegroup, "ELIGIBLE_CELL", "Census eligible\nindividuals" %+% endings$N)
+    setnames(ncen_agegroup, "ELIGIBLE_CELL", "Census-eligible\nindividuals" %+% endings$N)
     if( longname ){
         setnames(r19_hivprev, "CELL", "HIV prevalence in age band" %+% endings$p)
-        setnames(r19_prop_unsupp, "CELL", "Proportion of census eligible individuals\nwho are unsuppressed in age  band" %+% endings$p)
+        setnames(r19_prop_unsupp, "CELL", "Proportion of census-eligible individuals\nwho are unsuppressed in age  band" %+% endings$p)
         setnames(r19_supphiv, "CELL", "Proportion of PLHIV\nwho are unsuppressed in age band" %+% endings$p)
     }else{
         setnames(r19_hivprev, "CELL", "Proportion of people who\nhave HIV in each age group" %+% endings$p)

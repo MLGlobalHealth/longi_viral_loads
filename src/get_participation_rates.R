@@ -113,7 +113,7 @@ dprop[, eval(.ex), by=setdiff(key_cols, c('AGEYRS', 'ROUND', 'FC'))] |> kable()
 if(make_plots){
     # different age-pyramid plots
     p_pyramid_eligibleparticipants  <- plot.pyramid.bysexround( dprop, 
-        .ylab = 'Number of participants among census eligible individuals',
+        .ylab = 'Number of participants among census-eligible individuals',
         NUM="N_PART",
         DEN='ELIGIBLE')
     filename <- 'pyramid_Neligible_Nparticipants.pdf'

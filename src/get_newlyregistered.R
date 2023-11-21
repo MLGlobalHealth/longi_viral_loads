@@ -93,7 +93,7 @@ VIREMIC_VIRAL_LOAD <- 1000 # WHO standards
 source(file.path(gitdir.functions, 'phsc_vl_helpers.R'))
 dall <- get.dall(path.hivstatusvl.r1520, make_flowchart=FALSE)
 
-# keep within census eligible age
+# keep within census-eligible age
 dall <- subset(dall, AGEYRS <= 50)
 
 # keep infected
@@ -202,19 +202,19 @@ if(make.plots)
             theme_default() 
     }
 
-    p1 <- first_participants |> plot.first.participant.histogram(y_lab='Number of first time participants among all participants')
+    p1 <- first_participants |> plot.first.participant.histogram(y_lab='Number of first-time participants among all participants')
     filename='hist_propfirstparticipants_bysexround.pdf'
     ggsave2(p=p1, file=filename, LALA=file.path(OUTDIR, 'figures'), w=18, h=18, u='cm')
 
     # now do analogous same among positives, taking FIRST_VISIT classification from first_participants
-    p2 <- rprev |> plot.first.participant.histogram(y_lab='Number of first time participants among HIV positive')
+    p2 <- rprev |> plot.first.participant.histogram(y_lab='Number of first-time participants among HIV positive')
     filename='hist_propfirstparticipants_amongpositives_bysexround.pdf'
     ggsave2(p=p2, file=filename, LALA=file.path(OUTDIR, 'figures'), w=18, h=18, u='cm')
 
     # what about non suppressed
     p_viraemic <- rprev |> 
         subset(VLNS == TRUE) |> 
-        plot.first.participant.histogram(y_lab="Number of first time participants among viraemic")
+        plot.first.participant.histogram(y_lab="Number of first-time participants among viraemic")
     filename='hist_propfirstparticipants_amongviraemic_bysexround.pdf'
     ggsave2(p=p_viraemic, file=filename, LALA=file.path(OUTDIR, 'figures'), w=18, h=18, u='cm')
     # can I visualise both on the same plot?

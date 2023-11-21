@@ -85,7 +85,7 @@ rda_files <- list.files.from.output.directory('.rda', dir=vl.out.dir, args=args)
 dall <- get.dall(path.hivstatusvl.r1520, make_flowchart=TRUE)
 
 
-# Get census eligible and compare with participants 
+# Get census-eligible and compare with participants 
 # __________________________________________________
 
 # we need to chose whether to use the smoothed version, or the actual counts (`.count`)
@@ -93,7 +93,7 @@ by_vars <- c('ROUND', 'SEX_LABEL', 'LOC_LABEL')
 dcens <- get.census.eligible()
 dcens[, .(N_ELIGIBLE=sum(ELIGIBLE)), by=by_vars] |> 
     dcast(ROUND + SEX_LABEL ~ LOC_LABEL, value.var='N_ELIGIBLE' ) |>
-    kable(caption = 'number of census eligible by round, sex and location')
+    kable(caption = 'number of census-eligible by round, sex and location')
 
 # merge with number of participant -> positives -> not suppressed
 dcens <- get.participants.positives.unsuppressed(dall) |> 

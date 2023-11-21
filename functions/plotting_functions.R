@@ -305,7 +305,7 @@ plot.n.census.eligible.smooth <- function(DT) {
     p <- ggplot(tmp, aes(x = AGEYRS)) +
         geom_bar(data = unique(tmp[, .(TYPE, SEX_LAB, AGEYRS, ELIGIBLE, ROUND_LAB)]), aes(y = ELIGIBLE), stat = "identity", alpha = 0.5) +
         geom_line(aes(y = value, col = SMOOTH_PAR)) +
-        labs(y = "Census eligible individuals", x = "Age", color = "Loess parameter") +
+        labs(y = "Census-eligible individuals", x = "Age", color = "Loess parameter") +
         facet_grid(ROUND_LAB ~ TYPE + SEX_LAB) +
         theme_default() +
         geom_label(data = df_label, aes(x = 49, y = ylevel, label = diff, col = SMOOTH_PAR), size = 3, label.size = NA)
@@ -378,7 +378,7 @@ plot.pyramid.eligible.participants <- function(DT) {
         scale_y_continuous(labels = abs, expand = c(0.05, 0)) +
         scale_x_continuous(expand = c(0, 0)) +
         theme_default() +
-        my_labs(y = "Number of census eligible individuals") +
+        my_labs(y = "Number of census-eligible individuals") +
         NULL
 }
 
@@ -509,7 +509,7 @@ plot.contribution.to.census.eligible.population <- function(DT=ncen, var=ELIGIBL
         scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +  
         theme_default() + 
         my_labs(
-            y = "Contribution to census eligible population"
+            y = "Contribution to census-eligible population"
         ) +
         NULL
 }

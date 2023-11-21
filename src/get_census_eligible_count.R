@@ -49,7 +49,7 @@ is_all_unique <- flow[, .N , by=c('curr_id','round')][, all(N==1) ]
 stopifnot(is_all_unique)
 
 ##################################
-catn("Find census eligible count")
+catn("Find census-eligible count")
 ##################################
 
 # find  community
@@ -159,7 +159,7 @@ ncen[, ELIGIBLE_SMOOTH := ELIGIBLE_SMOOTH.50]
 ncen <- select(ncen, -c('ELIGIBLE_SMOOTH.25', 'ELIGIBLE_SMOOTH.50', 'ELIGIBLE_SMOOTH.75'))
 
 
-# plot contributions to census eligibles.
+# plot contributions to census-eligibles.
 filenames <- paste0("line_roundcontribution_ncensuseligible", c("", "smooth"),"_bysexage.pdf")
 p1 <- plot.contribution.to.census.eligible.population(DT=ncen, var=ELIGIBLE)
 p2 <- plot.contribution.to.census.eligible.population(DT=ncen, var=ELIGIBLE_SMOOTH)

@@ -80,7 +80,7 @@ if (make_paper_numbers) {
 }
 fetch.postprocessing.settings.from.args(args)
 
-# Census eligible, participants, and smooth
+# Census-eligible, participants, and smooth
 cols <- c("ROUND", "TYPE", "SEX", "AGEYRS", "ELIGIBLE", "ELIGIBLE_SMOOTH")
 ncen <- fread(path.census.eligible, select=cols ) |>
     subset(ROUND %in% 16:19) |>
@@ -284,7 +284,7 @@ catn(" FIGURE for KATE")
 {
     horizontal <- TRUE
     fig_pyr <- plot.pyramid.bysexround(dprop[ROUND == 19 & FC == "inland"],
-        .ylab = "Number of census eligible individuals",
+        .ylab = "Number of census-eligible individuals",
         NUM = "ELIGIBLE", DEN = "ELIGIBLE",
         percent_lab = FALSE
     ) +

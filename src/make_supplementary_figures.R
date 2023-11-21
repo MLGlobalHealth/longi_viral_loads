@@ -37,7 +37,7 @@ dcens <- fread(path.census.eligible)
 dpart <- readRDS(path.participation.rates)
 dcens[, FC := fifelse(COMM_INDEX == 1, yes="fishing", no="inland")]
 
-# Horizonal looks better, but not for displaying the census eligible sizes in fishing communities
+# Horizonal looks better, but not for displaying the census-eligible sizes in fishing communities
 facet_formula <- formula(ROUND_LAB ~ FC_LAB)
 horizontal <- FALSE
 if(horizontal){
@@ -65,7 +65,7 @@ p_smoothed_cens <- plot.pyramid.bysexround(
     percent_lab = FALSE
 ) +
 geom_line(aes(y=ELIGIBLE_SMOOTH * (-1 + 2*as.integer(SEX == "F"))), color="purple" ) +
-labs( x="Census Eligible individuals", y="Age") +
+labs( x="Census-eligible population", y="Age") +
 theme(legend.key.size = unit(0.5, "cm")) 
 
 dplot <- subset(dpart, ROUND >= 16) |>

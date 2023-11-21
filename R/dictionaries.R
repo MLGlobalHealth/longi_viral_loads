@@ -139,7 +139,7 @@ community_dictionary <- list(
 
 ptype_dict = c(
     "all" = "All participants",
-    "ftp" = "First time participants"
+    "ftp" = "First-time participants"
 )
 
 sex_dictionary <- c(M = "Male", F = "Female", `0` = "Female", `1` = "Male", `Total`="Total")
@@ -257,9 +257,9 @@ my_labs_dictionary <- c(
     PTYPE = "Participant type",
     PVLNS_MEAN = "Prevalence of viraemia among population",
     PVLNSofHIV_MEAN = "Prevalence of viraemia among HIV infected",
-    ROUND = "Interview round",
-    ROUND_LAB = "Interview round",
-    ROUND_LABEL = "Interview round",
+    ROUND = "Survey round",
+    ROUND_LAB = "Survey round",
+    ROUND_LABEL = "Survey round",
     SEX = "Gender",
     SEX_LAB = "Gender",
     SEX_LABEL = "Gender",
@@ -343,7 +343,7 @@ dict_table_names <- list(
         LOC_LAB = "Community\ntype\n\n\n\n\n",
         SEX_LAB = "Gender\n\n\n\n\n\n",
         ROUND_LAB = "Round\n\n\n\n\n\n",
-        N_ELIGIBLE = "Census eligible\nindividuals\n\n\n\n(n)\n",
+        N_ELIGIBLE = "Census-eligible\nindividuals\n\n\n\n(n)\n",
         CELL_HIV_N = "People with HIV in the\npopulation\n\n\n\n(posterior median\nestimate, (95%CrI))",
         CELL_UNSUPP_N = "People with HIV who have\nunsuppressed virus\n\n\n\n(posterior median estimate,\n(95%CrI)) ",
         CELL_UNSUPP_P = "Percent reduction In the number \nof people with HIV who have\nunsuppressed virus relative to\nround 16\n\n(posterior median estimate,\n(95%CrI))",
@@ -357,7 +357,13 @@ dict_table_names <- list(
         `AGEMEAN_run-gp-prevl` = "Mean age of PLHIV",
         `AGESTD_run-gp-prevl` = "Standard deviation of PLHIV",
         `AGEMEAN_run-gp-supp-pop` = "Mean age of unsuppressed population",
-        `AGESTD_run-gp-supp-pop` = "Standard deviation of unsuppressed population"
+        `AGESTD_run-gp-supp-pop` = "Standard deviation of unsuppressed population",
+        `AGE25_run-gp-prevl` = "First quartile for age of individuals with HIV",
+        `AGE50_run-gp-prevl` = "Median age of individuals with HIV",
+        `AGE75_run-gp-prevl` = "Third quartile for age of individuals with HIV",
+        `AGE25_run-gp-supp-pop` = "First quartile for age of individuals with unsuppressed virus",
+        `AGE50_run-gp-supp-pop` = "Median age of individuals with unsuppressed virus",
+        `AGE75_run-gp-supp-pop` = "Third quartile for age of individuals with unsuppressed virus"
     ),
 
     NULL

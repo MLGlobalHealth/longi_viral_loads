@@ -53,7 +53,7 @@ paper_statements_female_prevalence <- function(DT=djoint_agegroup){
 
 paper_statements_prevalence_viraemia <- function(DT=djoint_agegroup, model="run-gp-supp-pop"){
 
-    lab <- fifelse(model == "run-gp-supp-pop", yes="census eligible", no = "PLHIV")
+    lab <- fifelse(model == "run-gp-supp-pop", yes="census-eligible", no = "PLHIV")
     tmp <- subset(DT, ROUND %in% c(16, 19) & SEX=="Total" & AGEGROUP == 'Total' & MODEL == model)
     tmp[, `:=` ( CELL = prettify_cell(M*100, CL*100, CU*100, percent=TRUE), M=NULL, CL=NULL, CU=NULL, IL=NULL, IU=NULL)]
     tmp[, {

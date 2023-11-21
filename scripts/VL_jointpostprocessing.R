@@ -92,12 +92,12 @@ catn("=== MAIN ===")
 # plot.first.participant.rates(add_loess=TRUE)
 
 
-# get census eligible
+# get census-eligible
 dcens <- get.census.eligible() |>
     setnames(c("AGE_LABEL", "SEX_LABEL", "LOC_LABEL"), c("AGEYRS", "SEX", "LOC"))
 dcens[, AGEGROUP := split.agegroup(AGEYRS)]
 
-# load number of census eligible individuals (.50 too rough)
+# load number of census-eligible individuals (.50 too rough)
 dpartrates <- readRDS(path.participation.rates) |>
     subset(select = c("ROUND", "FC", "SEX", "AGEYRS", "PARTRATE_SMOOTH.25")) |>
     setnames(c("FC", "PARTRATE_SMOOTH.25"), c("LOC", "PARTRATE"))

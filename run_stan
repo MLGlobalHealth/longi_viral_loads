@@ -8,7 +8,7 @@ if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "--help" ]]; then
     echo "Usage: ./run_stan OPTION1=value1 OPTION2=value2 ..."
     echo "OPTIONs:"
     echo "    VL : viremic viral load threshold                                         [default: 1000]"
-    echo "    FTP: subset to first time participants or not                             [default: FALSE]"
+    echo "    FTP: subset to first-time participants or not                             [default: FALSE]"
     echo "    STANWAY : either (r)stan or cmdstan                                       [default: cmdstan]"
     echo "    ALPHA : sd for alpha prior in GP                                          [default: 1]"
     echo "    SHARE : share hyperpars for FTP and ALL?                                  [default: TRUE]"

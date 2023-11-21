@@ -22,15 +22,17 @@ make.table.firstparticipant.NPhiv.NPunsupp <- function(DT=dall){
         setnamesdict(dict=dict_table_names$percent_reduction)
 
     tmp_dict <- c(
-        "Community type" = "Community\ntype\n\n\n\n\n\n\n(n)",
-        "Gender" = "Gender\n\n\n\n\n\n\n\n(n)",
-        "Survey round" = "Survey\nround\n\n\n\n\n\n\n(n)",
-        "N" = "First time\nparticipants\n\n\n\n\n\n\n(n)",
-        "N_HIV" = "First time\nparticipants\nwith HIV\n\n\n\n\n\n(n)",
-        "N_UNSUPP" = "First time\nparticipants\nwith\nunsuppressed\nvirus\n\n\n\n(n)",
-        "RATIO_HIV_R16" = "Ratio of\nfirt time\nparticipants\nwith HIV\nrelative to\nround 16\n\n\n(p)",
-        "RATIO_UNSUPP_R16" = "Ratio of\nfirt time\nparticipants\nwith\nunsuppressed\nvirus\nrelative to\nround 16\n(p)"
+        "Community type" = "Community \\ type \\  \\  \\  \\  \\  \\  \\ (n)",
+        "Gender" = "Gender \\  \\  \\  \\  \\  \\  \\  \\ (n)",
+        "Survey round" = "Survey \\ round \\  \\  \\  \\  \\  \\  \\ (n)",
+        "N" = "First-time \\ participants \\  \\  \\  \\  \\  \\  \\ (n)",
+        "N_HIV" = "First-time \\ participants \\ with HIV \\  \\  \\  \\  \\  \\ (n)",
+        "N_UNSUPP" = "First-time \\ participants \\ with \\ unsuppressed \\ virus \\  \\  \\  \\ (n)",
+        "RATIO_HIV_R16" = "Ratio of \\ firt time \\ participants \\ with HIV \\ relative to \\ round 16 \\  \\  \\ (p)",
+        "RATIO_UNSUPP_R16" = "Ratio of \\ firt time \\ participants \\ with \\ unsuppressed \\ virus \\ relative to \\ round 16 \\ (p)"
     )
+
+    # could add \textbf here and tabular here...
 
     setnamesdict(out, dict=tmp_dict)
 
