@@ -2024,8 +2024,13 @@ aggregate_posterior_fits <- function(model, filename_fmt) {
         common.legend = TRUE, legend = "none",
         ncol = 1, nrow = 4
     ) |> annotate_figure(top = text_grob("First-time participants", size = 8))
-    p <- ggarrange(p_all, p_ftp, ncol = 2, nrow = 1, common.legend = TRUE) |>
-        annotate_figure(
+    p <- ggarrange(
+        p_all, p_ftp, 
+        ncol = 2, nrow = 1,
+        labels="auto",
+        font.label = list(size=10, color="black", face="bold"),
+        common.legend = TRUE
+    ) |> annotate_figure(
             left = text_grob(.ylabs, size = 9, rot = 90),
             bottom = text_grob("Age at visit", size = 8)
         )

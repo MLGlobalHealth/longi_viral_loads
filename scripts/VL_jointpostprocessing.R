@@ -1423,7 +1423,11 @@ out <- lapply(
     DT=dfits
 )
 
-gg_list_pp <- lapply(gg_list_pp, function(p) p + theme(legend.margin = margin(r=0,l=-10, t = 0, b=0, unit = "pt")) )
+gg_list_pp <- lapply(
+    gg_list_pp, 
+    function(p) 
+        p + theme(legend.margin = margin(r=0,l=-10, t = 0, b=0, unit = "pt")) 
+)
 
 p_pp <- ggarrange(
     plotlist = gg_list_pp,
