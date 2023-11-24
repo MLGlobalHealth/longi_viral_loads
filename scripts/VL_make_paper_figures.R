@@ -150,6 +150,13 @@ dprev       <- .load.model.subset(filename_rds_prevalence, MODEL == "run-gp-prev
 
 if (system.file(package = "ggsn") != "" && usr == "andrea") {
 
+    stadia_api_key <- Sys.getenv("STADIA_API_KEY")
+    ggmap::register_stadiamaps(stadia_api_key)
+    # package_version("ggplot2")
+    library(ggmap)
+    citation("ggmap")
+    #  © Stadia Maps © Stamen Design © OpenMapTiles © OpenStreetMap contributor
+
     fig1a_inset <- plot_all_maps(sizes=list(points=1, text=3))
     # fig1a_columns <- plot_all_maps(type="columns")
     # fig1a_columns_list <- plot_all_maps(type="columns", return_list=TRUE)

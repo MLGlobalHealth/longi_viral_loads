@@ -749,14 +749,14 @@ if (file.exists(filename_rds) & !overwrite) {
 
 # TODO! (check that this worked.)
 if (make_tables) {
-    dt <- subset(dmeanage, select=-AGEMODE)
+    # dt <- subset(dmeanage, select=-AGEMODE)
     tmp1 <- rbind(
-        paper_statements_meanage_population(DT = dt, label = "run-gp-supp-pop", type = "AGEMEAN"),
-        paper_statements_meanage_population(DT = dt, label = "run-gp-supp-pop", type = "AGESTD")
+        paper_statements_meanage_population(DT = dmeanage, label = "run-gp-supp-pop", type = "AGEMEAN"),
+        paper_statements_meanage_population(DT = dmeanage, label = "run-gp-supp-pop", type = "AGESTD")
     )
     rm(dt, tmp1)
 
-    tab <- make.supp.table.meanage()
+    tab <- make.supp.table.meanage(newline=TRUE, include_date=TRUE)
 }
 
 catn("Other contribution to viraemia quantiles for text")

@@ -222,7 +222,10 @@ make_main_table_contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup
     dtable
 }
 
-make.supp.table.meanage <- function(DT=dmeanage, label=NA_character_){
+make.supp.table.meanage <- function(DT=dmeanage, label=NA_character_, newline=TRUE, include_date=TRUE){
+
+    if(include_date)
+        newline <- TRUE
 
     tab <- if(! is.na(label)){
         subset(DT,  MODEL == label)
@@ -242,10 +245,37 @@ make.supp.table.meanage <- function(DT=dmeanage, label=NA_character_){
         new=unname(dict_table_names$mean_ages), 
         skip_absent = TRUE)
 
+    if(newline){
+        nms <- setdiff(names(tab), c("Community type", "Gender", "Round"))
+        tab[, DUMMY := 1:.N]
+        tab <- tab[, lapply(.SD, function(x){ 
+            z <- stringr::str_split_1(x, " \\(") 
+            if(length(z)==2){
+                z[2] <- paste0("(", z[2]) 
+            }else{z[2] <- ""}
+            z
+        }),  by=DUMMY]
+        tab[, DUMMY := NULL]
+    }
+
+    if(include_date){
+        .labs <- drounds[, paste(START, END, sep="-")]
+        .labs <- gsub("20","", .labs)
+        tab$Round[ tab$Round == ""] <- rep(.labs, 2)
+    }
+
     # sort colnames
     order <- intersect(unname(dict_table_names$mean_ages), names(tab))
     setcolorder(tab, order)
-    xtable(tab)
+    print(
+        xtable(tab),
+        hline.after = which(tab$`Community type` == "Inland") - 1,
+        add.to.row = list(
+            pos = list(which(tab$Gender == "Male") - 1),
+            command = sprintf("\\cline{2-%i}", ncol(tab))
+        )
+    )
+    
     return(tab)
 }
 

@@ -2,6 +2,20 @@
 # Helpers for Latex tables 
 ### 
 
+
+library(xtable)
+
+# more info on xtable options in documentation
+textbf <- function(x){
+    paste0('{\\textbf{ ', x, '}}')
+}
+options(xtable.include.rownames=FALSE)
+options(xtable.timestamp="")
+options(xtable.sanitize.text.function=NULL)
+options(xtable.sanitize.colnames.function=textbf)
+options(xtable.NA.string="")
+options(xtable.onlycontents=FALSE)
+
 delete.repeated.table.values <- function(DT, cols=names(DT)){
 
     .repeated.to.empty <- function(x){
