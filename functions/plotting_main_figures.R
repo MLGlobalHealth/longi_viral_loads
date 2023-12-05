@@ -1980,9 +1980,9 @@ aggregate_posterior_fits <- function(model, filename_fmt) {
     .ylabs <- fcase(
         model %like% "prevl", "HIV prevalence",
         model %like% "supp-hiv",
-        "Proportion of individuals living with HIV who have suppressed virus\n",
+        "Proportion of individuals living with HIV who have suppressed virus",
         model %like% "supp-pop",
-        "Proportion of census-eligilbe individuals who have unsuppressed virus\n"
+        "Proportion of individuals who have unsuppressed virus"
     )
 
     tmp1 <- list(labs(x = NULL, y = NULL))
