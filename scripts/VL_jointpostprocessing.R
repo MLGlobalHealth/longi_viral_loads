@@ -98,6 +98,7 @@ dcens <- get.census.eligible() |>
 dcens[, AGEGROUP := split.agegroup(AGEYRS)]
 
 # load number of census-eligible individuals (.50 too rough)
+# not sure if needed ...
 dpartrates <- readRDS(path.participation.rates) |>
     subset(select = c("ROUND", "FC", "SEX", "AGEYRS", "PARTRATE_SMOOTH.25")) |>
     setnames(c("FC", "PARTRATE_SMOOTH.25"), c("LOC", "PARTRATE"))
@@ -485,7 +486,7 @@ catn("Get quantiles for population prevalences by custom age group")
 filename_rds <- file.path(out.dir.tables, "posterior_quantiles_suppression_agegroup_custom.rds")
 
 dcens_custom <- copy(dcens)
-dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, 18, 23, 28, 33, 38, 43, 44, 50))]
+dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, 18, 23, 28, 33, 38, 43, 48, 50))]
 
 if (file.exists(filename_rds) & !overwrite) {
     dsupp_agegroup_custom <- readRDS(filename_rds)

@@ -256,12 +256,19 @@ fig2b <- list(
         theme(strip.text.x=element_text(color="white")) + .yl() + labs(y=NULL) + nm_reqs
 ) |> ggarrange(plotlist=_,ncol=1, legend="bottom", common.legend = TRUE)
 
-fig2new <- ggarrange(fig2a, fig2b, ncol=2, widths = c(1.4, 1))
-
+fig2new <- ggarrange(
+    fig2a, 
+    fig2b + theme(legend.position = "none"), 
+    ncol=2, 
+    widths = c(1.4, 1))
 filename <- paste0("main_figure_suppression_plhiv_r1619.pdf")
-cmd <- ggsave_nature(p = fig2new, filename = filename, LALA = out.dir.figures, w = 19, h = 16)
+cmd <- ggsave_nature(p = fig2new,
+    filename = filename,
+    LALA = out.dir.figures,
+    w = 19, h = 16)
 # system(cmd)
-if(interactive()) upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
+if(interactive()) 
+    upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
 
 ########################
 catn("=== FIGURE 3 ===")
