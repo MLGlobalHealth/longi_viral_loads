@@ -84,7 +84,15 @@ make.table.Nhivpositive <- function(DT = joint_ageagrr_list$round_totals, DC = d
     return(tab)
 }
 
-make_main_table_contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup, DCONTRIB = dcontrib_agegroup, DSUPP = dsupp_agegroup, add_asterisks_unaids = TRUE, include_totals = c("SEX", "AGEGROUP"), round = 19) {
+make_main_table_contributions <- function(
+    DTPOP = ncen, 
+    DJOINT = djoint_agegroup,
+    DCONTRIB = dcontrib_agegroup,
+    DSUPP = dsupp_agegroup,
+    add_asterisks_unaids = TRUE,
+    include_totals = c("SEX", "AGEGROUP"),
+    round = 19
+) {
     include_totals <- intersect(include_totals, c("SEX", "AGEGROUP"))
     if (all(include_totals == "SEX")) {
         warning("SEX totals can only be included if AGEGROUP is. Including both...")
@@ -103,7 +111,9 @@ make_main_table_contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup
     ncen_totals[, ROUND := 19]
     # compute nice cells N(P%)
     expr_eligible_cell <- expr({
-        sprintf("%s (%.2f%%)", ELIGIBLE, 100 * proportions(ELIGIBLE))
+        sprintf("%s (%.2f%%)", 
+            format(ELIGIBLE, big.mark = ","), 
+            100 * proportions(ELIGIBLE))
     })
     cols <- c("ROUND", "LOC")
     ncen_agegroup[SEX != "Total" & AGEGROUP != "Total", ELIGIBLE_CELL := eval(expr_eligible_cell), by = cols]
@@ -132,20 +142,27 @@ make_main_table_contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup
     # go from supp to unsupp
     negate.percent.quantiles(r19_supphiv) 
     if (add_asterisks_unaids) {
-        r19_supphiv[, `:=`(UNAIDS_achieved = fifelse(M > .95^3, yes = " * ", no = ""), M = NULL, CL = NULL, CU = NULL, IL = NULL, IU = NULL)]
+        r19_supphiv[, `:=`(
+            UNAIDS_achieved = fifelse(M > .95^3, yes = " * ", no = ""),
+            M = NULL, CL = NULL, CU = NULL, IL = NULL, IU = NULL
+        )]
     } else {
         NULL
     }
 
+    # check proportions sum to 100% 
     if (length(include_totals) == 0) {
         check <- lapply(
             list(r19_comp_usnupp, r19_comp_hiv),
             function(DT) {
-                DT[AGEGROUP != "Total" & SEX != "Total", sum(M) %between% c(.95, 1.05) |> stopifnot(), by = c("ROUND", "LOC")]
+                DT[AGEGROUP != "Total" & SEX != "Total", 
+                sum(M) %between% c(.95, 1.05) |> stopifnot(),
+                by = c("ROUND", "LOC")]
             }
         )
     }
 
+    # prettify cells 
     null <- lapply(
         list(r19_hivprev, r19_prop_unsupp, r19_comp_usnupp, r19_supphiv, r19_comp_hiv),
         function(DT) {
@@ -154,52 +171,55 @@ make_main_table_contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup
         }
     ); rm(null)
 
+    totals <- expr(AGEGROUP == "Total" & SEX == "Total")
 
     # prettify all
     longname <- FALSE
     `%+%` <- function(x, y){ paste0(x, y)}
     endings <- c(
         N = "\n\n(n, (% of total population))",
-        p = "\n\n(posterior median\nestimate, (% CrI))"
+        p = "\n\n(posterior median\nestimate, (95%CrI))"
     )
 
     names_comp <- if(longname) {
         c(
-            hiv = "Age composition of PLHIV",
-            unsupp = "Age composition of people\nwith unsuppressed HIV"
+            hiv = "Age profile of PLHIV",
+            unsupp = "Age profile of people\nexhibiting viraemia"
         )
     } else {
         c(
-            hiv = "Age composition of\npeople with HIV",
-            unsupp = "Age composition of\npeople who have unsuppressed virus"
+            hiv = "Age profile of people\nliving with HIV",
+            unsupp = "Age profile of people\nexhibiting viraemia"
         )
     }
-    setnames(ncen_agegroup, "ELIGIBLE_CELL", "Census-eligible\nindividuals" %+% endings$N)
+    setnames(ncen_agegroup, "ELIGIBLE_CELL", "Census-eligible\nindividuals in\neach age group" %+% endings["N"])
     if( longname ){
-        setnames(r19_hivprev, "CELL", "HIV prevalence in age band" %+% endings$p)
-        setnames(r19_prop_unsupp, "CELL", "Proportion of census-eligible individuals\nwho are unsuppressed in age  band" %+% endings$p)
-        setnames(r19_supphiv, "CELL", "Proportion of PLHIV\nwho are unsuppressed in age band" %+% endings$p)
+        setnames(r19_hivprev, "CELL", "HIV prevalence in age band" %+% endings["p"])
+        setnames(r19_prop_unsupp, "CELL", "Proportion of census-eligible individuals\nwho are unsuppressed in age  band" %+% endings["p"])
+        setnames(r19_supphiv, "CELL", "Proportion of people\nliving with HIV\nexhibiting viraemia in\neach age group" %+% endings["p"])
     }else{
-        setnames(r19_hivprev, "CELL", "Proportion of people who\nhave HIV in each age group" %+% endings$p)
-        setnames(r19_prop_unsupp, "CELL", "Proportion of people \nwho have unsuppressed virus in each age  group")
-        setnames(r19_supphiv, "CELL", "Proportion of people with \nHIV who have unsuppressed virs")
+        setnames(r19_hivprev, "CELL", "Proportion of\npeople living with\nHIV in each age\ngroup" %+% endings["p"])
+        setnames(r19_prop_unsupp, "CELL", "Proportion of all\npersons with viraemia\nin each age group" %+% endings["p"])
+        setnames(r19_supphiv, "CELL", "Proportion of people\nliving with HIV\nexhibiting viraemia in\neach age group" %+% endings["p"])
     }
-    setnames(r19_comp_hiv, "CELL", names_comp["hiv"] %+% endings$p)
-    setnames(r19_comp_usnupp, "CELL", names_comp["unsupp"] %+% endings$p)
+    setnames(r19_comp_hiv, "CELL", names_comp["hiv"] %+% endings["p"])
+    setnames(r19_comp_usnupp, "CELL", names_comp["unsupp"] %+% endings["p"])
     dtable <- Reduce(
         f = function(x, y) merge(x, y, all = TRUE, by = c("ROUND", "LOC", "SEX", "AGEGROUP")),
         x = list(
             ncen_agegroup,
             r19_hivprev,
+            r19_supphiv,
             r19_prop_unsupp,
             r19_comp_hiv,
-            r19_comp_usnupp,
-            r19_supphiv
+            r19_comp_usnupp
         )
     )
-    if ("SEX" %in% include_totals) {
-        dtable[SEX == "Total", (names_comp) := lapply(.SD, function(x) "100.00%"), .SDcols = names_comp]
-    }
+    # if ("SEX" %in% include_totals) {
+    #     cols <- names(dtable) %like% paste(names_comp, collapse = "|")
+    #     dtable[SEX == "Total", 
+    #     (cols) := lapply(.SD, function(x) return("100.00%")), .SDcols = cols]
+    # }
     prettify_labels(dtable)
     dtable[, SEX_LAB := sex_dictionary2[SEX_LAB]]
     cols <- c("LOC_LAB", "SEX_LAB", "AGEGROUP")
@@ -219,6 +239,9 @@ make_main_table_contributions <- function(DTPOP = ncen, DJOINT = djoint_agegroup
         unname(my_labs_dictionary),
         skip_absent = TRUE
     )
+
+    # final changes
+    setnames(dtable, "Age group", "Age\ngroup")
     dtable
 }
 
