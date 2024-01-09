@@ -1345,11 +1345,18 @@ if (make_tables) {
     tab_mf_diffs <- make.table.malefemale.diff.viraemia(DT = dmf_ratios)
 
     .dict <- dict_table_names$percent_reduction
-    tab_eligible <- dcens[, .(N_ELIGIBLE = sum(ELIGIBLE)), by = c("ROUND", "LOC", "SEX")] |>
+    tab_eligible <- dcens[, 
+        .(N_ELIGIBLE = comma(sum(ELIGIBLE))),
+        by = c("ROUND", "LOC", "SEX")] |>
         prettify_labels() |>
         remove.nonpretty()
-    tab_hiv <- tablify.posterior.Nunsuppressed(joint_ageagrr_list, CELLname = "HIV", model = "run-gp-prevl")
-    tab_unsupp <- tablify.posterior.Nunsuppressed(joint_ageagrr_list, CELLname = "UNSUPP", model = "run-gp-supp-pop")
+
+    tab_hiv <- tablify.posterior.Nunsuppressed(joint_ageagrr_list, 
+        CELLname = "HIV",
+        model = "run-gp-prevl")
+    tab_unsupp <- tablify.posterior.Nunsuppressed(joint_ageagrr_list,
+        CELLname = "UNSUPP",
+        model = "run-gp-supp-pop")
 
     by_cols <- c("LOC_LAB", "SEX_LAB", "ROUND_LAB")
     tab_merge <- merge(tab_eligible, tab_hiv) |>
@@ -1363,13 +1370,12 @@ if (make_tables) {
     .sd <- names(tab_merge)[-(1:2)]
     tab_merge[, (.sd) := lapply(.SD, function(x) { x[x == "" | is.na(x)] <- "--"; x}), .SDcols = .sd]
 
-
-
     if (interactive()) {
         write.to.googlesheets(tab_merge, sheet = "Table2")
     }
     filename_table <- file.path(out.dir.tables, "table_reductionHIVandUNSUPP.rds")
     saveRDS(tab_merge, file = filename_table)
+    # view_xl(tab_merge)
 }
 
 
