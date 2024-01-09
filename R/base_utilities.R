@@ -304,3 +304,8 @@ cmd2overleaf <- function(x){
      system(out)
      TRUE
 }
+
+# adds comma to numbers: 1234 -> 1,234
+comma <- function(i){
+    format(i, big.mark = ",", scientific = FALSE)
+}

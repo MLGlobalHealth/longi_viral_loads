@@ -12,7 +12,6 @@ gitdir <- here::here()
 source(file.path(gitdir, "R/paths.R"))
 source(file.path(gitdir.functions, 'plotting_functions.R'))
 
-
 outdir <- '/home/andrea/HPC/ab1820/home/projects/2022/longvl'
 outdir.figures <- file.path(outdir, 'figures')
 outdir.tables <- file.path(outdir, 'tables')
@@ -40,7 +39,7 @@ cols_flow <- c('comm_num', 'locate1', 'locate2', 'resident', 'ageyrs', 'sex', 'r
 flow <- lapply(
     list(flow.1518, flow.19), 
     function(DT){
-        tmp <- select(DT, cols_flow)
+        tmp <- select(DT, all_of(cols_flow))
         tmp[, curr_id := format(curr_id, scientific=FALSE)]
 }) |> rbindlist() |> unique()
 
@@ -57,7 +56,6 @@ flow <- merge(flow, dcomm, by.x = 'comm_num', by.y = 'COMM_NUM')
 
 # Code for ineligibility
 flow[, reason_ineligible := NA_character_]
-
 flow[locate1==10 & locate2==8, reason_ineligible := "Out_migrated"]
 flow[locate1==2 & locate2==10, reason_ineligible := "Out_migrated"]
 flow[locate1==13 & locate2==8, reason_ineligible := "Out_migrated"]
@@ -66,7 +64,6 @@ flow[locate1==5 & locate2==10, reason_ineligible := "Out_migrated"]
 flow[locate1==3 & locate2==13, reason_ineligible := "Out_migrated"]
 flow[locate1==6 & locate2==13, reason_ineligible := "Out_migrated"]
 flow[locate1==6 & locate2==10, reason_ineligible := "Out_migrated"]
-
 flow[locate1==7 & locate2==8, reason_ineligible := "Already_seen"]
 flow[locate1==2 & locate2==7, reason_ineligible := "Already_seen"]
 flow[locate1==6 & locate2==7, reason_ineligible := "Already_seen"]
@@ -76,14 +73,10 @@ flow[locate1==7 & locate2==7, reason_ineligible := "Already_seen"]
 flow[locate1==17 & locate2==8, reason_ineligible := "Already_seen"]
 flow[locate1==7 & locate2==88, reason_ineligible := "Already_seen"]
 flow[locate1==7 & locate2==2, reason_ineligible := "Already_seen"]
-
 flow[locate1==11 & locate2==8, reason_ineligible := "Dead"]
 flow[locate2==11, reason_ineligible := "Dead"]
-
 flow[resident==0, reason_ineligible := "not_resident"]
-
 flow[ageyrs<15 | ageyrs > 49, reason_ineligible := "Not_within_eligible_age_range"]
-
 flow[is.na(reason_ineligible), reason_ineligible := 'none']
 
 # SET ROUND 15S IN INLAND AS 15
@@ -110,6 +103,23 @@ re[ROUND %like% '^R' ,ROUND := substring(ROUND, 3) ]
 re <- re[order(ROUND, SEX, TYPE, AGEYRS)]
 re[, SEX_INDEX := ifelse(SEX == 'M', 1, 0)]
 re[, COMM_INDEX := ifelse(TYPE == 'fishing', 1, 0)]
+
+# Number of unique people censed over the study period
+flow[, table(reason_ineligible)]
+tot_censed_round <- cube(
+    flow[! round %like% '15' & reason_ineligible %like% "none|migrated"],
+    uniqueN(curr_id) ,
+    by = "round")
+with(tot_censed_round, 
+    sprintf("Over the study period, %s unique individuals were censed,
+        with an average of %s individuals censed per round. ",
+    comma(V1[5]), 
+    comma(round(mean(V1[-length(V1)])))
+    )
+)
+
+# Find total number of census eligibles by round
+cube(re, sum(ELIGIBLE), c("ROUND", "TYPE", "SEX"))
 
 #################################################
 catn("find average population size by community")
@@ -145,6 +155,7 @@ ncen <- re[, {
     
 }, by=c('ROUND', 'TYPE', 'SEX')]
 ncen <- merge(ncen, re, by=c('ROUND', 'TYPE', 'SEX', 'AGEYRS', 'ELIGIBLE'))
+# cube(ncen, comma(sum(ELIGIBLE)), "ROUND")
 
 #########################
 catn("Make Data figures")
