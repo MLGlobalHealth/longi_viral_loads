@@ -50,7 +50,7 @@ type2text <- function(x){
 
     dict <- c(
         'logratioftpvsnnonbyroundcomm' = "Posterior log ratio of participants vs first-time participants", 
-        'barenumviraemiccensel' = "Expected number of viraemic among census-eligible",
+        'barenumviraemiccensel' = "Expected number of individuals exhibiting viraemia among census-eligible",
         'lineecontrviraemiccensel' = "Expected prevalence of viraemia among census-eligible",
         'contribagegenderbyroundcomm' = "Gender-age contributions by round and community",
         'contribagegroupgenderbyroundcomm' = "Gender-agegroup contributions by round and community",

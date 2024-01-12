@@ -375,7 +375,7 @@ plot.estimated.number.viraemic.among.census.eligible <- function(DT) {
         scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
         scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
         scale_y_continuous(expand = expansion(mult = c(0, .1))) +
-        my_labs(y = "Estimated number of viraemic individuals among census-eligible") +
+        my_labs(y = "Estimated number of individuals exhibiting viraemia among census-eligible") +
         NULL
 }
 
@@ -396,7 +396,7 @@ plot.estimated.contribution.viraemic.among.census.eligible <- function(DT) {
         scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
         scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
         scale_y_percentage +
-        my_labs(y = "Estimated proportion of viraemic individuals among census-eligible") +
+        my_labs(y = "Estimated proportion of individuals exhibiting viraemia among census-eligible") +
         NULL
 }
 

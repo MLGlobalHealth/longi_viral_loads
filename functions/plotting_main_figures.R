@@ -1855,7 +1855,7 @@ plot_propofpop_of_viraemic_byagesex_stratbycommround <- function(DT, colorby = "
         .scales() +
         scale_linetype_manual(values = c(4, 3, 2, 1)) +
         my_labs(
-            y = "Viraemic individuals in age group as a proportion of the census-eligible population",
+            y = "Individuals exhibiting viraemia in age group as a proportion of the census-eligible population",
             color = my_labs_dictionary[colorby],
             fill = my_labs_dictionary[colorby],
             linetype = my_labs_dictionary["ROUND_LAB"]
