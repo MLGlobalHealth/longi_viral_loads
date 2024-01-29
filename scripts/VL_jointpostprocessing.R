@@ -233,7 +233,7 @@ catn("Load all previous results and plot")
 # _________________________________________
 
 # get posteriors for proportions among entire pop, as weighted averages of FTP and non.
-filename_rds <- file.path(out.dir.tables, "fullpop_posteriorquantiles_by_agesexround.rds")
+filename_rds  <- file.path(out.dir.tables, "fullpop_posteriorquantiles_by_agesexround.rds")
 
 if (file.exists(filename_rds) & !overwrite) {
     djoint <- readRDS(filename_rds)
@@ -329,10 +329,8 @@ if (file.exists(filename_rds) & !overwrite) {
                     tmp[, quantile2(N / NE), by = c("LOC", "SEX", "AGEGROUP")]
                 }
             )
-        },
-        by = c("MODEL", "ROUND")
+        }, by = c("MODEL", "ROUND")
     ]
-
     djoint_agegroup[is.na(AGEGROUP), AGEGROUP := "Total"]
     djoint_agegroup[is.na(SEX), SEX := "Total"]
     saveRDS(object = djoint_agegroup, filename_rds)
@@ -351,7 +349,8 @@ if (make_tables) {
 catn("Get quantiles for population prevalences aggregated over age")
 # ___________________________________________________________
 
-filename_rds <- file.path(out.dir.tables, "posterior_quantiles_ageaggregate.rds")
+filename_rds  <- file.path(out.dir.tables, "posterior_quantiles_ageaggregate.rds")
+filename_rds2 <- file.path(out.dir.tables, "posterior_pvalues_virred_comparison.rds")
 
 if (file.exists(filename_rds) & !overwrite) {
     joint_ageagrr_list <- readRDS(filename_rds)
@@ -378,12 +377,10 @@ if (file.exists(filename_rds) & !overwrite) {
     .percent.reduction <- function(old, new) {
         (old - new) / old
     }
-    tmp <- dcast(djoint_ageaggr,
+    red <- dcast(djoint_ageaggr,
         MODEL + .chain + .iteration + .draw + LOC + SEX ~ paste0("R", ROUND),
         value.var = "joint"
-    )[
-        ,
-        list(
+    )[j=list(
             MODEL = MODEL, LOC = LOC, SEX = SEX,
             redR17 = .percent.reduction(R16, R17),
             redR18 = .percent.reduction(R16, R18),
@@ -395,11 +392,18 @@ if (file.exists(filename_rds) & !overwrite) {
         id.vars = c("MODEL", "LOC", "SEX"),
         measure.vars = c("redR17", "redR18", "redR19", "redR1718", "redR1819")
     )
+    pval_red <- red[MODEL %like% "run-gp-supp-pop" & variable == "redR19", {
+        iter_F <- as.logical(seq_len(.N) %% 2)
+        list(
+            type = "Viraemia reduction larger in women rather than men",
+            p_val = mean(value[iter_F] > value[!iter_F])
+        ) }, by="LOC"]
     joint_ageagrr_list <- list(
-        percent_reduction = tmp[, quantile2(value), by = c("MODEL", "SEX", "LOC", "variable")],
+        percent_reduction = red[, quantile2(value), by = c("MODEL", "SEX", "LOC", "variable")],
         round_totals = djoint_ageaggr[, quantile2(joint), by = c("MODEL", "SEX", "LOC", "ROUND")]
     )
     saveRDS(object = joint_ageagrr_list, filename_rds)
+    saveRDS(object = pval_red, filename_rds2)
     rm(djoint_ageaggr)
 }
 
@@ -1246,10 +1250,17 @@ catn("=== M/F PLHIV suppression ratio custom agegroups ===")
 # dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, 25, 40, 50))]
 
 filename_rds <- file.path(out.dir.tables, "posterior_mf_ratios_custom.rds")
+filename_rds2 <- file.path(out.dir.tables, "posterior_mf_ratios_custom_pvals.rds")
 
 if (file.exists(filename_rds) & !overwrite) {
     dmf_ratios <- readRDS(filename_rds)
 } else {
+    p_values <- data.table(
+        LOC = as.character(),
+        ROUND = as.character(),
+        P = as.numeric(),
+        AGEGROUP = as.character()
+    )
     dmf_ratios <- dfiles_rds[,
         {
             paths <- file.path(D, F)
@@ -1310,16 +1321,20 @@ if (file.exists(filename_rds) & !overwrite) {
                     cbind(tmp1[, quantile2(RATIO_MF_VIR), by = by_cols_nosex], TYPE = "VIR"),
                     cbind(tmp1[, quantile2(DIFF_MF_SUPP), by = by_cols_nosex], TYPE = "SUP-DIFF")
                 )
-                return(out)
+                return(list(Q=out, pv=tmp1[, .(P=mean(DIFF_MF_SUPP > 0)), by=by_cols_nosex]))
             }
-            list(
-                .take.supp.ratio(tmp, by_cols = c("LOC", "SEX", "AGEGROUP")),
-                .take.supp.ratio(tmp, by_cols = c("LOC", "SEX"))[, AGEGROUP := "Total"]
-            ) |> rbindlist(use.names = TRUE)
+            lala <- .take.supp.ratio(tmp, by_cols = c("LOC", "SEX", "AGEGROUP"))
+            lala2 <- .take.supp.ratio(tmp, by_cols = c("LOC", "SEX"))
+
+            p_values  <<- rbind(p_values, lala2$pv[, `:=` (ROUND=ROUND, AGEGROUP="Total")])
+            list( lala$Q, lala2$Q[, AGEGROUP := "Total"]) |> 
+                rbindlist(use.names = TRUE)
         },
         by = c("ROUND")
     ]
     saveRDS(object = dmf_ratios, filename_rds)
+    p_values$type <- "Suppression difference is larger than 0"
+    saveRDS(object = p_values, filename_rds2)
 }
 
 if (make_tables) {
@@ -1350,7 +1365,6 @@ if (make_tables) {
         by = c("ROUND", "LOC", "SEX")] |>
         prettify_labels() |>
         remove.nonpretty()
-
 
     tab_pvir <- djoint_agegroup[ MODEL %like% 'supp-pop' & AGEGROUP == "Total" & SEX != "Total",  .(
         LOC, SEX, ROUND,

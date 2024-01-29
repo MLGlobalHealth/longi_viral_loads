@@ -1037,7 +1037,7 @@ plot.figure.main.prevalence <- function(DPREV = dprev, DCONTRIB = dcontrib, subt
     fig_list <- plot_prevalenceandcontrid(
         DPREV,
         DCONTRIB,
-        sec_name = "Age profile of census-eligible PLHIV", return_list = TRUE,
+        sec_name = "Age profile of PLHIV\n(black line, right y-axis)", return_list = TRUE,
         loc_labeller = fifelse(subtitles == TRUE, yes = "none", no = "longest2n"),
     )
     .title <- function(lab) {
@@ -1136,7 +1136,7 @@ plot_2yaxis_hist_lines <- function(DThist, DTline, sec_name = "Contribution of e
         scale_fill_manual(values = palettes$sex, labels = sex_dictionary2) +
         scale_color_manual(values = palettes$sex, labels = sex_dictionary2) +
         facet_grid(. ~ LOC_LAB) +
-        my_labs(y = "HIV prevalence by age") +
+        my_labs(y = "HIV prevalence within each age band\n(orange bars, left y-axis)") +
         theme_default() +
         NULL
 }
@@ -1191,7 +1191,7 @@ plot_prevalenceandcontrid <- function(DTprev,
 
         # relabel
         tmp_labs <- c(
-            `HIV prevalence` = "HIV prevalence in age group",
+            `HIV prevalence` = "HIV prevalence within each age group\n(orange bars, left y-axis)",
             `Contribution to HIV prevalence` = sec_name
         )
         DT[, LABEL2 := tmp_labs[LABEL]]
@@ -1239,7 +1239,7 @@ plot_prevalenceandcontrid <- function(DTprev,
                 labeller = labeller(LOC_LAB = .loc_labeller, SEX_LAB = sex_dictionary2, .multi_line = FALSE)
             ) +
             my_labs(
-                y = list("HIV prevalence by age", NULL)[[.M.intcode]],
+                y = list("HIV prevalence within each age band\n(orange bars, left y-axis)", NULL)[[.M.intcode]],
                 x = NULL,
                 color = "",
                 fill = ""
