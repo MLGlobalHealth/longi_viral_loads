@@ -1351,6 +1351,13 @@ if (make_tables) {
         prettify_labels() |>
         remove.nonpretty()
 
+
+    tab_pvir <- djoint_agegroup[ MODEL %like% 'supp-pop' & AGEGROUP == "Total" & SEX != "Total",  .(
+        LOC, SEX, ROUND,
+        VIR_P = prettify_cell(M*100, CL*100, CU*100, percent = TRUE)
+    )] |> prettify_labels()
+    set(tab_pvir, j=c("LOC", "SEX", "ROUND"), value=NULL)
+
     tab_hiv <- tablify.posterior.Nunsuppressed(joint_ageagrr_list, 
         CELLname = "HIV",
         model = "run-gp-prevl")
@@ -1361,14 +1368,17 @@ if (make_tables) {
     by_cols <- c("LOC_LAB", "SEX_LAB", "ROUND_LAB")
     tab_merge <- merge(tab_eligible, tab_hiv) |>
         merge(tab_unsupp, by=by_cols) |>
+        merge(tab_pvir, by=by_cols) |>
         merge(tab_mf_diffs, by=by_cols)
     tab_merge[, SEX_LAB := unname(sex_dictionary2[SEX_LAB])]
     tab_merge <- delete.repeated.table.values(tab_merge) |>
         setnames(names(.dict), unname(.dict), skip_absent = TRUE)
+    setcolorder(tab_merge, unname(.dict))
 
     tab_merge <- subset(tab_merge, select = - CELL_HIV_P)
     .sd <- names(tab_merge)[-(1:2)]
     tab_merge[, (.sd) := lapply(.SD, function(x) { x[x == "" | is.na(x)] <- "--"; x}), .SDcols = .sd]
+    colnames(tab_merge)
 
     if (interactive()) {
         write.to.googlesheets(tab_merge, sheet = "Table2")

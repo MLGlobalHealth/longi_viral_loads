@@ -74,8 +74,8 @@ prettify_cell <- function(..., parenthesis="(", precision=1, newline=FALSE, perc
     if(is.na(fmt_skeleton) ){
         fmt_skeleton <- fcase(
             n_vars == 1, "%._prec_fPERCENT",
-            n_vars == 2, "(%._prec_f - %._prec_f)",
-            n_vars == 3, "%._prec_fPERCENT_line_(%._prec_f - %._prec_f)"
+            n_vars == 2, "(%._prec_f-%._prec_f)",
+            n_vars == 3, "%._prec_fPERCENT_line_(%._prec_fPERCENT-%._prec_fPERCENT)"
         )
     }
     fmt_skeleton <- gsub('_prec_',precision,fmt_skeleton)

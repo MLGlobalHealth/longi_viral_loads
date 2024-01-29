@@ -136,7 +136,6 @@ community_dictionary <- list(
     # I would probably try "Fishing communities with high HIV prevalence", "Inland communities with typical/more moderate HIV prevalence"
 )
 
-
 ptype_dict = c(
     "all" = "All participants",
     "ftp" = "First-time participants"
@@ -268,44 +267,35 @@ my_labs_dictionary <- c(
 )
 
 dict_stan_params <- c(
-
     `alpha_00` = expression(paste("s.deviation:  ", alpha[0][0])),
     `alpha_01` = expression(paste("s.deviation:  ", alpha[0][1])),
     `alpha_10` = expression(paste("s.deviation:  ", alpha[1][0])),
     `alpha_11` = expression(paste("s.deviation:  ", alpha[1][1])),
-    
     `rho_00` = expression(paste("lengthscale:  ", rho[0][0])),
     `rho_01` = expression(paste("lengthscale:  ", rho[0][1])),
     `rho_10` = expression(paste("lengthscale:  ", rho[1][0])),
     `rho_11` = expression(paste("lengthscale:  ", rho[1][1])),
-
     sex_0_loc_0 = expression(paste("baseline:  ", nu[0][0])),
     sex_0_loc_1 = expression(paste("baseline:  ", nu[0][1])),
     sex_1_loc_0 = expression(paste("baseline:  ", nu[1][0])),
     sex_1_loc_1 = expression(paste("baseline:  ", nu[1][1])),
-
     NULL
 )
 
 dict_stan_params2 <- with(stan_dicts, c(
-
     `alpha_00` = expression(paste("variance:  ", alpha["F"]["-fi"])),
     `alpha_01` = expression(paste("variance:  ", alpha["F"]["-in"])),
     `alpha_10` = expression(paste("variance:  ", alpha["M"]["-fi"])),
     `alpha_11` = expression(paste("variance:  ", alpha["M"]["-in"])),
-    
     `rho_00` = expression(paste("lengthscale:  ",  rho["F"]["-fi"])),
     `rho_01` = expression(paste("lengthscale:  ",  rho["F"]["-in"])),
     `rho_10` = expression(paste("lengthscale:  ",  rho["M"]["-fi"])),
     `rho_11` = expression(paste("lengthscale:  ",  rho["M"]["-in"])),
-
     sex_0_loc_0 = expression(paste("baseline:  ",   nu["F"]["-fi"])),
     sex_0_loc_1 = expression(paste("baseline:  ",   nu["F"]["-in"])),
     sex_1_loc_0 = expression(paste("baseline:  ",   nu["M"]["-fi"])),
     sex_1_loc_1 = expression(paste("baseline:  ",   nu["M"]["-in"])),
-
     NULL
-
 ))
 
 # same but with names = t(parname)
@@ -340,14 +330,15 @@ dict_table_names <- list(
     ),
 
     percent_reduction = c(
-        LOC_LAB = "Community\ntype\n\n\n\n\n",
+        LOC_LAB = "Location\n\n\n\n\n\n",
         SEX_LAB = "Gender\n\n\n\n\n\n",
         ROUND_LAB = "Round\n\n\n\n\n\n",
         N_ELIGIBLE = "Census-eligible\nindividuals\n\n\n\n(n)\n",
-        CELL_HIV_N = "People with HIV in the\npopulation\n\n\n\n(posterior median\nestimate, (95%CrI))",
-        CELL_UNSUPP_N = "People with HIV who have\nunsuppressed virus\n\n\n\n(posterior median estimate,\n(95%CrI)) ",
-        CELL_UNSUPP_P = "Percent reduction In the number \nof people with HIV who have\nunsuppressed virus relative to\nround 16\n\n(posterior median estimate,\n(95%CrI))",
-        CELL_MF_GAP = "Men-Women Gap in the\nproportion of individuals\nwith unsuppressed virus\n\n\n(posterior median estimate,\n(95%CrI))"
+        CELL_HIV_N = "People with HIV \n\n\n\n\n(posterior median\nestimate, (95%CrI))",
+        CELL_UNSUPP_N = "People with unsuppressed HIV\n\n\n\n\n(posterior median estimate,\n(95%CrI)) ",
+        VIR_P = "Proportion of\npeople \nexhibiting viraemia",
+        CELL_UNSUPP_P = "Percent reduction in the absolute number \nof people with \nunsuppressed HIV relative to\nround 16\n\n(posterior median estimate,\n(95%CrI))",
+        CELL_MF_GAP = "Male-female difference in the\nproportion of people\nwith HIV who have unsuppressed vireamia\n\n\n(posterior median estimate,\n(95%CrI))"
     ),
 
     mean_ages = c(
