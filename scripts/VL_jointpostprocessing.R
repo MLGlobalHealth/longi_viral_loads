@@ -559,7 +559,7 @@ if (make_plots) {
 }
 
 if ( make_tables ){
-    .null <- paper_statements_prevalence_viraemia_maximum (dsupp_agegroup_custom)
+    .null <- paper_statements_prevalence_viraemia_maximum(dsupp_agegroup_custom[SEX%like% "F"])
 }
 
 
