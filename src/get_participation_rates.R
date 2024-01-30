@@ -9,6 +9,7 @@ gitdir <- here::here()
 source(file.path(gitdir, 'R/paths.R'))
 source(file.path(gitdir.functions, 'phsc_vl_helpers.R'))
 source(file.path(gitdir.functions, 'plotting_functions.R'))
+source(file.path(gitdir.functions, 'paper_statements.R'))
 
 # set output directory
 outdir <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl"
@@ -49,6 +50,8 @@ stopifnot( any(is.na(dprop)) )
 
 check_more_elig_than_part <- dprop[, all(N_PART < ELIGIBLE) ] 
 stopifnot(check_more_elig_than_part)
+tab_el <- paper_statements_average_participation(dprop)
+tab <- make.table.eligible.participants(tab_el) 
 
 # aggregate over age group
 npar_agegroup <- subset(dprop, 
@@ -125,7 +128,6 @@ if(make_plots){
         DEN='N_PART')
     filename <- 'pyramid_Nparticipants_Nfirst.pdf'
     cmd <- ggsave2(p_pyramid_firstpart , file=filename, LALA=outdir.figures, w=10, h=11)
-
 
     p_pyramid_hivp  <- plot.pyramid.bysexround( dprop, 
         .ylab = "Number of unsuppressed among HIV positive participants", 

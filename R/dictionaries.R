@@ -201,6 +201,20 @@ with(drounds, {
     round_labs2 <<- gsub("\n", ":  ", round_labs)
 })
 
+round_labs3 <- gsub("Jul ", "07/", round_labs2) |>
+    gsub("Jan ", "01/", x=_) |>
+    gsub("Feb ", "02/", x=_) |>
+    gsub("Mar ", "03/", x=_) |>
+    gsub("Apr ", "04/", x=_) |>
+    gsub("May ", "05/", x=_) |>
+    gsub("Jun ", "06/", x=_) |>
+    gsub("Sep ", "09/", x=_) |>
+    gsub("Oct ", "10/", x=_) |>
+    gsub(" to ", "-", x=_) |>
+    gsub("201", "1", x=_) |>
+    gsub(":  ", "\n", x=_)
+
+
 dall_dictionaries <- list(
     TEST_YEAR_AGO = c(
         "0.5" = "<1",
@@ -315,7 +329,7 @@ plabels <- list(
 
 dict_table_names <- list(
     percent_reduction_old = c(
-        LOC_LAB = "Community type",
+        LOC_LAB = "Location",
         SEX_LAB = "Gender",
         ROUND_LAB = "Round",
         N_ELIGIBLE = "Number of census\neligible individuals",
@@ -342,7 +356,7 @@ dict_table_names <- list(
     ),
 
     mean_ages = c(
-        LOC_LAB = "Community type",
+        LOC_LAB = "Location",
         SEX_LAB = "Gender",
         ROUND_LAB = "Round",
         `AGEMEAN_run-gp-prevl` = "Mean age of PLHIV",
@@ -355,6 +369,16 @@ dict_table_names <- list(
         `AGE25_run-gp-supp-pop` = "First quartile for age of individuals with unsuppressed virus",
         `AGE50_run-gp-supp-pop` = "Median age of individuals with unsuppressed virus",
         `AGE75_run-gp-supp-pop` = "Third quartile for age of individuals with unsuppressed virus"
+    ),
+
+    eligible_participants = c(
+        FC_LAB = "Location",
+        SEX_LAB = "Gender",
+        ROUND_LAB = "Survey Round",
+        ROUND = "Survey Round",
+        EL = "Number of census eligible individuals",
+        PART = "Number of participants",
+        PERC = "Proportion of eligible individuals who participated"
     ),
 
     NULL

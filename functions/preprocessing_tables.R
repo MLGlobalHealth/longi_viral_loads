@@ -40,3 +40,25 @@ make.table.firstparticipant.NPhiv.NPunsupp <- function(DT=dall){
 
     return(out)
 }
+
+make.table.eligible.participants <- function(DT=tab_el){
+
+    # DT <- copy(tab_el)
+    dtable <- copy(DT)
+    setkey(dtable, FC, SEX, ROUND)
+    cols <- c("EL", "PART")
+    dtable[, (cols) := lapply(.SD, comma), .SDcols=cols]
+    dtable[, PERC := paste0(PERC, "%")]
+    dtable[, ROUND := round_labs3[as.character(ROUND)]]
+    out <- prettify_labels(dtable) |> 
+        set(j=c("ROUND_LAB", "FC", "SEX"), value=NULL) |>
+        setkey(FC_LAB, SEX_LAB, ROUND)|>
+        setcolorder(c("FC_LAB", "SEX_LAB", "ROUND")) |>
+        delete.repeated.table.values() |>
+        setnamesdict(dict=dict_table_names$eligible_participants)
+    out[, Location := gsub("([g|d])$", "\\1 communities", Location) ]
+    out[, Gender := gsub("Female", "Women", Gender) |> 
+                gsub("Male", "Men", x=_) ]
+    xtable(out) |> print()
+    return(out)
+}
