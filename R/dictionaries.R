@@ -78,11 +78,15 @@ community_dictionary <- list(
     ),
     long = c(
         "F" = "Fishing communities",
-        "I" = "Inland communitiesd",
+        "I" = "Inland communities",
         "fishing" = "Fishing communities",
         "inland" = "Inland communities",
         "Fishing" = "Fishing communities",
-        "Inland" = "Inland communities"
+        "Inland" = "Inland communities",
+        `Fishing, Round 16` = "Fishing, Round 16\nJul 2013 to Jan 2015" ,
+        `Fishing, Round 19` = "Fishing, Round 19\nJun 2018 to May 2019" ,
+        `Inland, Round 16` = "Inland, Round 16\nJul 2013 to Jan 2015",
+        `Inland, Round 19` = "Inland, Round 19\nJun 2018 to May 2019"
     ),
     longest = c(
         "F" = "Fishing communities with high HIV prevalence",

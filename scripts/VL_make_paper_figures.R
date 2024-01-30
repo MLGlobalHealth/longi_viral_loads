@@ -21,6 +21,7 @@ suppressPackageStartupMessages({
     library(here)
     library(optparse)
     library(patchwork)
+    library(osmdata)
 })
 
 
@@ -170,8 +171,8 @@ if (system.file(package = "ggsn") != "" && usr == "andrea") {
     #     fig1b_v
     # ) + plot_layout(widths=c(-3,7, -3, 1))
 
-    if(0) # alternative maps
-    {
+    if(0) {
+        # alternative maps
         .byrow <- TRUE
         fig1b_v_list <- plot_paper_population_pyramid(layout="vertical", return_list=TRUE)
         fig_map_and_hist <- patchwork::wrap_plots(
@@ -187,7 +188,6 @@ if (system.file(package = "ggsn") != "" && usr == "andrea") {
         cmd <- ggsave_nature(p = fig_map_and_hist, filename = filename, LALA = out.dir.figures, w = 18.5, h = 16)
     }
     # system(zathura2gthumb(cmd))
-
 
     # fig 1c
     fig1c <- plot.figure.main.prevalence(subtitles=TRUE, size=9)
@@ -347,37 +347,51 @@ ggsave_nature(p = plot_prevalence, filename = "whopepfar_prevalence.pdf", LALA =
     fig_kate_1d <- plot_suppandcontrib(
         dprev_vir2[LOC == "inland"],
         dcontrib_vir[LOC == "inland"],
-        sec_name = "Contribution of each age group to people with unsuppressed viral load",
-        prevalence.label = "Prevalence of viraemia among HIV positive population in each age band",
-        slides = FALSE,
-        CrI = FALSE,
+        sec_name = "Age and gender profile of people exhibiting vireamia\n(black line, right y-axis)",
+        prevalence.label = "Prevalence of viraemia among HIV positive population in each age band\n(orange bars, left y-axis)",
+        reqs = nm_reqs,
+        remove.legend = TRUE,
+        CrI = TRUE,
         sec_axis_scale = .08,
-        UNAIDS = TRUE
-    ) |> annotate_figure(top = text_grob( community_dictionary$longest2['I'], size = 12))
+        UNAIDS = FALSE
+    ) |> annotate_figure(top = text_grob( community_dictionary$longest2['I'], size = 9))
     fig_kate_1f <- plot_suppandcontrib(
         dprev_vir2[LOC == "fishing"],
         dcontrib_vir[LOC == "fishing"],
-        sec_name = "Contribution of each age group to people with unsuppressed viral load",
-        prevalence.label = "Prevalence of viraemia among HIV positive population in each age band",
-        slides = FALSE,
-        CrI = FALSE,
+        sec_name = "Age and gender profile of people exhibiting vireamia\n(black line, right y-axis)",
+        prevalence.label = "Prevalence of viraemia among HIV positive population in each age band\n(orange bars, left y-axis)",
+        reqs = nm_reqs,
+        CrI = TRUE,
         sec_axis_scale = .08,
-        UNAIDS = TRUE
-    ) |> annotate_figure(top=text_grob( community_dictionary$longest2['F'] , size = 12))
-    
+        UNAIDS = FALSE
+    ) |> annotate_figure(top=text_grob( community_dictionary$longest2['F'] , size = 9))
 
-
-    # plot_suppression <- (
-    #     (fig_kate_1c +  labs(tag="Considering entire population") + nm_reqs + labs(x="LALALA")) /
-    #     (fig_kate_1d +  labs(tag="Considering PLHIV only (as per 95-95-95 goals)") + slides_reqs )
-    # ) + plot_layout(guides="collect", ncol=1, heights=c(1,1.1)) + theme(legend.position="bottom")
-    plot_suppression <- fig_kate_1d
+    # plot_suppression <- fig_kate_1d + theme(legend.position="none")
     plot_suppression2 <- fig_kate_1d / fig_kate_1f
 }
-ggsave_nature(p = plot_suppression, filename = "whopepfar_suppression.pdf", LALA = out.dir.figures, w = 23, h = 17)
-cmd <- ggsave_nature(p = plot_suppression2, filename = "whopepfar_suppression_comms.pdf", LALA = out.dir.figures, w = 30 , h = 23)
-# system(cmd)
 
+if(0){
+    # used to 000e84161c933cdd1aba319a3571e36cfa3d63dc
+    ggsave_nature(p = plot_suppression, filename = "whopepfar_suppression.pdf", LALA = out.dir.figures, w = 23, h = 17)
+    cmd <- ggsave_nature(p = plot_suppression2, filename = "whopepfar_suppression_comms.pdf", LALA = out.dir.figures, w = 30 , h = 23)
+    # system(cmd)
+}
+
+dcontrib_vir1619 <- .load.model.subset(
+    filename_rds_contrib,
+    MODEL == "run-gp-supp-pop" & ROUND %in%  c(16, 19)
+) |> prettify_labels()
+p_sex <- make_figure_3b(facet_var = "SEX_LAB")
+# p_loc <- make_figure_3b(facet_var = "LOC_LAB")
+# fig3_redo <- ((fig_kate_1d / fig_kate_1f)/ p_loc ) + plot_layout(ncol=1, heights=c(.9,1,.4))
+fig3_redo <- ((fig_kate_1d / fig_kate_1f)/ p_sex ) + plot_layout(ncol=1, heights=c(.9,1,.4))
+
+cmd <- ggsave_nature(
+    p = fig3_redo,
+    filename = "main_figure_suppression_redo.pdf",
+    LALA = out.dir.figures, w = 20 , h = 22
+)
+system(cmd)
 
 ################################################
 catn("Make table with study pop characteristics")

@@ -15,8 +15,8 @@ theme_default <- function(...) {
             legend.position = "bottom",
             strip.background = element_blank(),
             # center title and substitle
-            plot.title=element_text(hjust=0.5),
-            plot.subtitle=element_text(hjust=0.5),
+            plot.title = element_text(hjust = 0.5),
+            plot.subtitle = element_text(hjust = 0.5),
             ...
         )
 }
@@ -74,7 +74,7 @@ ggsave2 <- function(p, file, w, h, LALA = vl.out.dir, u = "in") {
 naturemed_reqs <- function() {
     # call this before doing your plots
     nm_reqs <<- theme(
-        plot.subtitle = element_text(size=8, family="sans"),
+        plot.subtitle = element_text(size = 8, family = "sans"),
         axis.text = element_text(size = 7, family = "sans"),
         strip.text = element_text(size = 8, family = "sans"),
         text = element_text(size = 8, family = "sans"),
@@ -86,7 +86,7 @@ naturemed_reqs <- function() {
     )
 
     slides_reqs <<- theme(
-        plot.subtitle = element_text(size=9, family="sans"),
+        plot.subtitle = element_text(size = 9, family = "sans"),
         axis.text = element_text(size = 6, family = "sans"),
         text = element_text(size = 9, family = "sans"),
         legend.text = element_text(size = 9, family = "sans"),
@@ -202,7 +202,7 @@ palettes <- list(
         `Round 16, Male` = "#0056E0",
         `Round 19, Male` = "#9ac0cd", #
         `Round 16, Female` = "salmon",
-        `Round 19, Female` = "#F4B5BD" 
+        `Round 19, Female` = "#F4B5BD"
     ),
     comm = c(
         fishing = "#9ac0cd",
@@ -210,7 +210,11 @@ palettes <- list(
         Fishing = "#9ac0cd",
         Inland = "#9C964A",
         `Fishing communities with high HIV prevalence` = "#9ac0cd",
-        `Inland communities with typical HIV prevalence` = "#9C964A"
+        `Inland communities with typical HIV prevalence` = "#9C964A",
+        `Fishing, Round 16` = "#0056E0",
+        `Fishing, Round 19` = "#9ac0cd", #
+        `Inland, Round 16` = "brown",
+        `Inland, Round 19` = "#9C964A"
     ),
     arvmed = c(
         "#E03531",
@@ -296,7 +300,6 @@ palettes <- list(
         "#F2AD00",
         "#F98400"
     ),
-
     # minimal3 = c("#FAE48BFF","#FB6467FF"),
     minimal3 = c("purple", "darkgreen"),
     ftp = c(
@@ -310,9 +313,9 @@ shapes <- list(
     sex = c(
         `M` = 15, `Male` = 15, `Men` = 15,
         `F` = 17, `Female` = 17, `Women` = 17,
-        `Round 16, Male` =  15,
+        `Round 16, Male` = 15,
         `Round 19, Male` = 15,
-        `Round 16, Female` = 16, 
+        `Round 16, Female` = 16,
         `Round 19, Female` = 16
     ),
     comm = c(
@@ -320,7 +323,7 @@ shapes <- list(
         `fishing` = 25, `Fishing` = 25
     ),
     ptype = c(
-        'all' = 15, 
+        "all" = 15,
         "ftp" = 1
     ),
     NULL
@@ -462,10 +465,10 @@ labs_from_dictionaries <- function(dict) {
 }
 
 my_labs <- function(..., title = waiver(), subtitle = waiver(), caption = waiver(), tag = waiver(), alt = waiver(), alt_insight = waiver()) {
-    # detects the arguments passed to the main ggplot's aes call 
+    # detects the arguments passed to the main ggplot's aes call
     # and uses `my_labs_dictionary` to display a default label  based
     # on the name of the variable
-    # e.g. aes(x=AGEGROUP)  + my_labs() would automatically produce a 
+    # e.g. aes(x=AGEGROUP)  + my_labs() would automatically produce a
     # label equivalent to labs(x="Age group")
 
     p <- ggplot_build(last_plot())
@@ -496,8 +499,8 @@ my_labs <- function(..., title = waiver(), subtitle = waiver(), caption = waiver
     structure(args, class = "labels")
 }
 
-my_guides <- function(...){
-    guides(..., fill = guide_legend(override.aes = list(linetype = 0)) )
+my_guides <- function(...) {
+    guides(..., fill = guide_legend(override.aes = list(linetype = 0)))
 }
 
 dfacets <- list(
