@@ -260,13 +260,13 @@ fig2new <- ggarrange(
     fig2a, 
     fig2b + theme(legend.position = "none"), 
     ncol=2, 
-    widths = c(1.4, 1))
+    widths = c(1.2, 1))
 filename <- paste0("main_figure_suppression_plhiv_r1619.pdf")
 cmd <- ggsave_nature(p = fig2new,
     filename = filename,
     LALA = out.dir.figures,
     w = 19, h = 16)
-# system(cmd)
+system(cmd)
 if(interactive()) 
     upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
 

@@ -33,9 +33,7 @@ theme_debug <- function(...) {
 }
 t_nomargin <- theme(plot.margin = unit(c(0, 0, 0, 0), "cm"))
 
-
 theme_set(theme_default())
-
 
 #########################
 # Requirements + saving #
@@ -201,7 +199,7 @@ palettes <- list(
         Male = "#9ac0cd",
         `Round 16, Male` = "#0056E0",
         `Round 19, Male` = "#9ac0cd", #
-        `Round 16, Female` = "salmon",
+        `Round 16, Female` = "#D83F31", #"red",
         `Round 19, Female` = "#F4B5BD"
     ),
     comm = c(

@@ -283,13 +283,14 @@ paper_statements_contributions_census_eligible <- function(DT=dcens, comm="inlan
 paper_statements_average_participation <- function(DT=dprop){
     fmt <- paste0(
         "there were on average %.0f censused inds, of who on average", 
-        " %.0f  (%.1f %%) individuals participated in the RCCS"
+        " %.0f  (%.1f %%) individuals participated in the RCCS\n"
         )
 
-    tmp <- dprop[, 
+    tmp <- DT[, 
         .(EL = sum(ELIGIBLE), PART=sum(N_PART)),
-    by="ROUND"][, PERC := PART/EL ]
-    tmp[j=lapply(.SD, mean)][j=sprintf(fmt, EL, PART, 100*PERC)] |> cat()
+    by=c("FC","SEX","ROUND")][, PERC := PART/EL ]
+    # tmp[j=lapply(.SD, mean), .SDcols = c("EL", "ROUND")][j=sprintf(fmt, EL, PART, 100*PERC)] |> cat()
+    tmp[, PERC := round(100*PERC, 1)]
     return(tmp)
 }
 

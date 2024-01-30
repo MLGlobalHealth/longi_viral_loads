@@ -1261,10 +1261,10 @@ plot_prevalenceandcontrid <- function(DTprev,
     prettify_labels(DT)
 
     facets_dts <- list(
-        subset(DT, LOC_LAB == "Inland" & SEX_LAB == "Female"),
         subset(DT, LOC_LAB == "Inland" & SEX_LAB == "Male"),
-        subset(DT, LOC_LAB == "Fishing" & SEX_LAB == "Female"),
-        subset(DT, LOC_LAB == "Fishing" & SEX_LAB == "Male")
+        subset(DT, LOC_LAB == "Inland" & SEX_LAB == "Female"),
+        subset(DT, LOC_LAB == "Fishing" & SEX_LAB == "Male"),
+        subset(DT, LOC_LAB == "Fishing" & SEX_LAB == "Female")
     )
     # remove facets in case they are not needed
     ps <- lapply(facets_dts, .plot.facet)
@@ -1300,15 +1300,14 @@ plot_suppandcontrib <- function(DTprev1,
                                 legend.key.size = unit(0.4, "cm"),
                                 remove.legend = FALSE,
                                 sec_axis_scale = NA_real_,
-                                slides = FALSE,
+                                reqs = slide_reqs,
                                 CrI = TRUE,
-                                UNAIDS = TRUE) {
-    ALPHA <- .5
-    DODGE <- 1
+                                UNAIDS = TRUE
+                                ) {
+    ALPHA <- .5; DODGE <- .5
 
     n_loc <- DTprev1[, uniqueN(LOC)]
     n_sex <- DTprev1[, uniqueN(SEX)]
-    REQS <- c(nm_reqs, slides_reqs)[slides == TRUE + 1]
 
     .plot.facet <- function(DT) {
         # if empty data table do not plot:
@@ -1327,7 +1326,6 @@ plot_suppandcontrib <- function(DTprev1,
         )
         cat(.sec_axis_scale, "\n")
 
-
         DT[LABEL == viraemia.label, c("M", "CL", "CU") := {
             stopifnot("probably wrong label" = .N > 0)
             .(M / .sec_axis_scale, CL / .sec_axis_scale, CU / .sec_axis_scale)
@@ -1344,64 +1342,65 @@ plot_suppandcontrib <- function(DTprev1,
         DT[, LABEL2 := factor(LABEL2, levels = tmp_labs, ordered = TRUE)]
 
         # conditional faceting order
-        facet_formula <- if (n_loc == 1) {
-            as.formula(LOC_LAB ~ SEX_LAB)
+        .facet <- if (n_loc == 1) {
+            facet_grid(LOC_LAB ~ SEX_LAB, labeller = labeller(LOC_LAB = community_dictionary$longest2, SEX_LAB = sex_dictionary2))
         } else {
-            as.formula(SEX_LAB + LOC_LAB ~ .)
+            facet_grid(SEX_LAB + LOC_LAB ~ ., labeller = labeller(LOC_LAB = community_dictionary$longest2, SEX_LAB = sex_dictionary2))
         }
 
         # rescale 2nd data frame for the secondary axis
-        ggplot(DT, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = LABEL2)) +
-            geom_col(alpha = ALPHA, color = NA, position = position_dodge(width = DODGE)) +
-            {
-                if (CrI) {
-                    geom_linerange(position = position_dodge(width = DODGE))
-                } else {
-                    NULL
-                }
-            } +
-            scale_y_continuous(
+        ggplot(DT, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, color=LABEL2, fill = LABEL2)) +
+        geom_col(data=DT[LABEL == prevalence.label ], alpha=ALPHA,
+            position = position_dodge(width = DODGE)) +
+        geom_line(data=DT[LABEL == viraemia.label ], # alpha=ALPHA,
+            position = position_dodge(width = DODGE)) +
+        {
+            if (CrI) {
+                geom_linerange(position = position_dodge(width = DODGE))
+            } else {
+                NULL
+            }
+        } +
+        scale_y_continuous(
+            labels = scales::label_percent(),
+            limits = c(0, c(.55, .77)[as.integer(CrI == TRUE) + 1]),
+            expand = expansion(mult = c(0, 0)),
+            sec.axis = sec_axis(
+                trans = ~ . * .sec_axis_scale,
                 labels = scales::label_percent(),
-                limits = c(0, c(.55, .77)[as.integer(CrI == TRUE) + 1]),
-                expand = expansion(mult = c(0, 0)),
-                sec.axis = sec_axis(
-                    trans = ~ . * .sec_axis_scale,
-                    labels = scales::label_percent(),
-                    name = sec_name
+                name = gsub("\\n", " ",sec_name)
+            )
+        ) +
+        {
+            if (UNAIDS) {
+                geomtextpath::geom_texthline(
+                    yintercept = 1 - .95^3, color = "red", linetype = "dashed",
+                    label = "95-95-95", vjust = 0.5, hjust = 1
                 )
-            ) +
-            {
-                if (UNAIDS) {
-                    geomtextpath::geom_texthline(
-                        yintercept = 1 - .95^3, color = "red", linetype = "dashed",
-                        label = "95-95-95", vjust = 0.5, hjust = 1
-                    )
-                } else {
-                    NULL
-                }
-            } +
-            scale_x_continuous(expand = c(0, 0), breaks = c(seq(15, 45, 5), 50)) +
-            scale_fill_manual(values = palettes$minimal2) +
-            scale_color_manual(values = palettes$minimal2) +
-            facet_grid(facet_formula, labeller = labeller(LOC_LAB = community_dictionary$longest2, SEX_LAB = sex_dictionary2)) +
-            my_labs(y = prevalence.label, x = "", color = "", fill = "") +
-            theme_default(
-                strip.placement = "outside",
-                legend.key.size = legend.key.size,
-                legend.spacing.x = legend.key.size
-            ) +
-            REQS
+            } else {
+                NULL
+            }
+        } +
+        scale_x_continuous(expand = c(0, 0), breaks = c(seq(15, 45, 5), 50)) +
+        scale_fill_manual(values = palettes$minimal2) +
+        scale_color_manual(values = palettes$minimal2) +
+        .facet +
+        my_labs(y = gsub("\\n"," ",prevalence.label), x = "", color = "", fill = "") +
+        theme_default(
+            strip.placement = "outside",
+            legend.key.size = legend.key.size,
+            legend.spacing.x = legend.key.size
+        ) +
+        reqs
     }
 
     DTprev <- copy(DTprev1)
     DTcontrib <- copy(DTcontrib1)
-
     # bind
     DTprev[, LABEL := prevalence.label]
-    # DTprev[, (c('M', 'CL', 'CU')) := lapply(.SD, function(x) 1-x), .SDcols=c('M', 'CL', 'CU')]
     DTcontrib[, LABEL := viraemia.label]
-    DT <- rbind(DTprev, DTcontrib)
-    prettify_labels(DT)
+    DT <- rbind(DTprev, DTcontrib) |> 
+        prettify_labels()
 
     facets_dts <- list(
         subset(DT, LOC_LAB == "Inland" & SEX_LAB == "Female"),
@@ -1428,8 +1427,15 @@ plot_suppandcontrib <- function(DTprev1,
             )
         }
         p <- ggarrange(
-            ps[[2]] + theme(strip.text.y = element_blank(), axis.title.y.right = element_blank()),
-            ps[[1]] + theme(strip.text.y = element_blank()) + labs(y = ""),
+            ps[[1]] + theme(
+                strip.text.y = element_blank(),
+                axis.title.y.right = element_blank(),
+                axis.text.y.right = element_blank()
+            ),
+            ps[[2]] + theme(
+                strip.text.y = element_blank(),
+                axis.text.y.left = element_blank()
+            ) + labs(y = ""),
             ncol = 2, nrow = 1, common.legend = TRUE, legend = c("bottom", "none")[remove.legend + 1]
         )
     }
@@ -1758,16 +1764,10 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
 
     if (joint) {
         dplot[, ROUNDSEX_LAB := paste(ROUND_LAB, SEX_LAB, sep = ", ")]
-        alphas <- c(
-            `Round 16, Male` = 1,
-            `Round 19, Male` = 1,
-            `Round 16, Female` = 1,
-            `Round 19, Female` = 1
-        )
-
         base <- ggplot(dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = ROUNDSEX_LAB, color = ROUNDSEX_LAB, pch = ROUNDSEX_LAB, alpha = ROUNDSEX_LAB))
         col_lab <- shape_lab <- alpha_lab <- "Gender, Round"
     }
+
     alphas <- c(
         `Round 16, Male` = 1,
         `Round 19, Male` = 1,
@@ -1787,7 +1787,8 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
         my_labs(
             y = .ylab,
             x = "Age",
-            fill = col_lab, color = col_lab, shape = shape_lab, alpha = alpha_lab
+            fill = col_lab, color = col_lab,
+            shape = shape_lab, alpha = alpha_lab
         ) +
         nm_reqs
 }
@@ -1796,13 +1797,9 @@ plot_propofpop_of_viraemic_byagesex_stratbycommround <- function(DT, colorby = "
     # helpers for plot flexibility
     colorby <- match.arg(colorby, c("ROUND_LAB", "SEX_LAB")) |> invisible()
     expr_col <- ifelse(colorby == "ROUND_LAB", expr(ROUND_LAB), expr(SEX_LAB))
-    .scales <- function(x = {
-                            colorby == "ROUND_LAB"
-                        }) {
+    .scales <- function(x = { colorby == "ROUND_LAB" }) {
         out <- list(
-            if (cri) {
-                geom_ribbon(linetype = 0, alpha = .1)
-            },
+            if (cri) { geom_ribbon(linetype = 0, alpha = .1) },
             geom_line(),
             scale_y_continuous(expand = expansion(mult = c(0, .1)), labels = scales::label_percent()),
             scale_x_continuous(expand = c(0, 0)),
@@ -1999,7 +1996,7 @@ aggregate_posterior_fits <- function(model, filename_fmt) {
 
     if (model == "supp-pop") {
         gg_list[nms %which.like% model %which.like% "18|19"] <- lapply(
-            gg_list[nms %which.like% model %which.like% "18|19"], 
+            gg_list[nms %which.like% model %which.like% "18|19"],
             function(p) p + coord_cartesian(ylim = c(0, .3), expand = FALSE)
         )
     }
@@ -2025,15 +2022,15 @@ aggregate_posterior_fits <- function(model, filename_fmt) {
         ncol = 1, nrow = 4
     ) |> annotate_figure(top = text_grob("First-time participants", size = 8))
     p <- ggarrange(
-        p_all, p_ftp, 
+        p_all, p_ftp,
         ncol = 2, nrow = 1,
-        labels="auto",
-        font.label = list(size=10, color="black", face="bold"),
+        labels = "auto",
+        font.label = list(size = 10, color = "black", face = "bold"),
         common.legend = TRUE
     ) |> annotate_figure(
-            left = text_grob(.ylabs, size = 9, rot = 90),
-            bottom = text_grob("Age at visit", size = 8)
-        )
+        left = text_grob(.ylabs, size = 9, rot = 90),
+        bottom = text_grob("Age at visit", size = 8)
+    )
     p <- ggarrange(p, unique_legend, ncol = 1, nrow = 2, heights = c(3, 0.1))
 
     filename <- sprintf(filename_fmt, model)
@@ -2130,11 +2127,71 @@ plot_single_posterior_fit <- function(DT = dfits, model, verbose = TRUE) {
             x = sprintf(fmt_x, gsub("\\n", " ", lab1), lab2),
             y = sprintf(fmt_y, lab1, lab2)
         ) +
-        guides(shape = guide_legend(nrow = 2, byrow=TRUE)) +
+        guides(shape = guide_legend(nrow = 2, byrow = TRUE)) +
         nm_reqs +
         theme(legend.spacing.y = unit(-6, "pt"))
     force(p)
     gg_list_pp[[model]] <<- p
 
     return(p)
+}
+
+
+make_figure_3b <- function(DT=dcontrib_vir1619, facet_var="LOC_LAB"){
+
+    dplot <- copy(dcontrib_vir1619)
+
+    # facet_var can only be LOC_LAB or SEX_LAB or ROUND_LAB:
+    facet_var <- match.arg(facet_var, c("LOC_LAB", "SEX_LAB", "ROUND_LAB"))
+    .facet <- facet_wrap(
+        as.formula(paste0(". ~ ", facet_var)),
+        labeller=labeller(
+            LOC_LAB= community_dictionary[["longestn"]],
+            SEX_LAB= sex_dictionary2
+        ),
+        scales="free_y",
+        nrow = 1
+    )
+    if ( facet_var == "LOC_LAB"){
+        .pal <- palettes$sex
+        .labs <- sex_dictionary2
+        col_var <- "ROUNDSEX_LAB"
+        col_lab <- "Gender, Round"
+    }else if ( facet_var == "SEX_LAB"){
+        .pal <- palettes$comm
+        .labs <- community_dictionary$long
+        col_var <- "LOCROUND_LAB"
+        col_lab <- "Community type, Round"
+    }
+    shape_lab <- alpha_lab <- NULL
+    .ylab <- "Age and gender profile of individuals exhibiting viraemia"
+
+    dplot[, ROUNDSEX_LAB := paste(ROUND_LAB, SEX_LAB, sep = ", ")]
+    dplot[, LOCROUND_LAB := paste(LOC_LAB, ROUND_LAB,  sep = ", ")]
+
+    ggplot(dplot,
+        aes(x=AGEYRS,
+            y=M, ymin=CL, ymax=CU,
+            fill=.data[[col_var]],
+            color=.data[[col_var]]
+        )) +
+        geom_ribbon(alpha=.2, color=NA) +
+        geom_line() +
+        .facet  +
+        scale_y_continuous(
+            labels = scales::label_percent(),
+            limits = c(0, .06),
+            expand = expansion(mult = 0)
+        ) + 
+        scale_x_continuous(breaks = seq(15, 60, 5), expand = c(0, 0)) +
+        scale_color_manual(values = .pal, labels = .labs) +
+        scale_fill_manual(values = .pal, labels = .labs) +
+        # theme_default(legend.box.margin = margin(t = .margin, l = 0, r = 0, b = .margin)) +
+        my_labs(
+            y = .ylab,
+            x = NULL,
+            fill = col_lab, color = col_lab,
+            shape = shape_lab, alpha = alpha_lab
+        ) +
+        nm_reqs
 }
