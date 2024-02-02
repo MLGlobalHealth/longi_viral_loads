@@ -197,10 +197,11 @@ palettes <- list(
         Men = "#9ac0cd",
         Female = "#F4B5BD",
         Male = "#9ac0cd",
-        `Round 16, Male` = "#0056E0",
+        `Round 16, Male` = "#A2A475",
         `Round 19, Male` = "#9ac0cd", #
-        `Round 16, Female` = "#D83F31", #"red",
-        `Round 19, Female` = "#F4B5BD"
+        `Round 19, Female` ="#F4B5BD",
+        `Round 16, Female` ="#F1BB7B",
+        NULL
     ),
     comm = c(
         fishing = "#9ac0cd",
@@ -286,6 +287,11 @@ palettes <- list(
         "#000000",
         "#DF8F44"
     ),
+    minimal3 = c(
+        "#dd92ec",
+        "#000000",
+        NULL
+    ),
     # round = c(
     #     `16`="#219C90",
     #     `17`="#E9B824",
@@ -299,7 +305,7 @@ palettes <- list(
         "#F98400"
     ),
     # minimal3 = c("#FAE48BFF","#FB6467FF"),
-    minimal3 = c("purple", "darkgreen"),
+    # minimal3 = c("purple", "darkgreen"),
     ftp = c(
         `All participants` = "darkred",
         `First-time participants` = "orange"

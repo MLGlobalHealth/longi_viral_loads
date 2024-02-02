@@ -1196,6 +1196,7 @@ plot_prevalenceandcontrid <- function(DTprev,
         )
         DT[, LABEL2 := tmp_labs[LABEL]]
         DT[, LABEL2 := factor(LABEL2, levels = tmp_labs, ordered = TRUE)]
+
         DTline <- subset(DT, LABEL == "Contribution to HIV prevalence")
         DThist <- subset(DT, LABEL == "HIV prevalence")
         .breaks <- c(unique(DThist$LABEL2), unique(DTline$LABEL2))
@@ -1292,19 +1293,22 @@ plot_prevalenceandcontrid <- function(DTprev,
     return(p)
 }
 
-plot_suppandcontrib <- function(DTprev1,
-                                DTcontrib1,
-                                sec_name = "Contribution to viraemic population",
-                                prevalence.label = "FILL IT!",
-                                viraemia.label = "Contribution to viraemic population",
-                                legend.key.size = unit(0.4, "cm"),
-                                remove.legend = FALSE,
-                                sec_axis_scale = NA_real_,
-                                reqs = slide_reqs,
-                                CrI = TRUE,
-                                UNAIDS = TRUE
-                                ) {
+plot_suppandcontrib <- function(
+    DTprev1,
+    DTcontrib1,
+    sec_name = "Age and gender profile of people with\nunsuppressed virus (black line, right y-axis)",
+    prevalence.label = "Prevalence of unsuppressed virus among HIV positive\npopulation in each age band (purple bars, left y-axis)",
+    viraemia.label = "Contribution to viraemic population",
+    legend.key.size = unit(0.4, "cm"),
+    legend = "keep",
+    sec_axis_scale = NA_real_,
+    reqs = slide_reqs,
+    CrI = TRUE,
+    UNAIDS = TRUE
+) {
     ALPHA <- .5; DODGE <- .5
+
+    legend <- match.arg(legend, c("keep","remove", "return"))
 
     n_loc <- DTprev1[, uniqueN(LOC)]
     n_sex <- DTprev1[, uniqueN(SEX)]
@@ -1314,10 +1318,7 @@ plot_suppandcontrib <- function(DTprev1,
         if (nrow(DT) == 0) {
             return(NULL)
         }
-
         naturemed_reqs()
-
-
         .sec_axis_scale <- fcoalesce(
             sec_axis_scale,
             DT[, {
@@ -1350,7 +1351,7 @@ plot_suppandcontrib <- function(DTprev1,
 
         # rescale 2nd data frame for the secondary axis
         ggplot(DT, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, color=LABEL2, fill = LABEL2)) +
-        geom_col(data=DT[LABEL == prevalence.label ], alpha=ALPHA,
+        geom_col(data=DT[LABEL == prevalence.label ], alpha=ALPHA, color = NA,
             position = position_dodge(width = DODGE)) +
         geom_line(data=DT[LABEL == viraemia.label ], # alpha=ALPHA,
             position = position_dodge(width = DODGE)) +
@@ -1382,9 +1383,10 @@ plot_suppandcontrib <- function(DTprev1,
             }
         } +
         scale_x_continuous(expand = c(0, 0), breaks = c(seq(15, 45, 5), 50)) +
-        scale_fill_manual(values = palettes$minimal2) +
-        scale_color_manual(values = palettes$minimal2) +
+        scale_fill_manual(values = palettes$minimal3, breaks = tmp_labs) +
+        scale_color_manual(values = palettes$minimal3, breaks = tmp_labs, guide="none" ) +
         .facet +
+        # guides(fill = guide_legend(override.aes = list(color = NULL))) +
         my_labs(y = gsub("\\n"," ",prevalence.label), x = "", color = "", fill = "") +
         theme_default(
             strip.placement = "outside",
@@ -1412,6 +1414,10 @@ plot_suppandcontrib <- function(DTprev1,
     ps <- lapply(facets_dts, .plot.facet)
     ps <- ps[!sapply(ps, is.null)]
 
+    if(legend == "return"){
+        return(ggpubr::get_legend(ps[[1]]))
+    }
+
     if (length(ps) == 4) {
         p <- ggarrange(
             ps[[1]], ps[[2]],
@@ -1432,14 +1438,17 @@ plot_suppandcontrib <- function(DTprev1,
                 axis.title.y.right = element_blank(),
                 axis.text.y.right = element_blank()
             ),
+            plot_spacer(),
             ps[[2]] + theme(
                 strip.text.y = element_blank(),
                 axis.text.y.left = element_blank()
             ) + labs(y = ""),
-            ncol = 2, nrow = 1, common.legend = TRUE, legend = c("bottom", "none")[remove.legend + 1]
+            ncol = 3, nrow = 1, 
+            widths = c(1, -.01, 1),
+            common.legend = TRUE,
+            legend = c("bottom", "none")[as.integer(legend=="remove") + 1]
         )
     }
-
     return(p)
 }
 
@@ -1775,6 +1784,12 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
         `Round 19, Female` = 1
     )
 
+    pchs <- c(
+        `Round 16, Male` = 0,
+        `Round 19, Male` = 15,
+        `Round 16, Female` = 2,
+        `Round 19, Female` = 17
+    )
 
     base +
         .main() +
@@ -1783,6 +1798,7 @@ plot.main.suppression.among.plhiv <- function(DT = djoint, type = "point", unaid
         scale_x_continuous(breaks = seq(15, 60, 5), expand = c(0, 0)) +
         scale_color_manual(values = palettes$sex, labels = sex_dictionary2) +
         scale_fill_manual(values = palettes$sex, labels = sex_dictionary2) +
+        scale_shape_manual(values = pchs, labels = sex_dictionary2) +
         theme_default(legend.box.margin = margin(t = .margin, l = 0, r = 0, b = .margin)) +
         my_labs(
             y = .ylab,
@@ -2137,9 +2153,24 @@ plot_single_posterior_fit <- function(DT = dfits, model, verbose = TRUE) {
 }
 
 
-make_figure_3b <- function(DT=dcontrib_vir1619, facet_var="LOC_LAB"){
+make_figure_3b <- function(DT=dcontrib_vir1619, facet_var="LOC_LAB", timesviraemia=TRUE){
 
-    dplot <- copy(dcontrib_vir1619)
+    # dplot <- copy(dcontrib_vir1619)
+    if ( timesviraemia ){
+        dplot <- subset(DT, MODEL == "run-gp-supp-pop") |>
+            set(j = c("IL", "IU"), value = NULL) |>
+            merge(dcens[, -c("ELIGIBLE", "AGEGROUP")], by = c("ROUND", "LOC", "SEX", "AGEYRS")) |>
+            prettify_labels()
+        cols <- c("M", "CL", "CU")
+        dplot[,
+            (cols) := lapply(.SD, function(x, y) x * y, y = proportions(ELIGIBLE_SMOOTH)),
+            .SDcols = cols,
+            by = c("ROUND", "LOC_LAB")
+        ]
+    }else{
+        dplot <- copy(DT)
+        prettify_labels(dplot)
+    }
 
     # facet_var can only be LOC_LAB or SEX_LAB or ROUND_LAB:
     facet_var <- match.arg(facet_var, c("LOC_LAB", "SEX_LAB", "ROUND_LAB"))
@@ -2149,7 +2180,7 @@ make_figure_3b <- function(DT=dcontrib_vir1619, facet_var="LOC_LAB"){
             LOC_LAB= community_dictionary[["longestn"]],
             SEX_LAB= sex_dictionary2
         ),
-        scales="free_y",
+        # scales="free_y",
         nrow = 1
     )
     if ( facet_var == "LOC_LAB"){
@@ -2164,11 +2195,15 @@ make_figure_3b <- function(DT=dcontrib_vir1619, facet_var="LOC_LAB"){
         col_lab <- "Community type, Round"
     }
     shape_lab <- alpha_lab <- NULL
-    .ylab <- "Age and gender profile of individuals exhibiting viraemia"
+    .ylab <- "Age and gender profile of population with unsuppressed virus"
+    if(timesviraemia){
+        .ylab <- paste0(.ylab, "\nmultiplied by population prevalence of unsuppressed virus")
+    }
 
-    dplot[, ROUNDSEX_LAB := paste(ROUND_LAB, SEX_LAB, sep = ", ")]
-    dplot[, LOCROUND_LAB := paste(LOC_LAB, ROUND_LAB,  sep = ", ")]
-
+    dplot[, `:=` (
+        ROUNDSEX_LAB = paste(ROUND_LAB, SEX_LAB, sep = ", "),
+        LOCROUND_LAB = paste(LOC_LAB, ROUND_LAB,  sep = ", ")
+    )]
     ggplot(dplot,
         aes(x=AGEYRS,
             y=M, ymin=CL, ymax=CU,
@@ -2180,7 +2215,7 @@ make_figure_3b <- function(DT=dcontrib_vir1619, facet_var="LOC_LAB"){
         .facet  +
         scale_y_continuous(
             labels = scales::label_percent(),
-            limits = c(0, .06),
+            limits = c(0, NA),
             expand = expansion(mult = 0)
         ) + 
         scale_x_continuous(breaks = seq(15, 60, 5), expand = c(0, 0)) +
