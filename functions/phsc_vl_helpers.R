@@ -508,8 +508,10 @@ date2numeric <- function(x) {
             z <- which(DT$ROUND == ROUND & DT$FC == FC & DT$SEX == SEX & DT$AGEYRS == AGEYRS)
             list(
                 N = length(z),
+                # HIVNA_N = sum(is.na(DT$HIV_STATUS[z] == 1)),
                 HIV_N = sum(DT$HIV_STATUS[z] == 1),
-                VLNS_N = sum(DT$VLNS[z] == 1),
+                VLNA_N = sum(is.na(DT$VLNS[z])),
+                VLNS_N = sum(DT$VLNS[z] == 1, na.rm = TRUE),
                 ARV_N = sum(DT$ARVMED[z] == 0 & DT$HIV_STATUS[z] == 1 & !is.na(DT$ARVMED[z])),
                 VL_MEAN = mean(DT$VLC[z]),
                 VL_SD = sd(DT$VLC[z]),

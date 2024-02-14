@@ -59,7 +59,7 @@ args <- args[names(args) %in% opts_vec]
 # testing
 if (interactive()) {
     # args$out.dir.exact <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/vl_1000_joint"
-    args$out.dir.exact <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/cmdstan_alpha100sharedhyper_vl_1000"
+    args$out.dir.exact <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/OLD_cmdstan_alpha100sharedhyper_vl_1000"
     args$shared.hyper <- TRUE
 }
 print(args)

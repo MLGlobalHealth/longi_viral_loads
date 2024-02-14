@@ -96,11 +96,18 @@ if( args$confidential ){
     #     tmp
     #     write.to.googlesheets(tmp, sheet='SuppTable1')
     # }
-    dall <- subset(dall, ROUND %in% args$round)
+    dall <- subset(dall, 
+        ROUND %in% args$round & ! is.na(HIV_STATUS)
+    )
+    dall[, ARVMED := NA]
 
-    tmp <- .preprocess.ds.oli(dall)
-    cols <- c("N", "HIV_N", "VLNS_N", "ARV_N")
+    tmp <- .preprocess.ds.oli(dall, rm.na.vl=FALSE)
+    # tmp[ HIV_STATUS == 1 & is.na(VL_COPIES)]
+
+    cols <- c("N", "HIV_N", "VLNS_N", "VLNA_N")
     vla_all <- .preprocess.make.vla(tmp, select = cols )
+    # vla_all[ VLNA_N != 0]
+
     vla_ftp <- .preprocess.make.vla(tmp[FIRST_PARTICIPATION == 1], select = cols )
     vla <- rbind(vla_all[, PTYPE := "all"], vla_ftp[, PTYPE := "ftp"])
     setkeyv(vla, c("ROUND", "LOC_LABEL", "SEX_LABEL", "PTYPE", "AGE_LABEL"))
@@ -126,6 +133,7 @@ if(args$shared.hyper){
 }
 
 if (args$run.gp.prevl) {
+    # Number of HIV positive out of individuals with known HIV status
     if(args$shared.hyper){
         stopifnot("args$only.firstparticipants must not be TRUE"= ! args$only.firstparticipants)
         vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper(vla, refit = args$refit, alpha_hyper = args$stan.alpha)
@@ -139,6 +147,7 @@ if (args$run.gp.prevl) {
 # _______________________
 
 if (args$run.gp.supp.hiv) { # Among HIV positive
+    # Number of Virally supppressed out of PLHIV with known VL
     if(args$shared.hyper){
         stopifnot("args$only.firstparticipants must not be TRUE"= ! args$only.firstparticipants)
         vl.suppofinfected.by.gender.loc.age.gp.cmdstan.hyper(vla, refit = args$refit, alpha_hyper = args$stan.alpha)
@@ -150,6 +159,7 @@ if (args$run.gp.supp.hiv) { # Among HIV positive
 
 
 if (args$run.gp.supp.pop) { # Among Entire population
+    # Number of virally unsuppressed out of entire pop
     if(args$shared.hyper){
         stopifnot("args$only.firstparticipants must not be TRUE"= ! args$only.firstparticipants)
         vl.suppofpop.by.gender.loc.age.gp.cmdstan.hyper(vla, refit = args$refit, alpha_hyper = args$stan.alpha)

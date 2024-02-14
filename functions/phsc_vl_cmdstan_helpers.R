@@ -697,6 +697,9 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan <- function(
         round <- DT[, unique(ROUND)]
         stopifnot(length(round) == 1)
 
+        # Exclude people with unknown Viral load from analyses
+        DT[, HIV_N := HIV_N - VLNA_N ]
+        stopifnot(DT[, all(HIV_N>0)])
         DT[, VLSUP_N := HIV_N - VLNS_N, ]
         stan.data <- .make.stan.data.gp(DT, 
             num.var = "VLSUP_N",
@@ -998,6 +1001,10 @@ vl.suppofpop.by.gender.loc.age.gp.cmdstan <- function(
         #  DT <- copy(vla[ROUND == 16]); refit=FALSE
         round <- DT[, unique(ROUND)]
         stopifnot(length(round) == 1)
+
+        # Remove people with unknwon Viral load,
+        # else equivalent to assuming they are suppressed or negative
+        DT[, N := N - VLNA_N]
 
         stan.data <- .make.stan.data.gp(DT,
             num.var = "VLNS_N",
