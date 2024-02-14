@@ -229,6 +229,20 @@ expr_setup_ftp_all <- expr({
     cat(paths[idx.all], "\n")
 })
 
+expr_setup_hivprev_supphiv_ftpall <- expr({
+    paths <- file.path(D, F)
+    .check <- function(x) {
+        stopifnot(length(x) == 1 | args$shared.hyper)
+        return(x)
+    }
+    idx.hivprev <- which(MODEL == "run-gp-prevl")
+    idx.hivprev.all <- which(FTP == FALSE & MODEL == "run-gp-prevl") |> .check()
+    idx.hivprev.ftp <- which(FTP == TRUE & MODEL == "run-gp-prevl") |> .check()
+    idx.supphiv <- which(MODEL == "run-gp-supp-hiv")
+    idx.supphiv.all <- which(FTP == FALSE & MODEL == "run-gp-supp-hiv") |> .check()
+    idx.supphiv.ftp <- which(FTP == TRUE & MODEL == "run-gp-supp-hiv") |> .check()
+})
+
 extract.p_predict <- function(fit, lab=NA_character_){
     out <- posterior::as_draws_df(fit) |>
         posterior::subset_draws(variable = "^p_predict", regex=TRUE)

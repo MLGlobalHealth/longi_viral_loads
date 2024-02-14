@@ -82,13 +82,13 @@ make_vl_samplesize_table <- function(DT, rounds)
     knitr::kable(tmp1, caption='Number of vl measurements per person')
 }
 
-fill_na_vls_with_allpcr_data <- function(file=file.viral.loads2)
+fill_na_vls_with_allpcr_data <- function(file=file.viral.loads2, DT=dvl)
 { 
     cat('===\n Studying ', file, '...\n===\n\n')
 
     # Warnings about 6 dates prior to 1900, but shouldn t be an issue
-    dvl2 <- suppressWarnings(readxl::read_xlsx(file)) 
-    dvl2 <- as.data.table(dvl2)
+    dvl2 <- suppressWarnings(readxl::read_xlsx(file))  |> 
+        as.data.table()
     setkey(dvl2, study_id, round)
     setcolorder(dvl2, c('study_id', 'round'))
 
@@ -98,13 +98,13 @@ fill_na_vls_with_allpcr_data <- function(file=file.viral.loads2)
     if(0)
     {
         cols <- c('study_id', 'round')
-        idx <- dvl[!is.na(round), .(study_id, round, data='first')]
-        idx2 <- dvl[!is.na(round), .(study_id, round, data='second')]
+        idx <- DT[!is.na(round), .(study_id, round, data='first')]
+        idx2 <- DT[!is.na(round), .(study_id, round, data='second')]
         tmp <- merge(idx, idx2, all.x=TRUE, all.y=TRUE, by=cols)
         tmp[is.na(data.y)]
         
         merge(
-            dvl[, .(study_id, round, hiv_vl)],
+            DT[, .(study_id, round, hiv_vl)],
             dvl2[, .(study_id, round, COPIES = fcoalesce(new_copies, copies))],
             by=cols
         ) -> tmp
@@ -134,7 +134,7 @@ fill_na_vls_with_allpcr_data <- function(file=file.viral.loads2)
 
         cols <- c('study_id', 'round')
         merge(
-            dvl[, .SD, .SDcols=c(cols, 'hiv_vl')],
+            DT[, .SD, .SDcols=c(cols, 'hiv_vl')],
             dvl2[, .SD, .SDcols=c(cols, 'copies', 'new_copies')],
             by=cols
         ) -> dcomp
@@ -145,9 +145,8 @@ fill_na_vls_with_allpcr_data <- function(file=file.viral.loads2)
         dcomp[copies=='BD' & !is.na(copies2),]
         dvl2[copies == 'BD']
 
-        
     }
-    
+
     dvl2[copies %like% '[A-Z]|<|>' & ! new_copies %like% '[A-Z]|<|>' & !is.na(new_copies)]
     dvl2[copies %like% '[A-Z]|<|>', guessed := TRUE]
 
@@ -158,7 +157,7 @@ fill_na_vls_with_allpcr_data <- function(file=file.viral.loads2)
 
     # It would seem that new-copies should be kept if it differs from copies!
     # BD is generally equivalent with 0 hiv_vl (~70% of times, else NA)
-    copiestmp <- merge(dvl[, .(study_id, round, hiv_vl, hivdate)], dvl2, by=c('study_id', 'round'))
+    copiestmp <- merge(DT[, .(study_id, round, hiv_vl, hivdate)], dvl2, by=c('study_id', 'round'))
     # tmp[hiv_vl != new_copies & hiv_vl != 0]
     # tmp[new_copies %like% "[A-Z]", .(hiv_vl, new_copies)][, mean(!is.na(hiv_vl))]
 
@@ -172,7 +171,7 @@ fill_na_vls_with_allpcr_data <- function(file=file.viral.loads2)
     dvl2[, hiv_vl := as.numeric(hiv_vl)]
 
     # merge?
-    tmp <- dvl[is.na(hiv_vl), .(study_id, round)]
+    tmp <- DT[is.na(hiv_vl), .(study_id, round)]
     tmp <- merge(tmp, dvl2, all.x=TRUE)
     tmp[, cat("Out of ", .N, " NA viral loads in the first dataset, ", round(100*mean(!is.na(hiv_vl)),2), '% are reported in the second one', '\n' )]
 
@@ -182,13 +181,13 @@ fill_na_vls_with_allpcr_data <- function(file=file.viral.loads2)
     capt <- "The new dataset provided viral load measurements in rounds"
     tbl <- knitr::kable(tmp[!is.na(hiv_vl2), table(round)], caption=capt)
 
-    dvl <- merge(dvl,
+    DT <- merge(DT,
           tmp[!is.na(hiv_vl2), .(study_id, round, hiv_vl2)],
           all.x=TRUE, by=c('study_id', 'round'))
-    dvl[!is.na(hiv_vl2), hiv_vl := hiv_vl2]
-    dvl[, hiv_vl2:=NULL]
+    DT[!is.na(hiv_vl2), hiv_vl := hiv_vl2]
+    DT[, hiv_vl2:=NULL]
 
-    return(list(dvl=dvl, tbl=tbl))
+    return(list(dvl=DT, tbl=tbl))
 }
 
 make_relational_database <- function(DT)
@@ -835,3 +834,152 @@ make.testing.plots.community <- function(dtest, bytype=FALSE)
     p_aggregated
 }
 
+check_repeated_visits <- function(x, check=TRUE){
+    
+    dup <- x[, .N, by=c("STUDY_ID", "ROUND")][ N > 1, .(STUDY_ID, ROUND)]
+    if ( ! check ) return(dup)
+    stopifnot(
+        "Rep entries" = nrow(dup) == 0
+    )
+}
+
+check_unique_values_per_id <- function(DT, id="STUDY_ID", var){
+    DT[, uniqueN(.SD), by=id, .SDcols=var][, all(V1 == 1)] |> 
+        stopifnot()
+}
+
+check_increasing_dates <- function(DT, var){
+    setkey(DT, STUDY_ID, ROUND)
+    DT[, ! is.unsorted(.SD) , by=c("STUDY_ID"), .SDcols=var][, all(V1)] |> 
+        stopifnot()
+}
+
+visit_diffs <- function(DT1, DT2, labs){
+    dt1 <- subset(DT1, select=c("STUDY_ID", "ROUND"));
+    dt2 <- subset(DT2, select=c("STUDY_ID", "ROUND"));
+    dt1[, `:=` (FIRST = TRUE)]
+    dt2[, `:=` (SEC = TRUE)]
+    m <- merge(dt1, dt2, by=c("STUDY_ID", "ROUND"), all=TRUE)
+    m[is.na(SEC), sprintf("There are %i visits in %s who are not in %s\n", .N, labs[1], labs[2])] |> cat()
+    m[is.na(FIRST), sprintf("There are %i visits in %s who are not in %s\n", .N, labs[2], labs[1])] |> cat()
+
+    out <- m[is.na(SEC) | is.na(FIRST)]
+    setnames(out, c("FIRST", "SEC"), labs)
+    return(out)
+}
+
+
+process_path_participation <- function(path=path.participation){
+
+    # There are 3 ids in Melodie's list that are not here 
+    #   (G115933, H123385, K122497)
+
+    # First get all participants from the participantion file
+    cols_of_int <- c("STUDY_ID", "ROUND", "INT_DATE", "COMM", "COMM_NUM", "REGION", "FIRST_PARTICIPATION", "CURR_ID" )
+    allparticipants <- read_dta(path) |> setDT() 
+    names(allparticipants) <- toupper(names(allparticipants))
+    allparticipants[, `:=` (
+        FIRST_PARTICIPATION = QST_1STRND == ROUND,
+        ROUND = round2numeric(ROUND),
+        COMM = comm_num2comm_type(COMM_NUM),
+        INT_DATE = as.Date(INT_DATE, format="%d/%m/%Y")
+    )]
+    allparticipants <- subset(allparticipants, select=cols_of_int)
+    check_repeated_visits(allparticipants)
+    check_increasing_dates(allparticipants, "INT_DATE")
+    return(allparticipants)
+}
+
+process_flow_datasets <- function(path1=path.flow.r1518, path2=path.flow.r19){ 
+
+    cols_of_int <- c("study_id", "round", "curr_id", "sex", "comm_num", "birthdat" )
+    flow <- rbind(
+        {
+            flow1 <- fread(path1) |> 
+                subset(select=cols_of_int)
+            flow1[, birthdat := as.Date(birthdat, format="%d-%b-%y")]
+            flow1[ birthdat > "2030-01-01" , birthdat := as.Date(gsub("^20", "19", birthdat))]
+        } ,
+        {
+            read_dta(path2) |> 
+                as.data.table() |> subset(select=cols_of_int)
+        }
+    ) |> empty2NA()
+    names(flow) <- toupper(names(flow))
+    flow[, `:=` (
+        ROUND = round2numeric(ROUND),
+        COMM = comm_num2comm_type(COMM_NUM)
+    ) ]
+    flow <- flow[ ROUND %between% c(16, 19)]
+
+    # CHECK SEX CONSISTENCY
+    dsex <- flow[! is.na(STUDY_ID), .(STUDY_ID, SEX)] |> unique()
+    # dsex |> check_unique_values_per_id(var = "SEX")
+    ids_sex <- dsex[, uniqueN(SEX), by= "STUDY_ID"][V1 > 1,{
+        sprintf(
+            "There are %i individuals with double sex. Keep the last\n",
+            .N) |> cat()
+        STUDY_ID
+    }]
+    flow[STUDY_ID %in% ids_sex, SEX := SEX[.N]  , by="STUDY_ID"]
+    # CHECK BDAY CONSISTENCY
+    dbirth <- flow[! is.na(STUDY_ID), .(STUDY_ID, BIRTHDAT)] |> unique()
+    # dbirth |> check_unique_values_per_id(var = "BIRTHDAT")
+    idx_birth <- dbirth[! is.na(BIRTHDAT), uniqueN(BIRTHDAT), by= "STUDY_ID"][V1 > 1,{
+        sprintf(
+            "There are %i individuals with double birthdate. Keep the last\n",
+            .N) |> cat()
+        STUDY_ID
+    }]
+    flow[STUDY_ID %in% idx_birth, BIRTHDAT := if( diff(range(BIRTHDAT)) == 1){ 
+        BIRTHDAT[1]}else{BIRTHDAT}, by=STUDY_ID]
+    return(flow)
+}
+
+process_hiv_negatives <- function(path=path.negatives.r1520){
+    cols_of_int <- c("STUDY_ID", "SEX", "ROUND", "INT_DATE", "HIVDATE", "COMM", "COMM_NUM", "REGION", "AGEYRS", "HIV_STATUS")
+    dneg <- fread(path)
+    dneg[, `:=` (
+        conf_age = NULL,  # again, almost equal to ageyrs
+        int_date = as.Date(int_date, '%d/%m/%Y'),
+        hivdate = as.Date(hivdate, '%d%b%Y'),
+        round = round2numeric(round),
+        comm = comm_num2comm_type(comm_num),
+        hiv_status = fifelse(hiv == "P", yes=1, no=0)
+    ) ] 
+    names(dneg) <- toupper(names(dneg))
+    dneg <- subset(dneg, select=cols_of_int)
+    dneg[, table(INT_DATE == HIVDATE, useNA = "always")]
+    cat("Swapping AGEYRS for F131718, ROUND 20\n")
+    dneg[ STUDY_ID == "F131718" & ROUND == 20 , AGEYRS := 20 ]
+    dneg <- unique(dneg)
+    check_repeated_visits(dneg)
+    dneg
+}
+
+process_hiv_vls_for_hivpositives <- function(path1=path.viral.loads1, path2=path.viral.loads2){
+    cols_of_int <- c("STUDY_ID", "ROUND", "INT_DATE", "HIVDATE", "COMM", "COMM_NUM", "REGION", "AGEYRS", "HIV_STATUS", "HIV_VL")
+    # For some reason fread doesn't work below here:
+    dvl <- read.csv(path1, fill=TRUE, comment.char="") |> 
+        as.data.table() |> 
+        subset(nchar(study_id) < 8) |> 
+        empty2naDT() |> 
+        remove.columns.with.unique.entry()
+    # dvl[, round:=round2numeric(round)]
+    setkey(dvl, study_id, hivdate)
+    fix_visit_dates_before_1990(dvl)
+    dvl <- community.keys2type(DT=dvl, by.DT='comm_num')
+    dvl[, `:=` ( conf_age = NULL)]
+    # Store separate info in dsero, darv, dcd4 and dintdates, dicd
+
+    # rm(dsero,darv,dcd4,dintdates,ddeath, dlocate, dbirth)
+    dvl <- make_relational_database(dvl)
+    # sapply(c('dsero','darv','dcd4','dintdates','ddeath', 'dlocate', 'dbirth'), exists) |> all() |> stopifnot()
+    dvl[, round := round2numeric(round)]
+
+    tmp <- fill_na_vls_with_allpcr_data(file=path2, DT=copy(dvl))
+    dvl <- tmp$dvl
+    names(dvl) <- toupper(names(dvl))
+    dvl$HIV_STATUS <- 1L
+    return(dvl)
+}

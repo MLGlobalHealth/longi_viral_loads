@@ -513,3 +513,100 @@ plot.contribution.to.census.eligible.population <- function(DT=ncen, var=ELIGIBL
         ) +
         NULL
 }
+
+make_consort_diagram <- function(DT){
+    ending <- "over 4 survey rounds"
+    pasten <- function(...) paste(..., sep="\n")
+    # DT <- copy(tmp_r1619)
+    dnums <- subset(DT, 
+                    ! is.na(SEX) & 
+                    ! is.na(AGEYRS) &
+                    ROUND %between% c(16, 19) &
+                    AGEYRS %between% c(15, 50)
+    )
+    part_statement <- dnums[, sprintf(
+        "%s study participants of known sex and aged 15 to 50,\naccounting for %s visits %s", 
+        comma(uniqueN(STUDY_ID)), comma(.N), ending
+    )]
+    exc_hivpos <- dnums[ HIV_STATUS != 1 | is.na(HIV_STATUS), {
+        z1 <- which(HIV_STATUS == 0)
+        z2 <- which(is.na(HIV_STATUS))
+        sprintf( fmt=pasten(
+                "\\u  %s tested negative at least once\naccounting for %s visits %s",
+                "\\u  %s didn't have an associated test at least once\naccounting for %s visits %s"
+            ), 
+            comma(uniqueN(STUDY_ID[z1])), comma(length(z1)), ending,
+            comma(uniqueN(STUDY_ID[z2])), comma(length(z2)), ending
+        )
+    }]
+    dnums <- subset(dnums, HIV_STATUS == 1)
+    hivpos_statement <- dnums[, sprintf(
+        "%s HIV positive participants,\naccounting for %s visits %s", 
+        comma(uniqueN(STUDY_ID)), comma(.N), ending
+    )]
+    exc_vl <- dnums[is.na(HIV_VL), sprintf( 
+                "%s without VL measurement\naccounting for %s visits %s",
+            comma(uniqueN(STUDY_ID)), comma(.N), ending
+    )]
+    dnums <- subset(dnums, ! is.na(HIV_VL))
+    vl_statement <- dnums[, sprintf(
+        "%s HIV positive participants with VL measurement,\naccounting for %s visits %s", 
+        comma(uniqueN(STUDY_ID)), comma(.N), ending
+    )]
+
+    n_chars <- nchar("1,200 individuals with VL measurements:")
+    round_stat_fmt <- paste(sep="\n", 
+                          "%s",
+                          "",
+                          "Among men:",
+                          "%s individuals with VL measurements:",
+                          "\\Z  %s (%s) were vireamic.%s",
+                          "\\Z  %s (%s) had low level vireamia.%s",
+                          "\\Z  %s (%s) were non-vireamic.%s",
+                          "Among women:",
+                          "%s individuals with VL measurements:",
+                          "\\Z  %s (%s) were vireamic.%s",
+                          "\\Z  %s (%s) had low level vireamia.%s",
+                          "\\Z  %s (%s) were non-vireamic.%s"
+    )
+    round_stats <- dnums[, .(STAT = {
+        sumc<- function(x){ comma(sum(x))}
+        prop <- function(x,y){prettify_cell(sum(x & y) / sum(y) * 100, precision=1, percent=TRUE)}
+        fill <- function(x, lab){ 
+            tofill <- 30 - nchar(comma(sum(x))) - nchar(lab)
+            paste(rep(" ", tofill), collapse="")
+        }
+        m <- SEX == "M"
+        f <- SEX == "F"
+        yv <- HIV_VL >= 1000
+        lv <- HIV_VL %between%  c(200, 999)
+        nv <- HIV_VL < 200
+
+        sprintf(fmt=round_stat_fmt,
+            round_labs4[as.character(ROUND)],
+            sumc(m), 
+            sumc(m & yv), prop(yv,m), fill(m & yv, "were vireamic."),
+            sumc(m & lv), prop(lv,m), fill(m & lv, "had low level vireamia."),
+            sumc(m & nv), prop(nv,m), fill(m & nv, "were non-vireamic."),
+            sumc(f), 
+            sumc(f & yv), prop(yv,f), fill(f & yv, "were vireamic."),
+            sumc(f & lv), prop(lv,f), fill(f & lv, "had low level vireamia."),
+            sumc(f & nv), prop(nv,f), fill(f & nv, "were non-vireamic.")
+        )}), by="ROUND"]
+    # 
+    part_statement <-      sub("Z", "u", part_statement)
+    exc_hivpos <-          sub("Z", "u", exc_hivpos)
+    hivpos_statement <-    sub("Z", "u", hivpos_statement)
+    exc_vl <-              sub("Z", "u", exc_vl)
+    vl_statement <-        sub("Z", "u", vl_statement)
+    round_stats$STAT <-    gsub("Z", "u", round_stats$STAT)
+    # combine altogether
+    g <- add_box(txt=part_statement) |> 
+        add_side_box(txt=exc_hivpos) |> 
+        add_box(txt=hivpos_statement ) |> 
+        add_side_box(txt=exc_vl) |>
+        add_box(txt=vl_statement) |> 
+        add_split(txt=round_stats$STAT)
+    g
+}
+

@@ -354,6 +354,7 @@ filename_rds2 <- file.path(out.dir.tables, "posterior_pvalues_virred_comparison.
 
 if (file.exists(filename_rds) & !overwrite) {
     joint_ageagrr_list <- readRDS(filename_rds)
+    pval_red <- readRDS(filename_rds2)
 } else {
     djoint_ageaggr <- dfiles_rds[MODEL != "run-gp-supp-hiv",
         {
@@ -407,6 +408,8 @@ if (file.exists(filename_rds) & !overwrite) {
     rm(djoint_ageaggr)
 }
 
+pval_red
+
 catn("Get quantiles for suppression levels in agegroups")
 # _______________________________________________________
 
@@ -422,12 +425,7 @@ if (file.exists(filename_rds) & !overwrite) {
                 stopifnot(length(x) == 1 | args$shared.hyper)
                 return(x)
             }
-            idx.hivprev <- which(MODEL == "run-gp-prevl")
-            idx.hivprev.all <- which(FTP == FALSE & MODEL == "run-gp-prevl") |> .check()
-            idx.hivprev.ftp <- which(FTP == TRUE & MODEL == "run-gp-prevl") |> .check()
-            idx.supphiv <- which(MODEL == "run-gp-supp-hiv")
-            idx.supphiv.all <- which(FTP == FALSE & MODEL == "run-gp-supp-hiv") |> .check()
-            idx.supphiv.ftp <- which(FTP == TRUE & MODEL == "run-gp-supp-hiv") |> .check()
+            eval(expr_setup_hivprev_supphiv_ftpall)
             cat("Round ", unique(ROUND), "\n")
             draws_prev <- get.weighted.average.p_predict(
                 fit1 = readRDS(paths[idx.hivprev.all]),
@@ -470,6 +468,68 @@ if (file.exists(filename_rds) & !overwrite) {
     saveRDS(object = dsupp_agegroup, filename_rds)
 }
 
+filename_rds2 <- file.path(out.dir.tables, "posterior_pvalues_virofplhiv_comparison.rds")
+if (file.exists(filename_rds2) & !overwrite) {
+    NULL
+} else {
+    pvalues_draws <- dfiles_rds[ ROUND %in% c(19),
+        {
+            paths <- file.path(D, F)
+            .check <- function(x) {
+                stopifnot(length(x) == 1 | args$shared.hyper)
+                return(x)
+            }
+            eval(expr_setup_hivprev_supphiv_ftpall)
+            cat("Round ", unique(ROUND), "\n")
+            draws_prev <- get.weighted.average.p_predict(
+                fit1 = readRDS(paths[idx.hivprev.all]),
+                fit2 = readRDS(paths[idx.hivprev.ftp]),
+                fit_all = readRDS(paths[idx.hivprev]),
+                round = unique(ROUND),
+                expression_prereturn = {
+                    # find composition of prevalnce by age group
+                    by_cols <- c(dot.cols, "LOC", "SEX", "AGEGROUP")
+                    tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
+                    tmp <- tmp[, N_HIV := joint * ELIGIBLE_SMOOTH] |>
+                        subset(select = c(dot.cols, "LOC", "SEX", "AGEGROUP", "AGEYRS", "N_HIV"))
+                    return(tmp)
+                }
+            )
+            cat("prevalence done\n")
+            draws_supp <- get.weighted.average.p_predict(
+                fit1 = readRDS(paths[idx.supphiv.all]),
+                fit2 = readRDS(paths[idx.supphiv.ftp]),
+                fit_all = readRDS(paths[idx.supphiv]),
+                round = unique(ROUND),
+                expression_prereturn = {
+                    draws_all
+                }
+            )
+            cat("suppression done\n")
+            dot.cols <- c(".chain", ".iteration", ".draw")
+            tmp <- merge(draws_supp, draws_prev, by = c(dot.cols, "LOC", "SEX", "AGEYRS"))
+            tmp[, .(
+                S = sum(joint * proportions(N_HIV))
+            ), by = c(dot.cols, c("LOC", "SEX"))]
+        },
+        by = c("ROUND")
+    ]
+
+    pvalues <- pvalues_draws[ROUND == 19, {
+        # stopifnot(.N == 2)
+        length(S[SEX == "F"])
+        z <- mean(S[SEX == "F"] > S[SEX == "M"])
+        if (z == 1){
+            sprintf(">= 1 - 1/16,000")
+        }else{ as.character(z) }
+    }, by = c("LOC", "ROUND")]
+    pvalues[, TYPE := "Difference in suppression among PLHIV (pd women - men)"]
+
+    saveRDS(object = pvalues, filename_rds2)
+    rm(pvalues_draws)
+}
+
+
 if (make_plots & FALSE) {
     .w <- 14; .h <- 14
     p_list <- lapply(c(16:19), plot.prevalence.by.age.group, DT = dsupp_agegroup)
@@ -502,12 +562,7 @@ if (file.exists(filename_rds) & !overwrite) {
                 stopifnot(length(x) == 1 | args$shared.hyper)
                 return(x)
             }
-            idx.hivprev <- which(MODEL == "run-gp-prevl")
-            idx.hivprev.all <- which(FTP == FALSE & MODEL == "run-gp-prevl") |> .check()
-            idx.hivprev.ftp <- which(FTP == TRUE & MODEL == "run-gp-prevl") |> .check()
-            idx.supphiv <- which(MODEL == "run-gp-supp-hiv")
-            idx.supphiv.all <- which(FTP == FALSE & MODEL == "run-gp-supp-hiv") |> .check()
-            idx.supphiv.ftp <- which(FTP == TRUE & MODEL == "run-gp-supp-hiv") |> .check()
+            eval(expr_setup_ftp_all)
             cat("Round ", unique(ROUND), "\n")
             draws_prev <- get.weighted.average.p_predict(
                 fit1 = readRDS(paths[idx.hivprev.all]),
@@ -1268,14 +1323,7 @@ if (file.exists(filename_rds) & !overwrite) {
                 stopifnot(length(x) == 1 | args$shared.hyper)
                 return(x)
             }
-            idx.hivprev <- which(MODEL == "run-gp-prevl")
-            cat(length(idx.hivprev), "-")
-            idx.hivprev.all <- which(FTP == FALSE & MODEL == "run-gp-prevl") |> .check()
-            idx.hivprev.ftp <- which(FTP == TRUE & MODEL == "run-gp-prevl") |> .check()
-            idx.supphiv <- which(MODEL == "run-gp-supp-hiv")
-            cat(length(idx.supphiv), "\n")
-            idx.supphiv.all <- which(FTP == FALSE & MODEL == "run-gp-supp-hiv") |> .check()
-            idx.supphiv.ftp <- which(FTP == TRUE & MODEL == "run-gp-supp-hiv") |> .check()
+            eval(expr_setup_ftp_all)
             cat("Round ", unique(ROUND), "\n")
             # load hiv prevalences to compute N HIV positive in age groups
             draws_prev <- get.weighted.average.p_predict(
@@ -1357,6 +1405,10 @@ if (make_tables) {
     ## age-aggregated HIV prevalence by sex, round, loc
     # tab <- make.table.Nhivpositive (DT=joint_ageagrr_list$round_totals, DC=dcens)
     # filename_overleaf <- file.path(out.dir.tables, "overleaf_ageaggr_hivprev.rds")
+
+    dsupp_amonghiv <- subset(dsupp_agegroup, AGEGROUP == "Total" & SEX != "Total") |>
+        prettify_labels()
+
     tab_mf_diffs <- make.table.malefemale.diff.viraemia(DT = dmf_ratios)
 
     .dict <- dict_table_names$percent_reduction
@@ -1378,10 +1430,15 @@ if (make_tables) {
     tab_unsupp <- tablify.posterior.Nunsuppressed(joint_ageagrr_list,
         CELLname = "UNSUPP",
         model = "run-gp-supp-pop")
+    dsupp_amonghiv <- dsupp_amonghiv[, .(
+        ROUND_LAB, LOC_LAB, SEX_LAB, 
+        CELL_SUPPHIV = prettify_cell(M * 100, CL * 100, CU * 100, percent = TRUE)
+    )] 
 
     by_cols <- c("LOC_LAB", "SEX_LAB", "ROUND_LAB")
     tab_merge <- merge(tab_eligible, tab_hiv) |>
         merge(tab_unsupp, by=by_cols) |>
+        merge(dsupp_amonghiv, by=by_cols) |>
         merge(tab_pvir, by=by_cols) |>
         merge(tab_mf_diffs, by=by_cols)
     tab_merge[, SEX_LAB := unname(sex_dictionary2[SEX_LAB])]

@@ -218,6 +218,16 @@ round_labs3 <- gsub("Jul ", "07/", round_labs2) |>
     gsub("201", "1", x=_) |>
     gsub(":  ", "\n", x=_)
 
+round_labs4 <- gsub("Jul ", "July ", round_labs2) |>
+    gsub("Jan ", "January ", x=_) |>
+    gsub("Feb ", "Februay ", x=_) |>
+    gsub("Mar ", "March ", x=_) |>
+    gsub("Apr ", "April ", x=_) |>
+    gsub("May ", "May ", x=_) |>
+    gsub("Jun ", "June ", x=_) |>
+    gsub("Sep ", "September ", x=_) |>
+    gsub("Oct ", "October ", x=_) |>
+    gsub(":  ", "\n", x=_)
 
 dall_dictionaries <- list(
     TEST_YEAR_AGO = c(
@@ -355,8 +365,10 @@ dict_table_names <- list(
         CELL_HIV_N = "People with HIV \n\n\n\n\n(posterior median\nestimate, (95%CrI))",
         CELL_UNSUPP_N = "People with unsuppressed HIV\n\n\n\n\n(posterior median estimate,\n(95%CrI)) ",
         VIR_P = "Proportion of\npeople \nexhibiting viraemia",
+        CELL_SUPPHIV = "Proportion of\npeople exhibiting viramia\namong PLHIV",
         CELL_UNSUPP_P = "Percent reduction in the absolute number \nof people with \nunsuppressed HIV relative to\nround 16\n\n(posterior median estimate,\n(95%CrI))",
-        CELL_MF_GAP = "Male-female difference in the\nproportion of people\nwith HIV who have unsuppressed vireamia\n\n\n(posterior median estimate,\n(95%CrI))"
+        CELL_MF_GAP = "Male-female difference in the\nproportion of people\nwith HIV who have unsuppressed vireamia\n\n\n(posterior median estimate,\n(95%CrI))",
+        NULL
     ),
 
     mean_ages = c(
@@ -378,11 +390,30 @@ dict_table_names <- list(
     eligible_participants = c(
         FC_LAB = "Location",
         SEX_LAB = "Gender",
-        ROUND_LAB = "Survey Round",
-        ROUND = "Survey Round",
+        # ROUND_LAB = "Survey Round",
+        ROUND= "Survey\nRound",
+        ROUND_LAB = "Survey\nRound",
         EL = "Number of census eligible individuals",
+        N_EL = "Number of census\neligible individuals",
         PART = "Number of participants",
-        PERC = "Proportion of eligible individuals who participated"
+        N_PAR = "Number of\nparticipants",
+        PERC = "Participation\nrate",
+        RATE = "Participation\nrate"
+    ),
+
+    first_time_participants = c(
+        COMM_LAB = "Location",
+        COMM = "Location",
+        SEX_LAB = "Gender",
+        # ROUND_LAB = "Survey Round",
+        ROUND= "Survey\nRound",
+        ROUND_LAB = "Survey\nRound",
+        N = "First-time\nparticipants",
+        N_HIV =  "First-time\nparticipants\nwith HIV",
+        N_UV = "First-time\nparticipants\nwith\nunsuppressed virus",
+        R_UV = "Ratio of\nfirst-time\nparticipants\nwih HIV\nrelative to\nround 16",
+        R_HIV = "Ratio of\nfirst-time\nparticipants\nwith\nunsuppressed\nvirus\nrelative to\nround 16",
+        NULL
     ),
 
     NULL

@@ -309,3 +309,84 @@ paper_statements_prevalence_viraemia_maximum <- function(DT, round = 19){
     }, by=.(LOC_LAB, SEX_LAB)]
 
 }
+
+make.table.eligible.participants <- function(DT=tab_el, cols=c("EL", "PART"), splitrow=TRUE){
+
+    # DT <- copy(tab_el)
+    dtable <- copy(DT)
+    if('COMM' %in% names(dtable)){
+        setnames(dtable, "COMM", "FC")
+    }
+    setkey(dtable, FC, SEX, ROUND)
+    dtable[, (cols) := lapply(.SD, comma), .SDcols=cols]
+    dtable[, PERC := paste0(PERC, "%")]
+    dtable[, ROUND := round_labs3[as.character(ROUND)]]
+    out <- prettify_labels(dtable) |> 
+        set(j=c("ROUND_LAB", "FC", "SEX"), value=NULL) |>
+        setkey(FC_LAB, SEX_LAB, ROUND)|>
+        setcolorder(c("FC_LAB", "SEX_LAB", "ROUND")) |>
+        delete.repeated.table.values() |>
+        setnamesdict(dict=dict_table_names$eligible_participants)
+    out[, Location := gsub("([g|d])$", "\\1 communities", Location) ]
+    out[, Gender := gsub("Female", "Women", Gender) |> 
+                gsub("Male", "Men", x=_) ]
+
+    if(splitrow){
+        out[, DUMMY := 1:.N]
+        out <- out[, {
+            filler <- "communities"
+            filler <- fifelse(Location %like% filler, yes=filler, no="")
+            rbind(.SD, data.table(Location=filler), fill=TRUE)
+        }, by=DUMMY]
+        out[,  `Survey\nRound` := strsplit(`Survey\nRound`, "\\n"), by="DUMMY"]
+        out[, DUMMY:=NULL]
+        out[is.na(out)] <- ""
+        out[, `Location`:=gsub(" communities$", "", x=`Location`)]
+    }
+    xtable(out) |> print()
+    return(out)
+}
+
+make.table.first.time.participants <- function(DT=check_r1619, splitrow=TRUE){
+
+    by_cols <- c("COMM", "SEX", "ROUND")
+    dtable_ftp <- DT[ FIRST_PARTICIPATION == TRUE, .(
+        N=  uniqueN(STUDY_ID), 
+        N_HIV= sum(HIV_STATUS == 1, na.rm = TRUE),
+        N_UV = sum(HIV_VL > 1000, na.rm = TRUE)
+    ), by=by_cols]
+    setkeyv(dtable_ftp,by_cols)
+    dtable_ftp[, `:=` (
+        R_HIV = round(N_HIV/N_HIV[1], 2),
+        R_UV = round(N_UV/N_UV[1], 2)
+    ), by=c("COMM", "SEX")]
+    cols <- c("N", "N_HIV", "N_UV")
+    dtable_ftp[, (cols) := lapply(.SD, comma), .SDcols=cols]
+    dtable_ftp[, ROUND := round_labs3[as.character(ROUND)]]
+
+    out <- prettify_labels(dtable_ftp) |> 
+        set(j=c("ROUND_LAB", "SEX"), value=NULL) |>
+        setkey(COMM, SEX_LAB, ROUND)|>
+        setcolorder(c("COMM", "SEX_LAB", "ROUND")) |>
+        delete.repeated.table.values() |>
+        setnamesdict(dict=dict_table_names$first_time_participants)
+    out[, Location := gsub("([g|d])$", "\\1 communities", Location) ]
+    out[, Gender := gsub("Female", "Women", Gender) |> 
+                gsub("Male", "Men", x=_) ]
+    out
+
+    if(splitrow){
+        out[, DUMMY := 1:.N]
+        out <- out[, {
+            filler <- "communities"
+            filler <- fifelse(Location %like% filler, yes=filler, no="")
+            rbind(.SD, data.table(Location=filler), fill=TRUE)
+        }, by=DUMMY]
+        out[,  `Survey\nRound` := strsplit(`Survey\nRound`, "\\n"), by="DUMMY"]
+        out[, DUMMY:=NULL]
+        out[is.na(out)] <- ""
+        out[, `Location`:=gsub(" communities$", "", x=`Location`)]
+    }
+    xtable(out) |> print()
+    return(out)
+}

@@ -309,3 +309,7 @@ cmd2overleaf <- function(x){
 comma <- function(i){
     format(i, big.mark = ",", scientific = FALSE)
 }
+
+comm_num2comm_type <- function(x){
+    fifelse(x %in% c(38, 770, 771, 774), yes="fishing", no="inland")
+}

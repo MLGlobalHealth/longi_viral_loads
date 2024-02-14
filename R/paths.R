@@ -1,9 +1,9 @@
-gitdir.stan <- file.path(gitdir, 'stan')
+gitdir.stan      <- file.path(gitdir, 'stan')
 gitdir.functions <- file.path(gitdir, 'functions')
-gitdir.scripts <- file.path(gitdir, 'scripts')
-gitdir.src <- file.path(gitdir, 'src')
-gitdir.data <- file.path(gitdir, 'data')
-gitdir.R <- file.path(gitdir, 'R')
+gitdir.scripts   <- file.path(gitdir, 'scripts')
+gitdir.src       <- file.path(gitdir, 'src')
+gitdir.data      <- file.path(gitdir, 'data')
+gitdir.R         <- file.path(gitdir, 'R')
 
 #####################
 # check indir paths #
@@ -73,8 +73,14 @@ if ( exists("indir.deepdata") && dir.exists(indir.deepdata) ){
     # Pre-processed files
     # ___________________
 
+    # participants used in Nature Medicine paper
+    # ABl: rincp from l.192 of get_table_characteristics_pop.R
+    path.nm.participants <- file.path(indir.deepdata.r1518, "participants_for_Andrea.RDS")
+
     # obtained from process_data.R (also have a 230502 version)
-    path.hivstatusvl.r1520 <- file.path(indir.deepdata.r1520, 'all_participants_hivstatus_vl_230515.csv')
+    path.hivstatusvl.r1520.old2 <- file.path(indir.deepdata.r1520, 'all_participants_hivstatus_vl_220729.csv')
+    path.hivstatusvl.r1520.old <- file.path(indir.deepdata.r1520, 'all_participants_hivstatus_vl_230515.csv')
+    path.hivstatusvl.r1520 <- file.path(indir.deepdata.r1520,'all_participants_hivstatus_vl_240214.csv')
     path.viralloads.processed.r1520 <- file.path(indir.deepdata.r1520, 'viral_loads_r15r20_processed_230502.csv')
 
     # processed files: 
