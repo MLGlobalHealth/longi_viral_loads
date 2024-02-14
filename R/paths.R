@@ -90,7 +90,7 @@ if ( exists("indir.deepdata") && dir.exists(indir.deepdata) ){
     path.census.eligible <- file.path(gitdir.data, 'census_eligible_individuals_230514.csv')
 
     # OLD NAMES
-    # path.aggregated.nums.denoms.r1619 <- file.path(indir.deepdata.r1520,"RCCS_aggregated_nums_denoms.csv")
+    path.aggregated.nums.denoms.r1619 <- file.path(indir.deepdata.r1520,"RCCS_aggregated_nums_denoms.csv")
     # path.participation.rates <- file.path(gitdir.data, "participation_rates_230517.rds")
     path.participation.rates <- file.path(gitdir.data,  "participation_rates_240214.rds")
     # path.census.eligible.aggregated <- file.path(gitdir.data, "RCCS_census_eligible_aggregated.csv")
