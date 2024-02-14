@@ -246,7 +246,7 @@ ncen_table[, (new_cols) := lapply(.SD,  function(x) as.integer(x/N_COMM)), .SDco
 
 ncen_table |> prettify_labels()
 setcolorder(ncen_table, c('LOC_LAB', 'ROUND_LAB'))
-ncen_table[,  `:=` list(TYPE = NULL, ROUND = NULL )]
+ncen_table[,  `:=` (TYPE = NULL, ROUND = NULL )]
 
 filename <- file.path(outdir.tables, 'census_eligible_individuals_table_230514.rds')
 if(! file.exists(filename) )
@@ -262,4 +262,3 @@ readRDS(filename)
 # for paper writing
 ncen_table[ ROUND == 'Average', `Total-bycomm`]
 ncen_table[ ROUND == 'Average', pM ]
-
