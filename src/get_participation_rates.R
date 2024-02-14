@@ -40,13 +40,17 @@ dall <- dall[ ROUND %in% rounds_subsetted ]
 ncen[, ROUND := as.integer(ROUND)]
 dall[, ROUND := as.integer(ROUND)]
 
+# summarize participant populataion
+dall[, range(AGEYRS)]
+dall[ FC == "inland", .N |> comma(), by=c("FC","SEX", "ROUND")]
+
 #################################################
 catn("Make table with study pop characteristics")
 #################################################
 
 npar <- summarize.aggregates.dall()
 dprop <- merge(npar, ncen, all.x=TRUE, all.y=TRUE)
-stopifnot( any(is.na(dprop)) )
+stopifnot( "Some NA entries in dprop" = !any(is.na(dprop)) )
 
 check_more_elig_than_part <- dprop[, all(N_PART < ELIGIBLE) ] 
 stopifnot(check_more_elig_than_part)
@@ -65,7 +69,7 @@ npar_agegroup <- cube(npar_agegroup,
     by=c('ROUND', 'FC', 'SEX', 'AGEGROUP') ) |> 
     subset( ! is.na(ROUND) & !is.na(FC) )
 
-if(make_tables){
+if(make_tables & 0){
 
     cols_lab <- c('ROUND_LAB', 'FC_LAB', 'SEX_LAB', 'AGEGROUP')
     tab <- copy(npar_agegroup)
@@ -136,7 +140,6 @@ if(make_plots){
     filename <- 'pyramid_Nparticipants_Nhivp.pdf'
     cmd <- ggsave2(p_pyramid_hivp , file=filename, LALA=outdir.figures, w=10, h=11)
 
-
     p_pyramid_unsup  <- plot.pyramid.bysexround( dprop, 
         .ylab = "Number of unsuppressed among HIV positives", 
         NUM="N_VLNS",
@@ -178,7 +181,7 @@ if(make_plots){
     cmd <- ggsave2(p=p_partrate, file=filename, LALA=outdir.figures, w=10, h=11 )
 }
 
-filename <- file.path( gitdir.data, "participation_rates_230517.rds" )
+filename <- file.path( gitdir.data, "participation_rates_240214.rds" )
 if(! file.exists(filename)){
     cat("Saving file", filename, "...\n")
     saveRDS(object=loess_ratepart, file=filename)
@@ -186,10 +189,8 @@ if(! file.exists(filename)){
     cat("File", filename, "already exists...")
 }
 
-
 catn("what about the age composition/contribution of different pops")
 # ___________________________________________________________________
-
 
 # contribution to HIV
 plot.agecontribution.fromN.stratby(dprop, 'N_HIV', agegroup=FALSE,
@@ -206,60 +207,3 @@ p_contrib_viraemia_parts <- plot.agecontribution.fromN.stratby(dprop,
 filename <- 'bars_contrib_viraemia_participants.pdf'
 cmd <- ggsave2(p_contrib_viraemia_parts, file=filename, LALA=outdir.figures, w=10, h=11)
 
-
-if (0) # Study ARVMED
-{
-    darv <- dall[HIV_STATUS == 1]
-
-    cat("Assume NA ARV means no ARV usage...\n")
-    tmp <- darv[HIV_AND_VL == 1]
-    tmp[is.na(ARVMED) | ARVMED != 1, ARVMED := 0]
-    by_cols <- c("ROUND", "FC", "SEX", "ARVMED")
-    cols <- c("M", "CL", "CU")
-    tmp[, Y := as.integer(VL_COPIES <= VIREMIC_VIRAL_LOAD)]
-    tmp <- tmp[, binconf(sum(Y), .N, return.df = T), by = by_cols]
-    names(tmp) <- c(by_cols, cols)
-    setkeyv(tmp, by_cols)
-    supp.prop.by.arv <- copy(tmp)
-
-    ggplot(supp.prop.by.arv, aes(x = FC, colour = SEX)) +
-        geom_point(aes(y = M, pch = as.factor(ARVMED)), position = position_dodge(width = .5)) +
-        geom_linerange(aes(ymin = CL, ymax = CU, linetype = as.factor(ARVMED)), position = position_dodge(width = .5)) +
-        facet_grid(~ROUND) +
-        scale_y_continuous(labels = scales:::percent, limits = c(0, 1), expand = c(0, 0)) +
-        scale_colour_manual(values = c("M" = "royalblue3", "F" = "deeppink2")) +
-        theme(legend.position = "bottom") +
-        labs(
-            x = "Community type", y = "Proportion of suppressed measurements",
-            linetype = "Ever reported ARV", pch = "Ever reported ARV",
-            title = "Suppression by ARV reporting..."
-        )
-
-
-    cat("Suppression among participants reporting ARV \n")
-    darv[ARVMED == 1 & is.na(VL_COPIES), STUDY_ID] -> idx
-    tmp <- darv[STUDY_ID %in% idx, any(VL_COPIES == 0, na.rm = T), by = "STUDY_ID"]
-    tmp[, cat(
-        "Out of", .N, "HIV + participants with NA VL measurements", sum(V1),
-        "were measured suppressed at least once\n"
-    )]
-
-    tmp <- darv[HIV_AND_VL == 1 & ARVMED == 1]
-    by_cols <- c("ROUND", "FC", "SEX")
-    cols <- c("M", "CL", "CU")
-    tmp[, Y := as.integer(VL_COPIES <= VIREMIC_VIRAL_LOAD)]
-    tmp <- tmp[, binconf(sum(Y), .N, return.df = T), by = by_cols]
-    names(tmp) <- c(by_cols, cols)
-    setkeyv(tmp, by_cols)
-    supp.prop.among.report <- copy(tmp)
-
-    # Sex plays a bigger role than community.
-    ggplot(supp.prop.among.report, aes(x = FC, colour = SEX)) +
-        geom_point(aes(y = M), position = position_dodge(width = .5)) +
-        geom_linerange(aes(ymin = CL, ymax = CU), position = position_dodge(width = .5)) +
-        facet_grid(~ROUND) +
-        scale_y_continuous(labels = scales:::percent, limits = c(.5, 1), expand = c(0, 0)) +
-        scale_colour_manual(values = c("M" = "royalblue3", "F" = "deeppink2")) +
-        theme(legend.position = "bottom") +
-        labs(x = "Community type", y = "Proportion of suppressed measurements", title = "Among people reporting ever ARV...")
-}

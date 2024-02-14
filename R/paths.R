@@ -92,6 +92,7 @@ if ( exists("indir.deepdata") && dir.exists(indir.deepdata) ){
     # OLD NAMES
     # path.aggregated.nums.denoms.r1619 <- file.path(indir.deepdata.r1520,"RCCS_aggregated_nums_denoms.csv")
     # path.participation.rates <- file.path(gitdir.data, "participation_rates_230517.rds")
+    path.participation.rates <- file.path(indir.zenodo.data,  "participation_rates_240214.rds")
     # path.census.eligible.aggregated <- file.path(gitdir.data, "RCCS_census_eligible_aggregated.csv")
     # path.comm.censsize <- file.path(gitdir.data, 'censsize_by_community.rds')
 }
@@ -101,14 +102,17 @@ if ( exists("indir.deepdata") && dir.exists(indir.deepdata) ){
 # files to share #
 ##################
 
-indir.zenodo.data <- file.path(indir.zenodo, 'data')
-indir.zenodo.results <- file.path(indir.zenodo, 'results')
+if (indir.zenodo != "TODO") {
+    indir.zenodo.data <- file.path(indir.zenodo, 'data')
+    indir.zenodo.results <- file.path(indir.zenodo, 'results')
 
-path.aggregated.nums.denoms.r1619 <- file.path(indir.zenodo.data, "RCCS_aggregated_nums_denoms.csv")
-path.participation.rates <- file.path(indir.zenodo.data,  "participation_rates_230517.rds")
-path.census.eligible.aggregated <- file.path(indir.zenodo.data,  "RCCS_census_eligible_aggregated.csv")
-path.comm.censsize <- file.path(indir.zenodo.data,  'censsize_by_community.rds')
+    path.aggregated.nums.denoms.r1619 <- file.path(indir.zenodo.data, "RCCS_aggregated_nums_denoms.csv")
+    # path.participation.rates <- file.path(indir.zenodo.data,  "participation_rates_230517.rds")
+    path.participation.rates <- file.path(indir.zenodo.data,  "participation_rates_240214.rds")
+    path.census.eligible.aggregated <- file.path(indir.zenodo.data,  "RCCS_census_eligible_aggregated.csv")
+    path.comm.censsize <- file.path(indir.zenodo.data,  'censsize_by_community.rds')
 
+}
 #####################
 #     stan args     #
 #####################

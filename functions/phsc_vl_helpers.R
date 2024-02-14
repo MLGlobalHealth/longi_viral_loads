@@ -4,7 +4,7 @@ get.dall <- function(path, only_firstpart = FALSE, make_flowchart = FALSE) {
         subset(ROUND >= 16 & ROUND <= 19) |>
         subset(SEX != "" & AGEYRS %between% c(15, 49)) |>
         unique()
-    dall[, CURR_ID := NULL]
+    suppressWarnings(dall[, CURR_ID := NULL])
     dall <- unique(dall)
 
     # check keys are unique
@@ -48,9 +48,9 @@ summarize.aggregates.dall <- function(DT=dall, attributeNAfirstpar=TRUE)
         N_PART=.N,
         N_FIRST=sum(FIRST_PARTICIPATION),
         N_HASVL=sum(!is.na(VL_COPIES) & HIV_STATUS == 1),
-        N_HIV=sum(HIV_STATUS), 
+        N_HIV=sum(HIV_STATUS, na.rm=TRUE), 
         N_VLNS=sum( VL_COPIES >= VIREMIC_VIRAL_LOAD ,na.rm=TRUE),
-        N_LOWVL=sum( VL_COPIES >= 200)
+        N_LOWVL=sum( VL_COPIES >= 200, na.rm=TRUE)
         ), by=key_cols]
     npar[, ROUND := as.integer(ROUND)]
     return(npar)
