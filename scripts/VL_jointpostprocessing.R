@@ -563,7 +563,7 @@ if (file.exists(filename_rds) & !overwrite) {
                 stopifnot(length(x) == 1 | args$shared.hyper)
                 return(x)
             }
-            eval(expr_setup_ftp_all)
+            eval(expr_setup_hivprev_supphiv_ftpall)
             cat("Round ", unique(ROUND), "\n")
             draws_prev <- get.weighted.average.p_predict(
                 fit1 = readRDS(paths[idx.hivprev.all]),

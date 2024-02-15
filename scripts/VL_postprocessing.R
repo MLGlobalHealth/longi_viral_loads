@@ -79,10 +79,10 @@ dir.create(vl.out.dir.figures)  |> suppressWarnings()
 #     MAIN     #
 ################
 
-rda_files <- list.files.from.output.directory('.rda', dir=vl.out.dir, args=args)
-
 # get data
 dall <- get.dall(path.hivstatusvl.r1520, make_flowchart=TRUE)
+
+rda_files <- list.files.from.output.directory('.rda', dir=vl.out.dir, args=args)
 
 
 # Get census-eligible and compare with participants 
