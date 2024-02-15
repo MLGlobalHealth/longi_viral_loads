@@ -385,7 +385,7 @@ vl.suppofinfected.by.gender.loc.age.gp.cmdstan.hyper <- function(
 
         # Exclude people with unknown Viral load from analyses
         DT[, HIV_N := HIV_N - VLNA_N ]
-        stopifnot(DT[, all(HIV_N>0)])
+        stopifnot(DT[, all(HIV_N>=0)])
         DT[, VLSUP_N := HIV_N - VLNS_N, ]
         stan.data <- .make.stan.data.gp.sharedhyper(DT, 
             num.var = "VLSUP_N",

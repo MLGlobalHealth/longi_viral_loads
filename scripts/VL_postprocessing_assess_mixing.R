@@ -34,8 +34,9 @@ cat("\nStart of:", self_relative_path, "\n")
 }
 
 # paths
-self_relative_path <- "src/postprocessing_assess_mixing.R"
+self_relative_path <- "scripts/VL_postprocessing_assess_mixing.R"
 if (interactive()) {
+    here::i_am(self_relative_path)
     gitdir <- here::here()
 } else {
     cmd <- commandArgs()

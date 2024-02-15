@@ -86,7 +86,7 @@ source activate $ENVNAME
 set -euo pipefail
 "
 
-SUBMIT_CMD="sh"
+SUBMIT_CMD="qsub"
 
 if [[ "$LOCAL" == "TRUE" ]]; then
     HEAD="#!/bin/sh
