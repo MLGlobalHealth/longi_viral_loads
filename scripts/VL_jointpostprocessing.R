@@ -593,14 +593,14 @@ if (file.exists(filename_rds) & !overwrite) {
             dot.cols <- c(".chain", ".iteration", ".draw")
             tmp <- merge(draws_supp, draws_prev, by = c(dot.cols, "LOC", "SEX", "AGEYRS"))
             .aggr.hiv.prev <- function(DT, by_cols) {
-                DT[, .(S = sum(joint * proportions(N_HIV))), by = c(dot.cols, by_cols)][, quantile2(S), by = by_cols]
+                d <- DT[, .(S = sum(joint * proportions(N_HIV))), by = c(dot.cols, by_cols)]
+                d[, quantile2(S), by = by_cols]
             }
             list(
                 .aggr.hiv.prev(tmp, by_cols = c("LOC", "SEX", "AGEGROUP"))
             ) |> rbindlist(use.names = TRUE)
         },
-        by = c("MODEL","ROUND")
-    ]
+        by = c("ROUND")]
     saveRDS(object = dsupp_agegroup_custom, filename_rds)
 }
 
