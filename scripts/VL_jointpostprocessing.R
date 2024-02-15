@@ -815,7 +815,7 @@ if (make_tables) {
         paper_statements_meanage_population(DT = dmeanage, label = "run-gp-supp-pop", type = "AGEMEAN"),
         paper_statements_meanage_population(DT = dmeanage, label = "run-gp-supp-pop", type = "AGESTD")
     )
-    rm(dt, tmp1)
+    rm(tmp1)
 
     tab <- make.supp.table.meanage(newline=TRUE, include_date=TRUE)
 }

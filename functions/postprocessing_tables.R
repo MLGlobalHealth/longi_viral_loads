@@ -284,7 +284,7 @@ make.supp.table.meanage <- function(DT=dmeanage, label=NA_character_, newline=TR
     if(include_date){
         .labs <- drounds[, paste(START, END, sep="-")]
         .labs <- gsub("20","", .labs)
-        tab$Round[ tab$Round == ""] <- rep(.labs, 2)
+        tab[Round == "", Round := rep(.labs, times=.N/length(.labs)) ]
     }
 
     # sort colnames
@@ -292,13 +292,12 @@ make.supp.table.meanage <- function(DT=dmeanage, label=NA_character_, newline=TR
     setcolorder(tab, order)
     print(
         xtable(tab),
-        hline.after = which(tab$`Community type` == "Inland") - 1,
+        hline.after = which(tab$`Location` == "Inland") - 1,
         add.to.row = list(
             pos = list(which(tab$Gender == "Male") - 1),
             command = sprintf("\\cline{2-%i}", ncol(tab))
         )
     )
-    
     return(tab)
 }
 
