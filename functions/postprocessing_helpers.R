@@ -226,7 +226,7 @@ expr_setup_ftp_all <- expr({
     paths <- file.path(D, F);
     idx.all <- which(FTP==FALSE);
     idx.ftp <- which(FTP==TRUE);
-    cat(paths[idx.all], "\n")
+    cat(basename(paths[idx.all]), "\n")
 })
 
 expr_setup_hivprev_supphiv_ftpall <- expr({

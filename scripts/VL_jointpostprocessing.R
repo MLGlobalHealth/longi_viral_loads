@@ -547,10 +547,11 @@ if (make_tables) {
 catn("Get quantiles for population prevalences by custom age group")
 # __________________________________________________________________
 
-filename_rds <- file.path(out.dir.tables, "posterior_quantiles_suppression_agegroup_custom.rds")
-
 dcens_custom <- copy(dcens)
-dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, 18, 23, 28, 33, 38, 43, 48, 50))]
+dcens_custom[, AGEGROUP := split.agegroup(AGEYRS,
+    breaks = c(15, 18, 23, 28, 33, 38, 43, 48, 50))]
+
+filename_rds <- file.path(out.dir.tables, "posterior_quantiles_suppression_agegroup_custom.rds")
 
 if (file.exists(filename_rds) & !overwrite) {
     dsupp_agegroup_custom <- readRDS(filename_rds)
@@ -598,7 +599,7 @@ if (file.exists(filename_rds) & !overwrite) {
                 .aggr.hiv.prev(tmp, by_cols = c("LOC", "SEX", "AGEGROUP"))
             ) |> rbindlist(use.names = TRUE)
         },
-        by = c("ROUND")
+        by = c("MODEL","ROUND")
     ]
     saveRDS(object = dsupp_agegroup_custom, filename_rds)
 }
