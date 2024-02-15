@@ -1324,7 +1324,8 @@ if (file.exists(filename_rds) & !overwrite) {
                 stopifnot(length(x) == 1 | args$shared.hyper)
                 return(x)
             }
-            eval(expr_setup_ftp_all)
+            # eval(expr_setup_ftp_all)
+            eval(expr_setup_hivprev_supphiv_ftpall )
             cat("Round ", unique(ROUND), "\n")
             # load hiv prevalences to compute N HIV positive in age groups
             draws_prev <- get.weighted.average.p_predict(
@@ -1390,7 +1391,6 @@ if (make_tables) {
     # paper_statements_malefemaleratio_suppression(DT = dmf_ratios, reverse = FALSE)
     tmp <- paper_statements_malefemaleratio_suppression2()
 
-    
     # paper_statements_malefemaleratio_suppression()
 
     # dmf_ratios[TYPE == "VIR" & AGEGROUP != "Total" & ROUND == 19, ] |>
