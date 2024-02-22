@@ -343,17 +343,21 @@ plot.proportion.firstparticipants.by.vars <- function(DT, by_cols = c("ROUND", "
     p_prop_newparts
 }
 
-plot.pyramid.eligible.participants <- function(DT) {
-    cols <- c("N_PART", "ELIGIBLE")
+plot.pyramid.eligible.participants <- function(DT, part=TRUE) {
+
+    cols <- c("ELIGIBLE")
+    if(part)    cols <- c(cols, "N_PART")
     new_cols <- paste(cols, "PYR", sep = "_")
 
-    DT[, (new_cols) := lapply(.SD, function(x) (-1 + 2 * (SEX == "F")) * x), .SDcols = cols]
+    DT[, (new_cols) := lapply(.SD, function(x){
+        (-1 + 2 * (SEX == "F")) * x
+    }), .SDcols = cols]
 
+    if(part){
     dlabs <- DT[,
         .(P = round(100 * sum(N_PART) / sum(ELIGIBLE), 2)),
-        by = c("ROUND", "FC", "SEX")
-    ] |>
-        prettify_labels()
+        by = c("ROUND", "FC", "SEX") ] |> 
+            prettify_labels()
     dlabs[, `:=`(
         P_LAB = paste0(P, "%"),
         XPOS = Inf,
@@ -363,14 +367,24 @@ plot.pyramid.eligible.participants <- function(DT) {
         HJUST  = 1 / 2 + sign(XPOS) / 2,
         VJUST  = 1 / 2 + sign(YPOS) / 2
     )]
+        part_ls <- list(
+            geom_col(aes(y = ELIGIBLE_PYR), fill = "white", color = "grey60") +
+            geom_col(aes(y = N_PART_PYR), color = "grey60"),
+            geom_text(data = dlabs[SEX == "F"], aes(x = XPOS, y = YPOS, hjust = 1.2, vjust = 2, label = P_LAB)),
+            geom_text(data = dlabs[SEX == "M"], aes(x = XPOS, y = YPOS, hjust = -0.2, vjust = 2, label = P_LAB)),
+            NULL
+        )
+    }else{
+        part_ls <- list(
+            geom_col(aes(y = ELIGIBLE_PYR), color = "grey60"),
+            NULL
+        )
+    }
 
     DT |>
         prettify_labels() |>
         ggplot(aes(x = AGEYRS, fill = SEX_LAB)) +
-        geom_col(aes(y = ELIGIBLE_PYR), fill = "white", color = "grey60") +
-        geom_col(aes(y = N_PART_PYR), color = "grey60") +
-        geom_text(data = dlabs[SEX == "F"], aes(x = XPOS, y = YPOS, hjust = 1.2, vjust = 2, label = P_LAB)) +
-        geom_text(data = dlabs[SEX == "M"], aes(x = XPOS, y = YPOS, hjust = -0.2, vjust = 2, label = P_LAB)) +
+        part_ls + 
         coord_flip() +
         facet_grid(ROUND_LAB ~ FC_LAB, scales = "free_x", labeller = labeller(ROUND_LAB = round_labs)) +
         scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +

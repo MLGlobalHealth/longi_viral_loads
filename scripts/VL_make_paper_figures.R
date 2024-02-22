@@ -59,7 +59,7 @@ args <- args[names(args) %in% opts_vec]
 # testing
 if (interactive()) {
     # args$out.dir.exact <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/vl_1000_joint"
-    args$out.dir.exact <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/OLD_cmdstan_alpha100sharedhyper_vl_1000"
+    args$out.dir.exact <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/cmdstan_alpha100sharedhyper_vl_1000"
     args$shared.hyper <- TRUE
 }
 print(args)
@@ -275,21 +275,24 @@ catn("=== FIGURE 3 ===")
 ########################
 
 dcens <- copy(ncen) |> setnames("FC", "LOC")
-fig3 <- plot_propofpop_of_viraemic_byagesex_stratbycommround(DT=djoint, colorby='ROUND_LAB', cri=TRUE)
-dlabels <- labels_propofpop_of_viraemic_byagesex_stratbycommround()
-dtriangles <- point_propofpop_of_viraemic_byagesex_stratbycommround()
-.f <- function(add_labels=FALSE, add_ages=FALSE){
-    list(
-        if(add_labels)  geom_text(data=dlabels, aes(label=CELL), color="black", x=Inf, y=Inf, hjust=1, vjust=1),
-        if(add_ages)  geom_point(data=dtriangles, aes(x=M2, y=0), size=3, pch=17, alpha=.8), 
-        NULL
-    ) -> out 
-    out[!sapply(out, is.null)]
+if(0){
+    # Deprecated
+    fig3 <- plot_propofpop_of_viraemic_byagesex_stratbycommround(DT=djoint, colorby='ROUND_LAB', cri=TRUE)
+    dlabels <- labels_propofpop_of_viraemic_byagesex_stratbycommround()
+    dtriangles <- point_propofpop_of_viraemic_byagesex_stratbycommround()
+    .f <- function(add_labels=FALSE, add_ages=FALSE){
+        list(
+            if(add_labels)  geom_text(data=dlabels, aes(label=CELL), color="black", x=Inf, y=Inf, hjust=1, vjust=1),
+            if(add_ages)  geom_point(data=dtriangles, aes(x=M2, y=0), size=3, pch=17, alpha=.8), 
+            NULL
+        ) -> out 
+        out[!sapply(out, is.null)]
+    }
+    fig3 <- fig3 + .f(add_ages=FALSE, add_labels=FALSE)
+    filename <- paste0("main_figure_profile_nonsuppressed.pdf")
+    cmd <- ggsave_nature(p = fig3, filename = filename, LALA = out.dir.figures, w = 17, h = 16)
+    if(interactive()) upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
 }
-fig3 <- fig3 + .f(add_ages=FALSE, add_labels=FALSE)
-filename <- paste0("main_figure_profile_nonsuppressed.pdf")
-cmd <- ggsave_nature(p = fig3, filename = filename, LALA = out.dir.figures, w = 17, h = 16)
-if(interactive()) upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
 
 ########################
 catn(" FIGURE for KATE")
@@ -435,7 +438,6 @@ p <- table.to.plot(dtable1)
 cmd <- ggsave2(p = p, file = tex2pdf(filename_tex), LALA = out.dir.tables, w = 20, h = 10)
 if (interactive()) system(zathura2gthumb(cmd))
 
-
 dcontrib_agegroup[ROUND %in% c(16, 19) & MODEL == "run-gp-supp-pop" & AGEGROUP %in% c("15-19", "20-24"),
     sum(M),
     by = c("ROUND", "SEX", "LOC")
@@ -462,3 +464,16 @@ dmeanage <- file.path(out.dir.tables, "mean_ages_plhiv_viraemic.rds") |>
 tab <- make.supp.table.meanage()
 filename_table <- file.path(out.dir.tables, "table_agemeanstd_prev_unsupp.rds")
 write.to.googlesheets(tab, sheet = "SuppTable2")
+
+
+########################
+catn("Some CROI stuff")
+########################
+
+p <- plot.pyramid.eligible.participants(DT=ncen[ROUND==19], part=FALSE)
+cmd <- ggsave2(
+    p = p +  theme(legend.position="none") + labs(x="", y=""),   
+    file = "CROI_pyramid_eligible.pdf",
+    LALA = out.dir.figures,
+    w = 15, h = 7.5, u="cm")
+system(zathura2gthumb(cmd))

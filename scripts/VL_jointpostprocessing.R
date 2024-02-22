@@ -344,6 +344,11 @@ if (make_tables) {
     .null <- paper_statements_prevalence_viraemia2(model = "run-gp-supp-pop")
     # NOT WORK .null <- paper_statements_prevalence_viraemia2(model = 'run-gp-supp-hiv')
     rm(.null)
+
+    # For CROI:
+    tmp <- djoint_agegroup[AGEGROUP == "Total" & SEX != "Total" & ROUND %in% c(16, 19)]
+    tmp[,  CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE)]
+    tmp[, dcast(.SD, ROUND ~ SEX, value.var="CELL") , by=c( "MODEL", "LOC")]
 }
 
 catn("Get quantiles for population prevalences aggregated over age")
@@ -542,6 +547,7 @@ if (make_plots & FALSE) {
 if (make_tables) {
     # paper_statements_suppression_PLHIV_aggregated()
     .null <- paper_statements_suppression_PLHIV_aggregated(reverse = TRUE, round = 19)
+    .null <- paper_statements_suppression_PLHIV_aggregated(reverse = TRUE, round = 16)
 }
 
 catn("Get quantiles for population prevalences by custom age group")

@@ -364,8 +364,8 @@ dict_table_names <- list(
         N_ELIGIBLE = "Census-eligible\nindividuals\n\n\n\n(n)\n",
         CELL_HIV_N = "People with HIV \n\n\n\n\n(posterior median\nestimate, (95%CrI))",
         CELL_UNSUPP_N = "People with unsuppressed HIV\n\n\n\n\n(posterior median estimate,\n(95%CrI)) ",
-        VIR_P = "Proportion of\npeople \nexhibiting viraemia",
         CELL_SUPPHIV = "Proportion of\npeople exhibiting viramia\namong PLHIV",
+        VIR_P = "Proportion of\npeople \nexhibiting viraemia",
         CELL_UNSUPP_P = "Percent reduction in the absolute number \nof people with \nunsuppressed HIV relative to\nround 16\n\n(posterior median estimate,\n(95%CrI))",
         CELL_MF_GAP = "Male-female difference in the\nproportion of people\nwith HIV who have unsuppressed vireamia\n\n\n(posterior median estimate,\n(95%CrI))",
         NULL
