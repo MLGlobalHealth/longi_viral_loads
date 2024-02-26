@@ -96,9 +96,9 @@ dcens[, AGEGROUP := split.agegroup(AGEYRS)]
 
 # load number of census-eligible individuals (.50 too rough)
 # not sure if needed ...
-dpartrates <- readRDS(path.participation.rates) |>
-    subset(select = c("ROUND", "FC", "SEX", "AGEYRS", "PARTRATE_SMOOTH.25")) |>
-    setnames(c("FC", "PARTRATE_SMOOTH.25"), c("LOC", "PARTRATE"))
+# dpartrates <- readRDS(path.participation.rates) |>
+#     subset(select = c("ROUND", "FC", "SEX", "AGEYRS", "PARTRATE_SMOOTH.25")) |>
+#     setnames(c("FC", "PARTRATE_SMOOTH.25"), c("LOC", "PARTRATE"))
 
 ####################################################
 catn("=== Compare model fits among FTP and ALL ===")

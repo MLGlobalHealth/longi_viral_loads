@@ -58,10 +58,6 @@ parallelise <- FALSE
 if (parallelise) 
     source(file.path(gitdir.R, "local_cores_parallelisation.R"))
 
-file.exists(path.hivstatusvl.r1520) |>
-    all() |>
-    stopifnot()
-
 ################
 #     MAIN     #
 ################
@@ -91,11 +87,8 @@ stopifnot(dir.exists(vl.out.dir))
 if( args$confidential ){
 
     dall <- get.dall(path = path.hivstatusvl.r1520, only_firstpart = args$only.firstparticipants)
-    # if(local()){
-    #     tmp <- make.table.firstparticipant.NPhiv.NPunsupp(dall)
-    #     tmp
-    #     write.to.googlesheets(tmp, sheet='SuppTable1')
-    # }
+    dall[, mean(!is.na(HIV_STATUS))]
+    dall[HIV_STATUS == TRUE, mean(!is.na(VL_COPIES))]
     dall <- subset(dall, 
         ROUND %in% args$round & ! is.na(HIV_STATUS)
     )

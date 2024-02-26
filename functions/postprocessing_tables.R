@@ -4,8 +4,13 @@ tablify.posterior.Nunsuppressed <- function(list, model = "run-gp-supp-pop", CEL
     tab_list <- lapply(tab_list, remove.ILIU)
     tab_list <- lapply(tab_list, function(DT) DT[MODEL == model])
 
+    # report as integer, with 1,000 comma separators
+    cols <- c("M", "CL", "CU")
+    tab_list$round_totals[.SDcols=cols, 
+        j = (cols) := lapply(.SD, function(x){ comma(as.integer(x))})]
+
     with(tab_list, {
-        round_totals[, CELL_N := prettify_cell(M, CL, CU, precision = 0, newline = FALSE)]
+        round_totals[, CELL_N := sprintf("%s (%s-%s)", M, CL, CU)]
         percent_reduction[, CELL_P := prettify_cell(M * 100, CL * 100, CU * 100, newline = FALSE, percent = TRUE)]
 
         # select what to show per round
