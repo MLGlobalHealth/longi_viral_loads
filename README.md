@@ -18,6 +18,8 @@
 - [Acknowledgments](#acknowledgments)
 - [Funding](#funding)
 
+## :rocket: Quick Start
+
 ### System Requirements
 
 - UNIX or MacOs, the code was developed on Ubuntu 22.04 LTS.
