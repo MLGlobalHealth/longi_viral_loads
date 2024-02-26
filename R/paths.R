@@ -81,7 +81,7 @@ if ( exists("indir.deepdata") && dir.exists(indir.deepdata) ){
     path.hivstatusvl.r1520.old2 <- file.path(indir.deepdata.r1520, 'all_participants_hivstatus_vl_220729.csv')
     path.hivstatusvl.r1520.old <- file.path(indir.deepdata.r1520, 'all_participants_hivstatus_vl_230515.csv')
     path.hivstatusvl.r1520 <- file.path(indir.deepdata.r1520,'all_participants_hivstatus_vl_240214.csv')
-    path.viralloads.processed.r1520 <- file.path(indir.deepdata.r1520, 'viral_loads_r15r20_processed_230502.csv')
+    # path.viralloads.processed.r1520 <- file.path(indir.deepdata.r1520, 'viral_loads_r15r20_processed_230502.csv')
 
     # processed files: 
     path.processed.hivstatus.r0920 <- file.path(indir.deepdata.r1520,"RCCS_processed_participants_hivstatus_230328.rds")

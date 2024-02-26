@@ -27,14 +27,11 @@ dcomm[, `:=` (
 flow.1518 <- fread(path.flow.r1518)
 flow.19 <- as.data.table(read_dta(path.flow.r19))
 
-basename(path.flow.r1518)
-basename(path.flow.r19)
-
 ##################################
 catn("combine flow across rounds")
 ##################################
 
-cols_flow <- c('comm_num', 'locate1', 'locate2', 'resident', 'ageyrs', 'sex', 'round', 'curr_id')
+cols_flow <- c('comm_num', 'locate1', 'locate2', 'resident', 'ageyrs', 'sex', 'round', 'curr_id', 'study_id')
 
 flow <- lapply(
     list(flow.1518, flow.19), 
@@ -85,6 +82,14 @@ flow[, PARTICIPATED_TO_ROUND_RO15 := any(round == 'R015'), by= 'curr_id']
 flow[round == 'R015S' & TYPE == 'inland' & PARTICIPATED_TO_ROUND_RO15 == F, round := 'R015']
 flow <- flow[!(round == 'R015S' & TYPE == 'inland' & PARTICIPATED_TO_ROUND_RO15 == T)]
 
+# Get unique ids per round
+ce_ids.r1619 <- subset(flow, 
+    round %like% 'R016|R017|R018|R019' &
+    reason_ineligible %in% c('none', 'Out_migrated') &
+    ageyrs %between% c(15, 49),
+    select=c("round", "study_id","curr_id", "TYPE", "reason_ineligible", "ageyrs")
+) |> unique()
+
 # find count eligible (Out migrated count as half, assuming could have migrated after?)
 by_cols <- c('reason_ineligible', 'round', 'TYPE', 'ageyrs', 'sex')
 cols_reasons <- unique(flow$reason_ineligible)
@@ -107,7 +112,7 @@ re[, COMM_INDEX := ifelse(TYPE == 'fishing', 1, 0)]
 # Number of unique people censed over the study period
 flow[, table(reason_ineligible)]
 tot_censed_round <- cube(
-    flow[! round %like% '15' & reason_ineligible %like% "none|migrated"],
+    flow[! round %like% '15' & reason_ineligible %like% "none"],
     uniqueN(curr_id) ,
     by = "round")
 with(tot_censed_round, 
@@ -119,7 +124,9 @@ with(tot_censed_round,
 )
 
 # Find total number of census eligibles by round
-cube(re, sum(ELIGIBLE), c("ROUND", "TYPE", "SEX"))
+tot_ce <- cube(re[ROUND >= 16], sum(ELIGIBLE) |> comma(), c("ROUND", "TYPE", "SEX"))
+tot_ce[is.na(tot_ce)] <- "Total"
+tot_ce[SEX == "Total" & TYPE == "Total"]
 
 #################################################
 catn("find average population size by community")
@@ -198,6 +205,18 @@ if(! file.exists(filename)  )
     cat("File:", filename, "already exists...\n")
 }
 
+if(0){
+    ncen_aggr <- get.census.eligible(ncen, rounds=16:19)
+    filename <- path.census.eligible.aggregated
+    if(! file.exists(filename)  )
+    {
+        cat("Saving file:", filename, '\n')
+        fwrite(ncen_agg, filename , row.names = FALSE)
+    }else{
+        cat("File:", filename, "already exists...\n")
+    }
+}
+
 ##################
 catn("Make table")
 ##################
@@ -262,3 +281,26 @@ readRDS(filename)
 # for paper writing
 ncen_table[ ROUND == 'Average', `Total-bycomm`]
 ncen_table[ ROUND == 'Average', pM ]
+
+if ( 0 ){
+    # Compare CEs with participants
+    dall <- fread(path.hivstatusvl.r1520)
+    ce_ids.r1619[, `:=` ( ROUND = round2numeric(round), round = NULL )]
+    names(ce_ids.r1619) <- toupper(names(ce_ids.r1619))
+    ce_ids.r1619[, mean(STUDY_ID !=""), by=ROUND]
+    ce_ids.r1619[, any(STUDY_ID != "") , by="CURR_ID"][, mean(V1)]
+
+
+    comp <- merge(
+        dall[, .(STUDY_ID, ROUND, LA=TRUE)],
+        ce_ids.r1619,
+        by = c('STUDY_ID', 'ROUND'),
+        all = TRUE
+    )
+    comp[ STUDY_ID != "", table(is.na(LA))]
+    comp[ STUDY_ID != "", uniqueN(CURR_ID), by="STUDY_ID"][, table(V1)]
+    dall[, comma(.N)]
+    dall[, uniqueN(STUDY_ID) |> comma()]
+    dall[, table(FIRST_PARTICIPATION) |> comma()]
+    dall[, sum(FIRST_PARTICIPATION, na.rm=TRUE) |> comma()]
+}

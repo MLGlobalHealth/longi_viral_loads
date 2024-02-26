@@ -25,9 +25,8 @@ VIREMIC_VIRAL_LOAD <- 1000
 
 
 # load stuff
-cols <- c( "ROUND", "TYPE", "SEX", "AGEYRS", "ELIGIBLE")
-ncen <- fread(path.census.eligible, select = cols)
-setnames(ncen, c('TYPE'), c('FC'))
+cols <- c( "ROUND", "TYPE", "FC", "SEX", "AGEYRS", "ELIGIBLE")
+ncen <- fread(path.census.eligible.aggregated, select=cols)
 
 cols <- c("STUDY_ID", "ROUND", "SEX", "AGEYRS", "FC", 'HIV_STATUS', 'VL_COPIES', 'FIRST_PARTICIPATION')
 dall <- get.dall(path.hivstatusvl.r1520) |> 
