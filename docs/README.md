@@ -94,7 +94,7 @@ flowchart LR
 	
 	subgraph results
 		r11[(results/run-gp-*/cmd_*.rds)]
-        r21[(results/tables)]
+        r21[(results/tables/*)]
 
 		style r11 fill:#ffd700
 		style r21 fill:#ffd700
@@ -105,7 +105,7 @@ flowchart LR
 	o11 -- load --> sc1
 	o21 -- load --> sc1
 	sc1 -- create --> r11
-    
+
     r11 -- load --> sc2
     sc2 -- create --> r21
 ```
