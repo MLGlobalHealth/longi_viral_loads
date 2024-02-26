@@ -2053,7 +2053,7 @@ aggregate_posterior_fits <- function(model, filename_fmt) {
     cmd <- ggsave2(p = p, file = filename, LALA = out.dir.figures, w = 18, h = 23, u = "cm")
 }
 
-plot_single_posterior_fit <- function(DT = dfits, model, verbose = TRUE) {
+plot_single_posterior_pred <- function(DT = dfits, model, verbose = TRUE) {
     if (verbose) {
         print(model)
     }

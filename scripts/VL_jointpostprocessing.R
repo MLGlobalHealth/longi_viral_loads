@@ -1514,7 +1514,7 @@ cmds <- lapply(
 gg_list_pp <- list()
 out <- lapply( 
     c("run-gp-prevl","run-gp-supp-hiv","run-gp-supp-pop"),
-    plot_single_posterior_fit,
+    plot_single_posterior_pred,
     DT=dfits
 )
 
