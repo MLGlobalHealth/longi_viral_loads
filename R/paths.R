@@ -28,17 +28,17 @@ if(usr=='andrea') {
     indir.zenodo <- "TODO"
 }
 
-dir.exists(c(indir.deepdata, indir.deepsequence_analyses)) |> 
-    all() |> 
-    stopifnot("Input data directories could not be found in paths.R"=_)
-
+if( usr == "andrea" | usr == "ab1820"){
+    dir.exists(c(indir.deepdata, indir.deepsequence_analyses)) |> 
+        all() |> 
+        stopifnot("Input data directories could not be found in paths.R"=_)
+}
 
 # simplify sourcing of all R/*.R helpers
 R_scripts <- list.files( gitdir.R, pattern = "\\.R$", full.names = TRUE)
 R_scripts <- R_scripts[! R_scripts %like% 'test_palettes.R|local_cores_parallelisation.R|paths.R']
 for (path in R_scripts)
     source(file=path)
-
 
 ##############################
 # proceed to all definitions #
@@ -86,7 +86,6 @@ if ( exists("indir.deepdata") && dir.exists(indir.deepdata) ){
     # processed files: 
     path.processed.hivstatus.r0920 <- file.path(indir.deepdata.r1520,"RCCS_processed_participants_hivstatus_230328.rds")
     path.processed.testing.r1519 <- file.path(indir.deepdata.r1520,"RCCS_processed_participants_testing_230328.rds")
-
     path.census.eligible <- file.path(gitdir.data, 'census_eligible_individuals_230514.csv')
 
     # OLD NAMES

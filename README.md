@@ -8,18 +8,15 @@
 
 ## Table of contents
  
-- [Quick Start](#quick-start)
+- [Quick Start](#rocket-quick-start)
     - [System Requirements](#system-requirements)
     - [Installation](#installation)
     - [Reproducing our Analyses](#reproducing-our-analyses)
-- [License](#license)
-- [Warranty](#warranty)
-- [Citation](#citation)
+- [License](#pagefacingup-license)
+- [Warranty](#shield-warranty)
+- [Citation](#books-citation)
 - [Acknowledgments](#acknowledgments)
 - [Funding](#funding)
-
-
-## Quick Start
 
 ### System Requirements
 
@@ -77,15 +74,15 @@ All the `R` scripts called by the two executable can be found in the [`scripts`]
 > 
 > Every flag should be specified as `FLAG=value` or `FLAG="value with spaces"`, leaving no white spaces before and after the `=` sign.
 
-## License 
+## :page_facing_up: License 
 
 The code in this repository is licensed under [CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg).
 
-## Warranty 
+## :shield: Warranty 
 
 Imperial makes no representation or warranty about the accuracy or completeness of the data nor that the results will not constitute in infringement of third-party rights. Imperial accepts no liability or responsibility for any use which may be made of any results, for the results, nor for any reliance which may be placed on any such work or results.
 
-## Citation:
+## :books: Citation
 
 Please cite this work as *TODO* (leave a citation.bib in the repo?)
 
