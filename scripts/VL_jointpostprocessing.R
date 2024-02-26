@@ -52,13 +52,6 @@ if (interactive()) {
     naturemed_reqs()
 }
 
-file.exists(
-    path.hivstatusvl.r1520,
-    path.census.eligible
-) |>
-    all() |>
-    stopifnot()
-
 # command line options, stored in args. Then subset
 opts_vec <- c(
     "viremic.viral.load",
@@ -71,7 +64,7 @@ opts_vec <- c(
 )
 args <- args[names(args) %in% opts_vec]
 # testing
-if (interactive()) {
+if (interactive() & usr=="andrea" ) {
     # args$jobname <- "vl_1000_firstpart"
     args$jobname <- "cmdstan_alpha100sharedhyper_vl_1000"
     args$out.dir.exact <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/cmdstan_alpha100sharedhyper_vl_1000"
@@ -81,6 +74,7 @@ print(args)
 
 overwrite <- !interactive()
 make_plots <- make_tables <- TRUE
+# Get out.dir etc...
 fetch.postprocessing.settings.from.args(args)
 
 ####################
@@ -91,10 +85,13 @@ catn("=== MAIN ===")
 # plot.first.participant.rates(add_loess=FALSE)
 # plot.first.participant.rates(add_loess=TRUE)
 
-
 # get census-eligible
-dcens <- get.census.eligible() |>
-    setnames(c("AGE_LABEL", "SEX_LABEL", "LOC_LABEL"), c("AGEYRS", "SEX", "LOC"))
+if (file.exists(path.census.eligible.aggregated)){
+    dcens <- fread(path.census.eligible.aggregated)
+}else{
+    dcens <- get.census.eligible(path=path.census.eligible) |>
+        setnames(c("AGE_LABEL", "SEX_LABEL", "LOC_LABEL"), c("AGEYRS", "SEX", "LOC"))
+}
 dcens[, AGEGROUP := split.agegroup(AGEYRS)]
 
 # load number of census-eligible individuals (.50 too rough)
@@ -107,7 +104,7 @@ dpartrates <- readRDS(path.participation.rates) |>
 catn("=== Compare model fits among FTP and ALL ===")
 ####################################################
 
-dfiles_rda <- get.output.paths.ftp.and.all(regex = ".rda$")
+dfiles_rda <- get.output.paths.ftp.and.all(dir.shared = out.dir, regex = ".rda$")
 
 if (!args$shared.hyper) {
     stopifnot(dfiles_rda[, .N, by = "F"][, all(N == 2)])

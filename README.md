@@ -51,12 +51,13 @@ ZENODO_DIR="PATH-TO-DOWNLOADED-ZENODO-DATA"
 To run the code with the same settings as in our paper, we then run from the root directory of the repository the [`run_stan`](run_stan) executable. 
 
 ```{sh}
-./run_stan OUTDIR="$ZENODO_DIR/results" ROUND=19 MODELS="run-gp-prevl" LOCAL=TRUE
+./run_stan OUTDIR="$ZENODO_DIR/results" ROUND=19 MODELS="run-gp-prevl" LOCAL=TRUE REFIT=TRUE
 ```
 
 Note that: 
-1. alternative output directories can be used, and the above can also be run as a bash script through `bash run_stan ...`.
-2. stan settings can be updated in the [`stan/binomial_gp_config.yml`](stan/binomial_gp_config.yml) file.
+1. The above can also be run as a bash script through `bash run_stan ...`.
+2. alternative output directories can be used, as in `OUTDIR="path/to/other/directory"`.
+3. stan argumebts can be updated in the [`stan/binomial_gp_config.yml`](stan/binomial_gp_config.yml) file.
  
 Once all jobs are run, it is possible to run our postprocessing code, involving reproducibility of figures, tables and an `html` report summarising the runs.
 
@@ -71,6 +72,7 @@ All the `R` scripts called by the two executable can be found in the [`scripts`]
 > * `LOCAL`: indicates we want to run jobs locally, instead of submitting them to a job scheduler with `qsub`.
 > * `MODELS` indicates which models we want to run, and can be one, or a combination of, the following: `run-gp-prevl`, `run-gp-supp-pop`, `run-gp-supp-hiv`.
 > * `ROUND` flag indicates the survey round for which we want to run our analyses 
+> * `REFIT` flag indicates whether we want to refit the model and overwrite them in case a previous version already exists.
 > 
 > Every flag should be specified as `FLAG=value` or `FLAG="value with spaces"`, leaving no white spaces before and after the `=` sign.
 

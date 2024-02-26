@@ -28,17 +28,17 @@ stanindices2vars <- function(names) {
     out
 }
 
-get.output.paths.ftp.and.all <- function(regex, dir.shared=out.dir, dir.ftp=indir.ftp, dir.all=indir.all, shared=args$shared.hyper){
+get.output.paths.ftp.and.all <- function(regex, dir.shared = out.dir, dir.ftp = indir.ftp, dir.all = indir.all, shared = args$shared.hyper) {
     # vl is not well read but not important
-    if( shared ){
-        files <- list.files.from.output.directory(regex, dir=out.dir, rounds = 16:19)
-    }else{
-        files <- c( 
-            list.files.from.output.directory(regex, dir=dir.ftp, rounds = 16:19),
-            list.files.from.output.directory(regex, dir=dir.all,  rounds = 16:19)
+    if (shared) {
+        files <- list.files.from.output.directory(regex, dir = dir.shared, rounds = 16:19)
+    } else {
+        files <- c(
+            list.files.from.output.directory(regex, dir = dir.ftp, rounds = 16:19),
+            list.files.from.output.directory(regex, dir = dir.all, rounds = 16:19)
         )
     }
-    
+
     # get paths of models
     dfiles <- data.table(F = files)
     dfiles[, `:=`(
@@ -53,7 +53,7 @@ get.output.paths.ftp.and.all <- function(regex, dir.shared=out.dir, dir.ftp=indi
     return(dfiles)
 }
 
-fetch.postprocessing.settings.from.args <- function(args=args){
+fetch.postprocessing.settings.from.args <- function(args = args) {
     with(args, {
         VL_DETECTABLE <<- detectable.viral.load
         VIREMIC_VIRAL_LOAD <<- viremic.viral.load
@@ -79,8 +79,8 @@ fetch.postprocessing.settings.from.args <- function(args=args){
     }
     out.dir.figures <<- file.path(out.dir, "figures")
     out.dir.tables <<- file.path(out.dir, "tables")
-    if(!dir.exists(out.dir.figures)) dir.create(out.dir.figures)
-    if(!dir.exists(out.dir.tables)) dir.create(out.dir.tables)
+    if (!dir.exists(out.dir.figures)) dir.create(out.dir.figures)
+    if (!dir.exists(out.dir.tables)) dir.create(out.dir.tables)
     cat("set output directories `out.dir.figures` and `out.dir.tables`\n")
 }
 
@@ -187,7 +187,7 @@ plot.comparison.ftptype.colftp <- function(DT, ylab) {
     p <- ggplot(dplot, aes(x = AGE_LABEL, y = M, ymin = CL, ymax = CU, color = FTP_LAB, fill = FTP_LAB)) +
         geom_ribbon(alpha = .2, color = NA) +
         geom_line() +
-        facet_grid(LOC_LAB ~ SEX_LAB, scales = "free_y", labeller=labeller(SEX_LAB = sex_dictionary2, LOC_LAB=community_dictionary$long)) +
+        facet_grid(LOC_LAB ~ SEX_LAB, scales = "free_y", labeller = labeller(SEX_LAB = sex_dictionary2, LOC_LAB = community_dictionary$long)) +
         scale_y_continuous(labels = scales::label_percent(), limits = c(0, NA), expand = c(0, 0)) +
         scale_x_continuous(limits = c(15, 50), expand = c(0, 0)) +
         scale_color_manual(values = palettes$rakailogo) +
@@ -206,11 +206,11 @@ plot.comparison.ftptype.colsex <- function(DT, ylab) {
     p <- ggplot(dplot, aes(x = AGE_LABEL, y = M, ymin = CL, ymax = CU, color = SEX_LAB, fill = SEX_LAB)) +
         geom_ribbon(alpha = .2, color = NA) +
         geom_line() +
-        facet_grid(LOC_LAB ~ FTP_LAB, scales = "free_y", labeller=labeller(LOC_LAB=community_dictionary$long)) +
+        facet_grid(LOC_LAB ~ FTP_LAB, scales = "free_y", labeller = labeller(LOC_LAB = community_dictionary$long)) +
         scale_y_continuous(labels = scales::label_percent(), limits = c(0, NA), expand = c(0, 0)) +
         scale_x_continuous(limits = c(15, 50), expand = c(0, 0)) +
-        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
-        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
+        scale_color_manual(values = palettes$sex, labels = sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels = sex_dictionary2) +
         theme_default() +
         my_labs(y = ylab) +
         NULL
@@ -218,14 +218,14 @@ plot.comparison.ftptype.colsex <- function(DT, ylab) {
 }
 
 expr_setup_ftp_all <- expr({
-    if(args$shared.hyper == TRUE){
-        stopifnot(.N==1);
-    }else{
-        stopifnot(.N==2);
+    if (args$shared.hyper == TRUE) {
+        stopifnot(.N == 1)
+    } else {
+        stopifnot(.N == 2)
     }
-    paths <- file.path(D, F);
-    idx.all <- which(FTP==FALSE);
-    idx.ftp <- which(FTP==TRUE);
+    paths <- file.path(D, F)
+    idx.all <- which(FTP == FALSE)
+    idx.ftp <- which(FTP == TRUE)
     cat(basename(paths[idx.all]), "\n")
 })
 
@@ -243,24 +243,25 @@ expr_setup_hivprev_supphiv_ftpall <- expr({
     idx.supphiv.ftp <- which(FTP == TRUE & MODEL == "run-gp-supp-hiv") |> .check()
 })
 
-extract.p_predict <- function(fit, lab=NA_character_){
+extract.p_predict <- function(fit, lab = NA_character_) {
     out <- posterior::as_draws_df(fit) |>
-        posterior::subset_draws(variable = "^p_predict", regex=TRUE)
-    if(!is.na(lab)){
+        posterior::subset_draws(variable = "^p_predict", regex = TRUE)
+    if (!is.na(lab)) {
         names(out) <- gsub("p_predict", lab, names(out))
-    }else{
+    } else {
         setDT(out)
-        names(out) <- gsub("p_predict(.*)_ftp(.*)$", "ftp\\1\\2", names(out)) 
-        names(out) <- gsub("p_predict(.*)$", "parts\\1", names(out)) 
+        names(out) <- gsub("p_predict(.*)_ftp(.*)$", "ftp\\1\\2", names(out))
+        names(out) <- gsub("p_predict(.*)$", "parts\\1", names(out))
     }
     return(out)
 }
 
-get.weighted.average.p_predict <- function(fit1, fit2, fit_all, round, expression_prereturn = {}, uniqueRDS=args$shared.hyper) {
-
-    .optional.thinning <- function(DT){
-        if(! interactive()) return(DT) 
-        posterior::thin_draws(DT, thin=5)
+get.weighted.average.p_predict <- function(fit1, fit2, fit_all, round, expression_prereturn = {}, uniqueRDS = args$shared.hyper) {
+    .optional.thinning <- function(DT) {
+        if (!interactive()) {
+            return(DT)
+        }
+        posterior::thin_draws(DT, thin = 5)
     }
 
     # round <- 19
@@ -268,11 +269,11 @@ get.weighted.average.p_predict <- function(fit1, fit2, fit_all, round, expressio
     demo.cols <- c("SEX", "LOC", "AGEYRS")
 
     # extract age-specific draws from both ftp and allparts
-    if(!uniqueRDS){
-        draws_parts <- extract.p_predict(fit1, "parts") |> .optional.thinning() 
-        draws_ftp <- extract.p_predict(fit2, "ftp") |> .optional.thinning() 
+    if (!uniqueRDS) {
+        draws_parts <- extract.p_predict(fit1, "parts") |> .optional.thinning()
+        draws_ftp <- extract.p_predict(fit2, "ftp") |> .optional.thinning()
         draws_all <- posterior::bind_draws(draws_parts, draws_ftp) |> setDT()
-    }else{
+    } else {
         draws_all <- extract.p_predict(fit_all)
     }
     draws_all <- melt(draws_all,
@@ -302,22 +303,23 @@ get.weighted.average.p_predict <- function(fit1, fit2, fit_all, round, expressio
     eval(expression_prereturn)
 }
 
-get.posterior.diff.ftp <- function(fit1, fit2, fit_all, expression_prereturn=NULL, uniqueRDS=args$shared.hyper) {
-
-    .optional.thinning <- function(DT){
-        if(! interactive()) return(DT) 
-        posterior::thin_draws(DT, thin=5)
+get.posterior.diff.ftp <- function(fit1, fit2, fit_all, expression_prereturn = NULL, uniqueRDS = args$shared.hyper) {
+    .optional.thinning <- function(DT) {
+        if (!interactive()) {
+            return(DT)
+        }
+        posterior::thin_draws(DT, thin = 5)
     }
 
     dot.cols <- c(".chain", ".iteration", ".draw")
     demo.cols <- c("SEX", "LOC", "AGEYRS")
     demo.cols2 <- paste0(demo.cols, "_LAB")
 
-    if(!uniqueRDS){
-        draws_parts <- extract.p_predict(fit1, "parts") |> .optional.thinning() 
-        draws_ftp <- extract.p_predict(fit2, "ftp") |> .optional.thinning() 
+    if (!uniqueRDS) {
+        draws_parts <- extract.p_predict(fit1, "parts") |> .optional.thinning()
+        draws_ftp <- extract.p_predict(fit2, "ftp") |> .optional.thinning()
         draws_all <- posterior::bind_draws(draws_parts, draws_ftp) |> setDT()
-    }else{
+    } else {
         draws_all <- extract.p_predict(fit_all)
     }
 
@@ -327,9 +329,9 @@ get.posterior.diff.ftp <- function(fit1, fit2, fit_all, expression_prereturn=NUL
         value.name = "value"
     )
     draws_all[, (demo.cols) := stanindices2vars(participation)]
-    draws_all[, participation := fifelse(participation %like% 'ftp', yes='ftp',no='parts' )]
-    draws_all <- dcast.data.table(draws_all,  ... ~ participation, value.var='value' )
-    draws_all <- draws_all[ , diff :=parts - ftp ]
+    draws_all[, participation := fifelse(participation %like% "ftp", yes = "ftp", no = "parts")]
+    draws_all <- dcast.data.table(draws_all, ... ~ participation, value.var = "value")
+    draws_all <- draws_all[, diff := parts - ftp]
     draws_all <- subset(draws_all, !is.na(diff))
 
     #
@@ -371,8 +373,8 @@ plot.fit.weighted.by.ftpstatus <- function(DT, label, include_baseline = FALSE) 
         } +
         geom_line() +
         facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
-        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
-        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
+        scale_color_manual(values = palettes$sex, labels = sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels = sex_dictionary2) +
         scale_y_percentage +
         scale_x_continuous(expand = c(0, 0), breaks = age_breaks) +
         theme_default() +
@@ -386,15 +388,15 @@ plot.estimated.number.viraemic.among.census.eligible <- function(DT) {
         facet_grid(ROUND_LAB ~ LOC_LAB, scales = "free_y") +
         theme_default() +
         scale_x_continuous(expand = c(0, 0), breaks = age_breaks) +
-        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
-        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
+        scale_color_manual(values = palettes$sex, labels = sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels = sex_dictionary2) +
         scale_y_continuous(expand = expansion(mult = c(0, .1))) +
         my_labs(y = "Estimated number of individuals exhibiting viraemia among census-eligible") +
         NULL
 }
 
 check_median_contr_approx1 <- function(DT) {
-    cond <- DT[ AGEGROUP != "Total", abs(sum(M) - 1), by = c("MODEL", "ROUND", "LOC")][, sum(V1) < .5]
+    cond <- DT[AGEGROUP != "Total", abs(sum(M) - 1), by = c("MODEL", "ROUND", "LOC")][, sum(V1) < .5]
     if (!cond) {
         warning("Unexpected value for aggregated contributions")
     }
@@ -407,8 +409,8 @@ plot.estimated.contribution.viraemic.among.census.eligible <- function(DT) {
         facet_grid(ROUND_LAB ~ LOC_LAB) +
         scale_x_continuous(expand = c(0, 0), breaks = age_breaks) +
         theme_default() +
-        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
-        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
+        scale_color_manual(values = palettes$sex, labels = sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels = sex_dictionary2) +
         scale_y_percentage +
         my_labs(y = "Estimated proportion of individuals exhibiting viraemia among census-eligible") +
         NULL
@@ -483,7 +485,8 @@ find_summary_output <- function(samples, output, vars, transform = NULL, standar
 
 plot.agesex.contributions.by.roundcomm <- function(DT, label, include_baseline = FALSE) {
     # DT <- copy(dcontrib); label = 'run-gp-supp-pop'; include_baseline = TRUE
-    if(! is.na(label)){ dplot <- subset(DT, MODEL == label)
+    if (!is.na(label)) {
+        dplot <- subset(DT, MODEL == label)
     }
     prettify_labels(dplot)
 
@@ -509,8 +512,8 @@ plot.agesex.contributions.by.roundcomm <- function(DT, label, include_baseline =
         } +
         geom_line() +
         facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
-        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
-        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
+        scale_color_manual(values = palettes$sex, labels = sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels = sex_dictionary2) +
         scale_y_percentage +
         scale_x_continuous(expand = c(0, 0), breaks = age_breaks) +
         theme_default() +
@@ -544,15 +547,15 @@ plot.agesex.contributions.by.roundcomm2 <- function(DT, label, include_baseline 
         geom_col(position = position_dodge(width = .9)) +
         geom_errorbar(position = position_dodge(width = .9), width = .3) +
         facet_grid(ROUND_LAB ~ LOC_LAB, labeller = labeller(ROUND_LAB = round_labs)) +
-        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
-        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
+        scale_color_manual(values = palettes$sex, labels = sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels = sex_dictionary2) +
         scale_y_continuous(expand = expansion(mult = c(0, 0.1)), labels = scales::percent) +
         theme_default() +
         my_labs(y = .makelab(label), x = "") +
         NULL
 }
 
-plot.logratio.ftpvsnon <- function(DT, label, log=TRUE) {
+plot.logratio.ftpvsnon <- function(DT, label, log = TRUE) {
     dplot <- subset(DT, MODEL == label) |>
         prettify_labels()
 
@@ -560,20 +563,23 @@ plot.logratio.ftpvsnon <- function(DT, label, log=TRUE) {
         .prefix <- c(
             "Log ratio of posterior estimates for",
             "Ratio of posterior estimates for"
-        )[log==TRUE+1]
-        paste( .prefix, gsub("^P", "p", model_dict[lab]),
-            "\nin all participants vs first-time-participants")
+        )[log == TRUE + 1]
+        paste(
+            .prefix, gsub("^P", "p", model_dict[lab]),
+            "\nin all participants vs first-time-participants"
+        )
     }
 
     ggplot(dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = SEX_LAB, color = SEX_LAB)) +
-        geom_hline(yintercept = c(1,0)[log+1], linetype = "dashed") +
+        geom_hline(yintercept = c(1, 0)[log + 1], linetype = "dashed") +
         geom_ribbon(alpha = .2, color = NA) +
         geom_line() +
-        facet_grid(ROUND_LAB ~ LOC_LAB, 
-            scales='free_y',
-            labeller = labeller(ROUND_LAB = round_labs)) +
-        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
-        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
+        facet_grid(ROUND_LAB ~ LOC_LAB,
+            scales = "free_y",
+            labeller = labeller(ROUND_LAB = round_labs)
+        ) +
+        scale_color_manual(values = palettes$sex, labels = sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels = sex_dictionary2) +
         scale_x_continuous(expand = c(0, 0)) +
         theme_default() +
         my_labs(y = .makelab(label), x = "") +
@@ -581,45 +587,48 @@ plot.logratio.ftpvsnon <- function(DT, label, log=TRUE) {
 }
 
 plot.diff.ftpvsnon <- function(DT, label) {
-
     dplot <- subset(DT, MODEL == label) |>
         prettify_labels()
 
     .makelab <- function(lab) {
-        paste("Posterior difference in", gsub("^P", "p", model_dict[lab]),
-            "\nin all participants vs first-time-participants")
+        paste(
+            "Posterior difference in", gsub("^P", "p", model_dict[lab]),
+            "\nin all participants vs first-time-participants"
+        )
     }
 
     ggplot(dplot, aes(x = AGEYRS, y = M, ymin = CL, ymax = CU, fill = SEX_LAB, color = SEX_LAB)) +
         geom_hline(yintercept = 0, linetype = "dashed") +
         geom_ribbon(alpha = .2, color = NA) +
         geom_line() +
-        facet_grid(ROUND_LAB ~ LOC_LAB, 
-            scales='free_y',
-            labeller = labeller(ROUND_LAB = round_labs)) +
-        scale_color_manual(values = palettes$sex, labels=sex_dictionary2) +
-        scale_fill_manual(values = palettes$sex, labels=sex_dictionary2) +
+        facet_grid(ROUND_LAB ~ LOC_LAB,
+            scales = "free_y",
+            labeller = labeller(ROUND_LAB = round_labs)
+        ) +
+        scale_color_manual(values = palettes$sex, labels = sex_dictionary2) +
+        scale_fill_manual(values = palettes$sex, labels = sex_dictionary2) +
         scale_x_continuous(expand = c(0, 0)) +
         theme_default() +
         my_labs(y = .makelab(label), x = "") +
         NULL
 }
 
-get.posterior.logratios.ftp <- function(fit1, fit2, fit_all, round, expression_prereturn = {}, uniqueRDS=args$shared.hyper) {
-
-    .optional.thinning <- function(DT){
-        if(! interactive()) return(DT) 
-        posterior::thin_draws(DT, thin=5)
+get.posterior.logratios.ftp <- function(fit1, fit2, fit_all, round, expression_prereturn = {}, uniqueRDS = args$shared.hyper) {
+    .optional.thinning <- function(DT) {
+        if (!interactive()) {
+            return(DT)
+        }
+        posterior::thin_draws(DT, thin = 5)
     }
     dot.cols <- c(".chain", ".iteration", ".draw")
     demo.cols <- c("SEX", "LOC", "AGEYRS")
 
     # extract age-specific draws from both ftp and allparts
-    if(!uniqueRDS){
-        draws_parts <- extract.p_predict(fit1, "parts") |> .optional.thinning() 
-        draws_ftp <- extract.p_predict(fit2, "ftp") |> .optional.thinning() 
+    if (!uniqueRDS) {
+        draws_parts <- extract.p_predict(fit1, "parts") |> .optional.thinning()
+        draws_ftp <- extract.p_predict(fit2, "ftp") |> .optional.thinning()
         draws_all <- posterior::bind_draws(draws_parts, draws_ftp) |> setDT()
-    }else{
+    } else {
         draws_all <- extract.p_predict(fit_all)
     }
     draws_all <- melt(draws_all,

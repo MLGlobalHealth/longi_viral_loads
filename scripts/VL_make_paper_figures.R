@@ -83,9 +83,8 @@ fetch.postprocessing.settings.from.args(args)
 
 # Census-eligible, participants, and smooth
 cols <- c("ROUND", "TYPE", "SEX", "AGEYRS", "ELIGIBLE", "ELIGIBLE_SMOOTH")
-ncen <- fread(path.census.eligible, select=cols ) |>
-    subset(ROUND %in% 16:19) |>
-    setnames("TYPE", "FC")
+dcens <- fread(path.census.eligible.aggregated)
+setnames(dcens, "LOC", "FC")
 ncen[, ROUND := as.integer(ROUND)]
 
 # HIV status and viral load among participants
@@ -110,25 +109,25 @@ filename_rds_contrib_agegroup        <- .fp("fullpop_allcontributions_byagegroup
 filename_rds_supphiv_agegroup        <- .fp("posterior_quantiles_suppression_agegroup.rds")
 filename_rds_supphiv_agegroup_custom <- .fp("posterior_quantiles_suppression_agegroup_custom.rds")
 
-djoint_agegroup         <- readRDS(filename_rds_prevalence_agegroup)
-dcontrib_agegroup       <- readRDS(filename_rds_contrib_agegroup)
-dsupp_agegroup          <- readRDS(filename_rds_supphiv_agegroup)
-dsupp_agegroup_custom   <- readRDS(filename_rds_supphiv_agegroup_custom)
+djoint_agegroup                      <- readRDS(filename_rds_prevalence_agegroup)
+dcontrib_agegroup                    <- readRDS(filename_rds_contrib_agegroup)
+dsupp_agegroup                       <- readRDS(filename_rds_supphiv_agegroup)
+dsupp_agegroup_custom                <- readRDS(filename_rds_supphiv_agegroup_custom)
 
 ######################
 # Google drive stuff #
 ######################
 
-if ( interactive()){
+if (interactive()) {
     library(googledrive)
-    drive_project_base <-'longivl_paper_figures' 
-    if( ! basename(out.dir) %in% drive_ls(drive_project_base)$name ){
-        drive_mkdir(name = basename(out.dir),path=drive_project_base, overwrite = FALSE)
-    }else{
+    drive_project_base <- "longivl_paper_figures"
+    if (!basename(out.dir) %in% drive_ls(drive_project_base)$name) {
+        drive_mkdir(name = basename(out.dir), path = drive_project_base, overwrite = FALSE)
+    } else {
         cat("GoogleDrive job directory already present\n")
     }
-    upload_to_googledrive <- function(path){
-        drive_upload( media=path, path = file.path(drive_project_base, basename(path)), overwrite = TRUE )
+    upload_to_googledrive <- function(path) {
+        drive_upload(media = path, path = file.path(drive_project_base, basename(path)), overwrite = TRUE)
     }
 }
 
@@ -146,11 +145,10 @@ catn("=== FIGURE 1 ===")
 ########################
 
 # only make this figure if ggsn package is installed (but still load files for later)
-dcontrib    <- .load.model.subset(filename_rds_contrib, MODEL == "run-gp-prevl" & ROUND == 19) |> prettify_labels()
-dprev       <- .load.model.subset(filename_rds_prevalence, MODEL == "run-gp-prevl" & ROUND == 19) |> prettify_labels()
+dcontrib <- .load.model.subset(filename_rds_contrib, MODEL == "run-gp-prevl" & ROUND == 19) |> prettify_labels()
+dprev    <- .load.model.subset(filename_rds_prevalence, MODEL == "run-gp-prevl" & ROUND == 19) |> prettify_labels()
 
 if (system.file(package = "ggsn") != "" && usr == "andrea") {
-
     stadia_api_key <- Sys.getenv("STADIA_API_KEY")
     ggmap::register_stadiamaps(stadia_api_key)
     # package_version("ggplot2")
@@ -158,67 +156,72 @@ if (system.file(package = "ggsn") != "" && usr == "andrea") {
     citation("ggmap")
     #  © Stadia Maps © Stamen Design © OpenMapTiles © OpenStreetMap contributor
 
-    fig1a_inset <- plot_all_maps(sizes=list(points=1, text=3))
+    fig1a_inset <- plot_all_maps(sizes = list(points = 1, text = 3))
     # fig1a_columns <- plot_all_maps(type="columns")
     # fig1a_columns_list <- plot_all_maps(type="columns", return_list=TRUE)
 
-    fig1b_h <- plot_paper_population_pyramid(layout="horizontal")
+    fig1b_h <- plot_paper_population_pyramid(layout = "horizontal")
 
     # fig_map_and_hist <- patchwork::wrap_plots(
-    #     plot_spacer(), 
+    #     plot_spacer(),
     #     fig1a_columns,
-    #     plot_spacer(), 
+    #     plot_spacer(),
     #     fig1b_v
     # ) + plot_layout(widths=c(-3,7, -3, 1))
 
-    if(0) {
+    if (0) {
         # alternative maps
         .byrow <- TRUE
-        fig1b_v_list <- plot_paper_population_pyramid(layout="vertical", return_list=TRUE)
+        fig1b_v_list <- plot_paper_population_pyramid(layout = "vertical", return_list = TRUE)
         fig_map_and_hist <- patchwork::wrap_plots(
             fig1a_columns_list[[1]] + nm_reqs,
             fig1a_columns_list[[2]] + nm_reqs + theme(legend.key.size = unit(0.05, "cm"), legend.spacing.x = unit(0.05, "cm")),
-            fig1b_v_list[[1]] + nm_reqs + labs(x="Age") + if(.byrow==FALSE){labs(y="")}else{NULL},
+            fig1b_v_list[[1]] + nm_reqs + labs(x = "Age") + if (.byrow == FALSE) {
+                labs(y = "")
+            } else {
+                NULL
+            },
             fig1b_v_list[[2]] + nm_reqs,
-            nrow = 2, 
+            nrow = 2,
             byrow = .byrow,
-            widths=c(1,1)
-        ) + plot_annotation(tag_levels = "a") 
+            widths = c(1, 1)
+        ) + plot_annotation(tag_levels = "a")
         filename <- "main_figure_mapandhist.pdf"
         cmd <- ggsave_nature(p = fig_map_and_hist, filename = filename, LALA = out.dir.figures, w = 18.5, h = 16)
     }
     # system(zathura2gthumb(cmd))
 
     # fig 1c
-    fig1c <- plot.figure.main.prevalence(subtitles=TRUE, size=9)
+    fig1c <- plot.figure.main.prevalence(subtitles = TRUE, size = 9)
     filename <- paste0("main_figure_hivprevalenceonly.pdf")
     cmd <- ggsave_nature(p = fig1c, filename = filename, LALA = out.dir.figures, w = 19.5, h = 16)
     # system(zathura2gthumb(cmd))
-    upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
-    }
-    # plot.figure.main.prevalence(subtitles=FALSE)
+    upload_to_googledrive(path = file.path(out.dir.figures, pdf2png(filename)))
+}
+# plot.figure.main.prevalence(subtitles=FALSE)
 
-    # fig1 <- {
-    #     fig1_top / fig1c
-    # } + plot_layout(heights = c(1, 2.7), widths = c(1, 1, 1)) &
-    #     theme(
-    #         legend.key.size = unit(3, "mm"),
-    #         legend.margin = margin(1.6, 1.6, 1.6, 1.6, unit = "mm"),
-    #     ) + t_nomargin
+# fig1 <- {
+#     fig1_top / fig1c
+# } + plot_layout(heights = c(1, 2.7), widths = c(1, 1, 1)) &
+#     theme(
+#         legend.key.size = unit(3, "mm"),
+#         legend.margin = margin(1.6, 1.6, 1.6, 1.6, unit = "mm"),
+#     ) + t_nomargin
 
-    ls_top <- list( nm_reqs, t_nomargin, theme(legend.key.size=unit(3, 'mm'), legend.position='none'))
-    ls <- list( scale_x_continuous(), scale_y_continuous(), nm_reqs, t_nomargin)
-    fig1_top <- (fig1a_inset | fig1b_h) + plot_layout(widths = c(1, 1))
-    fig1 <- ggarrange(
-        fig1_top + ls_top,
-        fig1c + ls,
-        nrow=2, heights=c(1,2), align="v" )
+ls_top <- list(nm_reqs, t_nomargin, theme(legend.key.size = unit(3, "mm"), legend.position = "none"))
+ls <- list(scale_x_continuous(), scale_y_continuous(), nm_reqs, t_nomargin)
+fig1_top <- (fig1a_inset | fig1b_h) + plot_layout(widths = c(1, 1))
+fig1 <- ggarrange(
+    fig1_top + ls_top,
+    fig1c + ls,
+    nrow = 2, heights = c(1, 2), align = "v"
+)
 
-    filename <- paste0("main_figure_populationcomposition.pdf")
-    cmd <- ggsave_nature(p = fig1, filename = filename, LALA = out.dir.figures, w = 19.5, h = 22)
-    system(gsub("zathura","inkscape",cmd))
-    # system(zathura2gthumb(cmd))
-    upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
+filename <- paste0("main_figure_populationcomposition.pdf")
+cmd <- ggsave_nature(p = fig1, filename = filename, LALA = out.dir.figures, w = 19.5, h = 22)
+system(gsub("zathura", "inkscape", cmd))
+# system(zathura2gthumb(cmd))
+upload_to_googledrive(path = file.path(out.dir.figures, pdf2png(filename)))
 
 # }
 
@@ -243,55 +246,59 @@ djoint <- {
         readRDS()
 }
 .null <- paper_statements_suppression_above_959595(djoint)
-.yl <- function() scale_y_continuous(limits=c(0, 1), expand=expansion(c(0,0)), labels=scales::label_percent() )
+.yl <- function() scale_y_continuous(limits = c(0, 1), expand = expansion(c(0, 0)), labels = scales::label_percent())
 
 fig2a <- list(
-    plot.main.suppression.among.plhiv(DT=djoint[LOC=='inland'] ,m=-5,joint=TRUE) + .yl() + labs(tag = "a"),
-    plot.main.suppression.among.plhiv(DT=djoint[LOC=='fishing'],m=-5,joint=TRUE)+ .yl() + labs(tag = "b")
-) |> ggarrange( plotlist=_, ncol=1, legend="bottom", common.legend = TRUE  )
+    plot.main.suppression.among.plhiv(DT = djoint[LOC == "inland"], m = -5, joint = TRUE) + .yl() + labs(tag = "a"),
+    plot.main.suppression.among.plhiv(DT = djoint[LOC == "fishing"], m = -5, joint = TRUE) + .yl() + labs(tag = "b")
+) |> ggarrange(plotlist = _, ncol = 1, legend = "bottom", common.legend = TRUE)
 fig2b <- list(
-    hist_prevalence_by_age_group_custom(dsupp_agegroup_custom[ LOC == 'inland']) +
-        theme(strip.text.x=element_text(color="white")) + .yl() + labs(y=NULL) + nm_reqs,
-    hist_prevalence_by_age_group_custom(dsupp_agegroup_custom[ LOC == 'fishing']) + 
-        theme(strip.text.x=element_text(color="white")) + .yl() + labs(y=NULL) + nm_reqs
-) |> ggarrange(plotlist=_,ncol=1, legend="bottom", common.legend = TRUE)
+    hist_prevalence_by_age_group_custom(dsupp_agegroup_custom[LOC == "inland"]) +
+        theme(strip.text.x = element_text(color = "white")) + .yl() + labs(y = NULL) + nm_reqs,
+    hist_prevalence_by_age_group_custom(dsupp_agegroup_custom[LOC == "fishing"]) +
+        theme(strip.text.x = element_text(color = "white")) + .yl() + labs(y = NULL) + nm_reqs
+) |> ggarrange(plotlist = _, ncol = 1, legend = "bottom", common.legend = TRUE)
 
 fig2new <- ggarrange(
-    fig2a, 
-    fig2b + theme(legend.position = "none"), 
-    ncol=2, 
-    widths = c(1.2, 1))
+    fig2a,
+    fig2b + theme(legend.position = "none"),
+    ncol = 2,
+    widths = c(1.2, 1)
+)
 filename <- paste0("main_figure_suppression_plhiv_r1619.pdf")
-cmd <- ggsave_nature(p = fig2new,
+cmd <- ggsave_nature(
+    p = fig2new,
     filename = filename,
     LALA = out.dir.figures,
-    w = 19, h = 16)
+    w = 19, h = 16
+)
 system(cmd)
-if(interactive()) 
-    upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
+if (interactive()) {
+    upload_to_googledrive(path = file.path(out.dir.figures, pdf2png(filename)))
+}
 
 ########################
 catn("=== FIGURE 3 ===")
 ########################
 
 dcens <- copy(ncen) |> setnames("FC", "LOC")
-if(0){
+if (0) {
     # Deprecated
-    fig3 <- plot_propofpop_of_viraemic_byagesex_stratbycommround(DT=djoint, colorby='ROUND_LAB', cri=TRUE)
+    fig3 <- plot_propofpop_of_viraemic_byagesex_stratbycommround(DT = djoint, colorby = "ROUND_LAB", cri = TRUE)
     dlabels <- labels_propofpop_of_viraemic_byagesex_stratbycommround()
     dtriangles <- point_propofpop_of_viraemic_byagesex_stratbycommround()
-    .f <- function(add_labels=FALSE, add_ages=FALSE){
+    .f <- function(add_labels = FALSE, add_ages = FALSE) {
         list(
-            if(add_labels)  geom_text(data=dlabels, aes(label=CELL), color="black", x=Inf, y=Inf, hjust=1, vjust=1),
-            if(add_ages)  geom_point(data=dtriangles, aes(x=M2, y=0), size=3, pch=17, alpha=.8), 
+            if (add_labels) geom_text(data = dlabels, aes(label = CELL), color = "black", x = Inf, y = Inf, hjust = 1, vjust = 1),
+            if (add_ages) geom_point(data = dtriangles, aes(x = M2, y = 0), size = 3, pch = 17, alpha = .8),
             NULL
-        ) -> out 
+        ) -> out
         out[!sapply(out, is.null)]
     }
-    fig3 <- fig3 + .f(add_ages=FALSE, add_labels=FALSE)
+    fig3 <- fig3 + .f(add_ages = FALSE, add_labels = FALSE)
     filename <- paste0("main_figure_profile_nonsuppressed.pdf")
     cmd <- ggsave_nature(p = fig3, filename = filename, LALA = out.dir.figures, w = 17, h = 16)
-    if(interactive()) upload_to_googledrive(path=file.path(out.dir.figures, pdf2png(filename)) )
+    if (interactive()) upload_to_googledrive(path = file.path(out.dir.figures, pdf2png(filename)))
 }
 
 ########################
@@ -347,7 +354,7 @@ plot_suppression2 <- {
     dprev_vir[, (c("M", "CU", "CL")) := lapply(.SD, function(x) 1 - x), .SDcols = c("M", "CL", "CU")]
 
 
-    figs_kate <- lapply(c("inland", "fishing"), function(x){
+    figs_kate <- lapply(c("inland", "fishing"), function(x) {
         plot_suppandcontrib(
             dprev_vir[LOC == x],
             dcontrib_vir[LOC == x],
@@ -356,22 +363,22 @@ plot_suppression2 <- {
             CrI = TRUE,
             sec_axis_scale = .08,
             UNAIDS = FALSE
-        ) |> annotate_figure(top = text_grob( community_dictionary$longest2[x], size = 9))
+        ) |> annotate_figure(top = text_grob(community_dictionary$longest2[x], size = 9))
     })
     legend <- plot_suppandcontrib(
         dprev_vir[LOC == "inland"],
         dcontrib_vir[LOC == "inland"],
         reqs = nm_reqs,
-        legend="return"
+        legend = "return"
     )
     # Combine them together
-    { 
-        figs_kate[[1]] / plot_spacer()  /
-        figs_kate[[2]] / plot_spacer()  /
-        legend         
-    } + plot_layout( heights = c(1, -.05, 1, -.05, .05), widths = c(0.01, 1, 0.01))
+    {
+        figs_kate[[1]] / plot_spacer() /
+            figs_kate[[2]] / plot_spacer() /
+            legend
+    } + plot_layout(heights = c(1, -.05, 1, -.05, .05), widths = c(0.01, 1, 0.01))
 }
-plot_suppression2 <- plot_spacer() + plot_suppression2 + plot_spacer() + plot_layout(nrow=1, widths = c(-.05, 1, -.05))
+plot_suppression2 <- plot_spacer() + plot_suppression2 + plot_spacer() + plot_layout(nrow = 1, widths = c(-.05, 1, -.05))
 
 
 # if(0){
@@ -380,26 +387,26 @@ plot_suppression2 <- plot_spacer() + plot_suppression2 + plot_spacer() + plot_la
 #     cmd <- ggsave_nature(p = plot_suppression2, filename = "whopepfar_suppression_comms.pdf", LALA = out.dir.figures, w = 30 , h = 23)
 #     # system(cmd)
 # }
-# 
-fig3b <- if( TRUE ){
-    subset(djoint, MODEL=="run-gp-supp-pop" & ROUND %in% c(16, 19)) |> 
+#
+fig3b <- if (TRUE) {
+    subset(djoint, MODEL == "run-gp-supp-pop" & ROUND %in% c(16, 19)) |>
         make_figure_3b(facet_var = "SEX_LAB", timesviraemia = TRUE)
-}else{
+} else {
     dcontrib_vir1619 <- .load.model.subset(
         filename_rds_contrib,
-        MODEL == "run-gp-supp-pop" & ROUND %in%  c(16, 19)
+        MODEL == "run-gp-supp-pop" & ROUND %in% c(16, 19)
     ) |> prettify_labels()
-    make_figure_3b(DT=dcontrib_vir1619, facet_var = "SEX_LAB", timesviraemia = FALSE)
+    make_figure_3b(DT = dcontrib_vir1619, facet_var = "SEX_LAB", timesviraemia = FALSE)
 }
 
-fig3_bottom <- (plot_spacer() | fig3b | plot_spacer() ) + plot_layout(ncol=3, widths = c(.001, 1, .002) )
+fig3_bottom <- (plot_spacer() | fig3b | plot_spacer()) + plot_layout(ncol = 3, widths = c(.001, 1, .002))
 # (fig3_top / plot_spacer() / fig3_bottom)  + plot_layout(ncol=1, heights=c(1,-.1, .44))
 fig3_redo <- ggarrange(plot_suppression2, fig3_bottom, ncol = 1, heights = c(1, .5))
 
 cmd <- ggsave_nature(
     p = fig3_redo,
     filename = "main_figure_suppression_redo.pdf",
-    LALA = out.dir.figures, w = 18 , h = 24
+    LALA = out.dir.figures, w = 18, h = 24
 )
 # system(cmd)
 
@@ -470,10 +477,11 @@ write.to.googlesheets(tab, sheet = "SuppTable2")
 catn("Some CROI stuff")
 ########################
 
-p <- plot.pyramid.eligible.participants(DT=ncen[ROUND==19], part=FALSE)
+p <- plot.pyramid.eligible.participants(DT = ncen[ROUND == 19], part = FALSE)
 cmd <- ggsave2(
-    p = p +  theme(legend.position="none") + labs(x="", y=""),   
+    p = p + theme(legend.position = "none") + labs(x = "", y = ""),
     file = "CROI_pyramid_eligible.pdf",
     LALA = out.dir.figures,
-    w = 15, h = 7.5, u="cm")
+    w = 15, h = 7.5, u = "cm"
+)
 system(zathura2gthumb(cmd))

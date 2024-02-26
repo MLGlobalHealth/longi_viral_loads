@@ -89,9 +89,9 @@ if ( exists("indir.deepdata") && dir.exists(indir.deepdata) ){
     path.census.eligible <- file.path(gitdir.data, 'census_eligible_individuals_230514.csv')
 
     # OLD NAMES
-    path.aggregated.nums.denoms.r1619 <- file.path(indir.deepdata.r1520,"RCCS_aggregated_nums_denoms.csv")
+    # path.aggregated.nums.denoms.r1619 <- file.path(indir.deepdata.r1520,"RCCS_aggregated_nums_denoms.csv")
     # path.participation.rates <- file.path(gitdir.data, "participation_rates_230517.rds")
-    path.participation.rates <- file.path(gitdir.data,  "participation_rates_240214.rds")
+    # path.participation.rates <- file.path(gitdir.data,  "participation_rates_240214.rds")
     # path.census.eligible.aggregated <- file.path(gitdir.data, "RCCS_census_eligible_aggregated.csv")
     # path.comm.censsize <- file.path(gitdir.data, 'censsize_by_community.rds')
 }
@@ -101,23 +101,21 @@ if ( exists("indir.deepdata") && dir.exists(indir.deepdata) ){
 # files to share #
 ##################
 
-if (indir.zenodo != "TODO") {
+if (indir.zenodo != "PATH-TO-DOWNLOADED-ZENODO-DATA") {
     indir.zenodo.data <- file.path(indir.zenodo, 'data')
     indir.zenodo.results <- file.path(indir.zenodo, 'results')
 
     path.aggregated.nums.denoms.r1619 <- file.path(indir.zenodo.data, "RCCS_aggregated_nums_denoms.csv")
-    # path.participation.rates <- file.path(indir.zenodo.data,  "participation_rates_230517.rds")
     path.participation.rates <- file.path(indir.zenodo.data,  "participation_rates_240214.rds")
     path.census.eligible.aggregated <- file.path(indir.zenodo.data,  "RCCS_census_eligible_aggregated.csv")
     path.comm.censsize <- file.path(indir.zenodo.data,  'censsize_by_community.rds')
-
 }
+
 #####################
 #     stan args     #
 #####################
 
 path.stan.config <- file.path(gitdir.stan, 'binomial_gp_config.yml')
-path.stan.config <- fifelse(usr == "andrea" & interactive(),
-    yes = file.path(gitdir.stan, 'binomial_gp_config_local.yml'),
-    no = file.path(gitdir.stan, 'binomial_gp_config.yml'),
-)
+if( usr == "andrea" & interactive() ){
+    path.stan.config  <- file.path(gitdir.stan, 'binomial_gp_config_local.yml')
+}

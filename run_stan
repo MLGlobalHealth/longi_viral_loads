@@ -10,7 +10,7 @@ if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "--help" ]]; then
     echo "    VL            : viremic viral load threshold                                    [default: 1000]"
     echo "    FTP           : subset to first-time participants or not                        [default: FALSE]"
     echo "    STANWAY       : either (r)stan or cmdstan                                       [default: cmdstan]"
-    echo "    ALPHA         : sd for alpha prior in GP                                        [default: 1]"
+    echo "    ALPHA         : sd for alpha prior in GP                                        [default: 1.00]"
     echo "    SHARE         : share hyperpars for FTP and ALL?                                [default: TRUE]"
     echo "    LOCAL         : run the analysis locally?                                       [default: TRUE]"
     echo "    MODELS        : models to be run hyperpars (run-gp-{prevl,supp-pop,supp-hiv})   [default: ALL]"
@@ -35,10 +35,11 @@ done
 # default options
 VL="${VL:-1000}" 
 FTP="${FTP:-FALSE}"
-ALPHA="${ALPHA:-1}"
+ALPHA="${ALPHA:-1.00}"
 SHARE="${SHARE:-TRUE}"
 REFIT="${REFIT:-FALSE}"
 STANWAY="${STANWAY:-cmdstan}"
+CONFIDENTIAL="${CONFIDENTIAL:-FALSE}"
 INDIR="${INDIR:-$ABSOLUTE_PATH}"
 OUTDIR="${OUTDIR:-/rds/general/user/ab1820/home/projects/2022/longvl}"
 LOCAL="${LOCAL:-TRUE}"
@@ -169,7 +170,7 @@ Rscript \$INDIR/scripts/VL_run_$STANWAY.R \\
     --round \$ROUND \\
     --firstpart $FTP \\
     --refit $REFIT \\
-    --shared-hyper $SHARE
+    --shared-hyper $SHARE \\
     --confidential $CONFIDENTIAL
 
 echo "-------------"
