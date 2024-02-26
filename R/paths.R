@@ -28,17 +28,17 @@ if(usr=='andrea') {
     indir.zenodo <- "TODO"
 }
 
-if( usr == "andrea" | usr == "ab1820"){
-    dir.exists(c(indir.deepdata, indir.deepsequence_analyses)) |> 
-        all() |> 
-        stopifnot("Input data directories could not be found in paths.R"=_)
-}
-
 # simplify sourcing of all R/*.R helpers
 R_scripts <- list.files( gitdir.R, pattern = "\\.R$", full.names = TRUE)
 R_scripts <- R_scripts[! R_scripts %like% 'test_palettes.R|local_cores_parallelisation.R|paths.R']
 for (path in R_scripts)
-    source(file=path)
+source(file=path)
+
+if( args$confidential ){
+    dir.exists(c(indir.deepdata, indir.deepsequence_analyses)) |> 
+        all() |> 
+        stopifnot("Input data directories could not be found in paths.R"=_)
+}
 
 ##############################
 # proceed to all definitions #
