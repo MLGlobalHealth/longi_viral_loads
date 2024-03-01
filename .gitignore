@@ -43,6 +43,7 @@ submission/
 tests/
 
 reports/deprecated/
+reports/
 
 src/process_data.R
 src/get_newly_registered.R
