@@ -95,10 +95,10 @@ if (file.exists(path.census.eligible.aggregated)){
 dcens[, AGEGROUP := split.agegroup(AGEYRS)]
 
 # load number of census-eligible individuals (.50 too rough)
-# not sure if needed ...
-# dpartrates <- readRDS(path.participation.rates) |>
-#     subset(select = c("ROUND", "FC", "SEX", "AGEYRS", "PARTRATE_SMOOTH.25")) |>
-#     setnames(c("FC", "PARTRATE_SMOOTH.25"), c("LOC", "PARTRATE"))
+# Definitely needed!
+dpartrates <- readRDS(path.participation.rates) |>
+    subset(select = c("ROUND", "FC", "SEX", "AGEYRS", "PARTRATE_SMOOTH.25")) |>
+    setnames(c("FC", "PARTRATE_SMOOTH.25"), c("LOC", "PARTRATE"))
 
 ####################################################
 catn("=== Compare model fits among FTP and ALL ===")
@@ -347,6 +347,49 @@ if (make_tables) {
     tmp[,  CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE)]
     tmp[, dcast(.SD, ROUND ~ SEX, value.var="CELL") , by=c( "MODEL", "LOC")]
 }
+
+catn("gender-folds in HIV and viraemia prevalences")
+# __________________________________________________
+
+filename_rds <- file.path(out.dir.tables, "posterior_gender_folds_prevalences.rds")
+
+if (file.exists(filename_rds) & !overwrite) {
+    dfolds_prevalence <- readRDS(filename_rds)
+} else {
+    dfolds_prevalence <- dfiles_rds[MODEL != "run-gp-supp-hiv",
+        {
+            eval(expr_setup_ftp_all)
+            get.weighted.average.p_predict(
+                fit1 = readRDS(paths[idx.all]),
+                fit2 = readRDS(paths[idx.ftp]),
+                fit_all = readRDS(paths),
+                round = unique(ROUND),
+                expression_prereturn = {
+                    # use grouping sets instead of standard 'by' to allow for sex-totals
+                    by_cols <- c(dot.cols, "LOC", "SEX", "AGEGROUP")
+                    tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
+                    tmp <- groupingsets(tmp,
+                        by = by_cols,
+                        j = list(N = sum(joint * ELIGIBLE_SMOOTH), NE = sum(ELIGIBLE_SMOOTH)),
+                        sets = list(by_cols, setdiff(by_cols, "AGEGROUP"), setdiff(by_cols, c("AGEGROUP", "SEX")))
+                    )
+                    tmp[, prev := N / NE]
+                    tmp[ is.na(AGEGROUP) & !is.na(SEX), 
+                        .(fold = prev[SEX=="F"]/prev[SEX=="M"]),
+                    by=c(dot.cols, "LOC")][, quantile2(fold), by="LOC"]
+                }
+            )
+        }, by = c("MODEL", "ROUND")
+    ]
+    dfolds_prevalence[is.na(AGEGROUP), AGEGROUP := "Total"]
+    dfolds_prevalence[is.na(SEX), SEX := "Total"]
+    saveRDS(object = dfolds_prevalence, filename_rds)
+}
+
+if(make_tables){
+    .null <- paper_statements_gender_prevl_fold(DT=dfolds_prevalence)
+}
+
 
 catn("Get quantiles for population prevalences aggregated over age")
 # ___________________________________________________________

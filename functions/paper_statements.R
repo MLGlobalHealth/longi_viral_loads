@@ -390,3 +390,17 @@ make.table.first.time.participants <- function(DT=check_r1619, splitrow=TRUE){
     xtable(out) |> print()
     return(out)
 }
+
+paper_statements_gender_prevl_fold <- function(DT = dfolds_prevalence, rounds=19){
+    dtable <- subset(DT, ROUND == rounds & MODEL %like% "prevl")
+    dtable[, CELL := prettify_cell(M, CL, CU, precision=2) ]
+    fmt <- "In %s communities, HIV prevalence among women was %s fold higher than among men\n"
+    if (length(rounds) == 1){
+        sprintf( "In round %s...\n", rounds) |> cat()
+        dtable[, sprintf(fmt, LOC, CELL) |> cat(), by=c("LOC", "ROUND")]
+    }else if(length(rounds) > 1){
+        fmt <- paste0("In round %s and ", fmt)
+        dtable[, sprintf(fmt, ROUND, LOC, CELL) |> cat(), by=c("LOC", "ROUND")]
+    }
+    return(dtable)
+}
