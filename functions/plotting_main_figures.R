@@ -50,7 +50,7 @@ plot.all.gps <- function(loc = "fishing") {
             theme_default() +
             labs(
                 x = "\nage at visit (years)",
-                y = "HIV prevalence\n(95% credible interval)",
+                y = "HIV seroprevalence\n(95% credible interval)",
                 pch = "gender", fill = "gender", color = "gender",
                 size = "population size"
             )
@@ -1136,7 +1136,7 @@ plot_2yaxis_hist_lines <- function(DThist, DTline, sec_name = "Contribution of e
         scale_fill_manual(values = palettes$sex, labels = sex_dictionary2) +
         scale_color_manual(values = palettes$sex, labels = sex_dictionary2) +
         facet_grid(. ~ LOC_LAB) +
-        my_labs(y = "HIV prevalence within each age band\n(orange bars, left y-axis)") +
+        my_labs(y = "HIV seroprevalence within each age band\n(orange bars, left y-axis)") +
         theme_default() +
         NULL
 }
@@ -1184,21 +1184,21 @@ plot_prevalenceandcontrid <- function(DTprev,
         .M.intcode <- as.integer(.sex_lab == "Male") + 1
 
         # rescale 2nd y-axis
-        DT[LABEL == "Contribution to HIV prevalence", c("M", "CL", "CU") := {
+        DT[LABEL == "Contribution to HIV seroprevalence", c("M", "CL", "CU") := {
             stopifnot("probably wrong label" = .N > 0)
             .(M / .sec_axis_scale, CL / .sec_axis_scale, CU / .sec_axis_scale)
         }]
 
         # relabel
         tmp_labs <- c(
-            `HIV prevalence` = "HIV prevalence within each age group\n(orange bars, left y-axis)",
-            `Contribution to HIV prevalence` = sec_name
+            `HIV seroprevalence` = "HIV seroprevalence within each age group\n(orange bars, left y-axis)",
+            `Contribution to HIV seroprevalence` = sec_name
         )
         DT[, LABEL2 := tmp_labs[LABEL]]
         DT[, LABEL2 := factor(LABEL2, levels = tmp_labs, ordered = TRUE)]
 
-        DTline <- subset(DT, LABEL == "Contribution to HIV prevalence")
-        DThist <- subset(DT, LABEL == "HIV prevalence")
+        DTline <- subset(DT, LABEL == "Contribution to HIV seroprevalence")
+        DThist <- subset(DT, LABEL == "HIV seroprevalence")
         .breaks <- c(unique(DThist$LABEL2), unique(DTline$LABEL2))
         # return(DThist[,range(M)])
 
@@ -1240,7 +1240,7 @@ plot_prevalenceandcontrid <- function(DTprev,
                 labeller = labeller(LOC_LAB = .loc_labeller, SEX_LAB = sex_dictionary2, .multi_line = FALSE)
             ) +
             my_labs(
-                y = list("HIV prevalence within each age band\n(orange bars, left y-axis)", NULL)[[.M.intcode]],
+                y = list("HIV seroprevalence within each age band\n(orange bars, left y-axis)", NULL)[[.M.intcode]],
                 x = NULL,
                 color = "",
                 fill = ""
@@ -1256,8 +1256,8 @@ plot_prevalenceandcontrid <- function(DTprev,
     }
 
     # bind
-    DTprev[, LABEL := "HIV prevalence"]
-    DTcontrib[, LABEL := "Contribution to HIV prevalence"]
+    DTprev[, LABEL := "HIV seroprevalence"]
+    DTcontrib[, LABEL := "Contribution to HIV seroprevalence"]
     DT <- rbind(DTprev, DTcontrib)
     prettify_labels(DT)
 
@@ -1937,7 +1937,7 @@ plot.proposed.metric <- function() {
         scale_x_continuous(expand = expansion(mult = c(0, 0))) +
         scale_y_percentagef(.1) +
         theme_default() +
-        my_labs(y = "Gender- and age- specific prevalence of viraemia over population HIV prevalence") +
+        my_labs(y = "Gender- and age- specific prevalence of viraemia over population HIV seroprevalence") +
         nm_reqs
 }
 
@@ -1991,7 +1991,7 @@ hist_prevalence_by_age_group_custom <- function(DT, reverse = TRUE, round = 19, 
 
 aggregate_posterior_fits <- function(model, filename_fmt) {
     .ylabs <- fcase(
-        model %like% "prevl", "HIV prevalence",
+        model %like% "prevl", "HIV seroprevalence",
         model %like% "supp-hiv",
         "Proportion of individuals living with HIV who have suppressed virus",
         model %like% "supp-pop",

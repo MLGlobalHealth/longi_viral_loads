@@ -223,7 +223,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
             prev.hiv.by.age[PTYPE == "ftp"],
             DT2=ppDT[PTYPE == "ftp"],
             ylims = c(0,.75),
-            ylab="HIV prevalence (95% credible intervals)"
+            ylab="HIV seroprevalence (95% credible intervals)"
         )
         filenames <- paste0("hivprevalence_vs_age_by_gender_fishinland_ftp_",c("", "data_"),"gp_round", round, ".pdf")
         ggsave2(plots_ftp[[1]], file = filenames[[1]], w = 6, h = 5)
@@ -233,7 +233,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
             prev.hiv.by.age[PTYPE == "all"],
             DT2=ppDT[PTYPE == "all"],
             ylims = c(0,.75),
-            ylab="HIV prevalence (95% credible intervals)"
+            ylab="HIV seroprevalence (95% credible intervals)"
         )
         filenames <- paste0("hivprevalence_vs_age_by_gender_fishinland_all_",c("", "data_"),"gp_round", round, ".pdf")
         ggsave2(plots_all[[1]], file = filenames[[1]], w = 6, h = 5)
@@ -266,7 +266,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
 
         draws_wholepop <- get.draws.wholepop(DRAWS=draws, DPART=dpartrates[ROUND==round])
         quants_wholepop <- draws_wholepop[, quantile2(P), by=c("AGE_LABEL", "SEX_LABEL", "LOC_LABEL")] 
-        p <- plot.quantiles.wholepop(quants_wholepop, ylab="HIV prevalence (95% credible intervals)")
+        p <- plot.quantiles.wholepop(quants_wholepop, ylab="HIV seroprevalence (95% credible intervals)")
         filename <- paste0("hivprevalence_vs_age_by_gender_fishinland_joint_round", round, ".pdf")
         cmd <- ggsave2(p, file = filename, w = 9, h = 6)
 
@@ -309,7 +309,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan.hyper <- function(
 
         p <- .plot.stan.fit.ratio(
             prevratio.hiv.by.loc.age[variable == "PR_FM"],
-            ylab = "female to male HIV prevalence ratio\n(95% credible interval)\n"
+            ylab = "female to male HIV seroprevalence ratio\n(95% credible interval)\n"
         ) + facet_grid( LOC_LABEL ~ PTYPE, scales="free_y")
         filename <- paste0("fit_hivprevalenceratio_vs_age_by_fishinland_stan_round", round, ".pdf")
         ggsave2(p, file = filename, w = 8, h = 8)

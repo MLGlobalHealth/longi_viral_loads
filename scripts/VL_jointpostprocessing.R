@@ -126,10 +126,10 @@ if (make_plots & !args$shared.hyper) {
 
     for (round in 16:19) {
         catn("Round:", round)
-        # plot HIV prevalence; estimates are similar but ofc more wiggly in ftp
+        # plot HIV seroprevalence; estimates are similar but ofc more wiggly in ftp
         prev.hiv.by.age <- rbind.ftpstatus.datatables.by.round("prev.hiv.by.age", round, envir_list = env_list)
-        # g1 <- prev.hiv.by.age |> plot.comparison.ftptype.colsex(ylab = "HIV prevalence")
-        p1 <- prev.hiv.by.age |> plot.comparison.ftptype.colftp(ylab = "HIV prevalence")
+        # g1 <- prev.hiv.by.age |> plot.comparison.ftptype.colsex(ylab = "HIV seroprevalence")
+        p1 <- prev.hiv.by.age |> plot.comparison.ftptype.colftp(ylab = "HIV seroprevalence")
         filename <- paste0("fit_hivprev_byftpstatus_round", round, ".pdf")
         ggsave2(p = p1, file = filename, LALA = out.dir.figures, w = 9, h = 8)
         # suppression among infected: again similar, no significant differences except for 'olde'
@@ -1449,7 +1449,7 @@ if (make_tables) {
 }
 
 if (make_tables) {
-    ## age-aggregated HIV prevalence by sex, round, loc
+    ## age-aggregated HIV seroprevalence by sex, round, loc
     # tab <- make.table.Nhivpositive (DT=joint_ageagrr_list$round_totals, DC=dcens)
     # filename_overleaf <- file.path(out.dir.tables, "overleaf_ageaggr_hivprev.rds")
 

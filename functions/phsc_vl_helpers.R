@@ -602,7 +602,7 @@ vl.vlprops.by.comm.gender.loc <- function(DT, write.csv = FALSE) {
     # get.community types
     dcomm <- get.dcomm()
 
-    # calculate HIV prevalence and proportion not suppressed of HIV+ by community and gender
+    # calculate HIV seroprevalence and proportion not suppressed of HIV+ by community and gender
     .f <- function(x, y) {
         as.vector(unname(binconf(sum(x), length(y))))
     }
@@ -797,7 +797,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT=vla, refit = FALSE, vl.out.dir
             theme(legend.position = "bottom") +
             labs(
                 x = "\nage at visit (years)",
-                y = "HIV prevalence (95% credible interval)\n",
+                y = "HIV seroprevalence (95% credible interval)\n",
                 colour = "gender", fill = "gender"
             )
 
@@ -884,7 +884,7 @@ vl.prevalence.by.gender.loc.age.gp <- function(DT=vla, refit = FALSE, vl.out.dir
             theme_bw() +
             labs(
                 x = "\nage at visit (years)",
-                y = "female to male HIV prevalence ratio\n(95% credible interval)\n"
+                y = "female to male HIV seroprevalence ratio\n(95% credible interval)\n"
             )
 
         filename <- paste0("220729_hivprevalenceratio_vs_age_by_fishinland_stan_round", round, ".pdf")
@@ -2301,7 +2301,7 @@ vl.vlrunningprops.by.gender.loc.age.round <- function(DT) {
     DT <- .preprocess.ds.oli(DT)
     ans <- .preprocess.make.vla.2(DT)
 
-    # HIV prevalence
+    # HIV seroprevalence
     # ______________
 
     p <- ggplot(ans) +
@@ -2316,7 +2316,7 @@ vl.vlrunningprops.by.gender.loc.age.round <- function(DT) {
         theme(legend.position = "bottom") +
         labs(
             x = "\nage at visit (years)",
-            y = "HIV prevalence (95% CI)\n",
+            y = "HIV seroprevalence (95% CI)\n",
             colour = "gender", fill = "gender", linetype = "location",
             title = "Rolling average prevalence estimates"
         )
@@ -2338,7 +2338,7 @@ vl.vlrunningprops.by.gender.loc.age.round <- function(DT) {
         theme_bw() +
         theme(legend.position = "bottom") +
         labs(
-            title = "HIV prevalence: rolling average estimates",
+            title = "HIV seroprevalence: rolling average estimates",
             x = "\nage at visit (years)",
             y = "proportion unsuppressed HIV (95% CI)\n",
             colour = "gender", fill = "gender", linetype = "location"

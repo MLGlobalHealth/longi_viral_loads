@@ -331,7 +331,7 @@ vl.vlprops.by.comm.gender.loc <- function(DT, write.csv = FALSE) {
     # get.community types
     dcomm <- .get.dcomm()
 
-    # calculate HIV prevalence and proportion not suppressed of HIV+ by community and gender
+    # calculate HIV seroprevalence and proportion not suppressed of HIV+ by community and gender
     .f <- function(x, y) {
         as.vector(unname(binconf(sum(x), length(y))))
     }
@@ -536,7 +536,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
             prev.hiv.by.age, 
             DT2=ppDT,
             ylims = c(0,.75),
-            ylab="HIV prevalence (95% credible intervals)")
+            ylab="HIV seroprevalence (95% credible intervals)")
 
         filenames <- paste0("hivprevalence_vs_age_by_gender_fishinland_",c("", "data_"),"gp_round", round, ".pdf")
 
@@ -595,7 +595,7 @@ vl.prevalence.by.gender.loc.age.gp.cmdstan <- function(
 
         p <- .plot.stan.fit.ratio(
             prevratio.hiv.by.loc.age[variable == "PR_FM"],
-            ylab = "female to male HIV prevalence ratio\n(95% credible interval)\n"
+            ylab = "female to male HIV seroprevalence ratio\n(95% credible interval)\n"
         )
 
         filename <- paste0("fit_hivprevalenceratio_vs_age_by_fishinland_stan_round", round, ".pdf")

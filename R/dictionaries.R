@@ -89,35 +89,35 @@ community_dictionary <- list(
         `Inland, Round 19` = "Inland, Round 19\nJun 2018 to May 2019"
     ),
     longest = c(
-        "F" = "Fishing communities with high HIV prevalence",
-        "I" = "Inland communities with typical HIV prevalence",
-        "fishing" = "Fishing communities with high HIV prevalence",
-        "inland" = "Inland communities with typical HIV prevalence",
-        "Fishing" = "Fishing communities with high HIV prevalence",
-        "Inland" = "Inland communities with typical HIV prevalence"
+        "F" = "Fishing communities with high HIV seroprevalence",
+        "I" = "Inland communities with typical HIV seroprevalence",
+        "fishing" = "Fishing communities with high HIV seroprevalence",
+        "inland" = "Inland communities with typical HIV seroprevalence",
+        "Fishing" = "Fishing communities with high HIV seroprevalence",
+        "Inland" = "Inland communities with typical HIV seroprevalence"
     ),
     longestn = c(
-        "F" = "Fishing communities\nwith high HIV prevalence",
-        "I" = "Inland communities\nwith typical HIV prevalence",
-        "fishing" = "Fishing communities\nwith high HIV prevalence",
-        "inland" = "Inland communities\nwith typical HIV prevalence",
-        "Fishing" = "Fishing communities\nwith high HIV prevalence",
-        "Inland" = "Inland communities\nwith typical HIV prevalence"
+        "F" = "Fishing communities\nwith high HIV seroprevalence",
+        "I" = "Inland communities\nwith typical HIV seroprevalence",
+        "fishing" = "Fishing communities\nwith high HIV seroprevalence",
+        "inland" = "Inland communities\nwith typical HIV seroprevalence",
+        "Fishing" = "Fishing communities\nwith high HIV seroprevalence",
+        "Inland" = "Inland communities\nwith typical HIV seroprevalence"
     ),
     longest2 = c(
-        "I" = "Inland communities with HIV prevalence typical of rural and semi-urban East Africa",
+        "I" = "Inland communities with HIV seroprevalence typical of rural and semi-urban East Africa",
         "F" = "Hyperendemic Lake Victoria fishing communities",
-        "inland" = "Inland communities with HIV prevalence typical of rural and semi-urban East Africa",
+        "inland" = "Inland communities with HIV seroprevalence typical of rural and semi-urban East Africa",
         "fishing" = "Hyperendemic Lake Victoria fishing communities",
-        "Inland" = "Inland communities with HIV prevalence typical of rural and semi-urban East Africa",
+        "Inland" = "Inland communities with HIV seroprevalence typical of rural and semi-urban East Africa",
         "Fishing" = "Hyperendemic Lake Victoria fishing communities"
     ),
     longest2n = c(
-        "I" = "Inland communities with HIV prevalence\ntypical of rural and semi-urban East Africa",
+        "I" = "Inland communities with HIV seroprevalence\ntypical of rural and semi-urban East Africa",
         "F" = "Hyperendemic Lake Victoria\nfishing communities",
-        "inland" = "Inland communities with HIV prevalence typical\nof rural and semi-urban East Africa",
+        "inland" = "Inland communities with HIV seroprevalence typical\nof rural and semi-urban East Africa",
         "fishing" = "Hyperendemic Lake Victoria\nfishing communities",
-        "Inland" = "Inland communities with HIV prevalence typical\nof rural and semi-urban East Africa",
+        "Inland" = "Inland communities with HIV seroprevalence typical\nof rural and semi-urban East Africa",
         "Fishing" = "Hyperendemic Lake Victoria\nfishing communities"
     ),
     none = c(
@@ -137,7 +137,7 @@ community_dictionary <- list(
         "Inland" = NULL
     )
 
-    # I would probably try "Fishing communities with high HIV prevalence", "Inland communities with typical/more moderate HIV prevalence"
+    # I would probably try "Fishing communities with high HIV seroprevalence", "Inland communities with typical/more moderate HIV seroprevalence"
 )
 
 ptype_dict = c(
@@ -173,7 +173,7 @@ loc_dictionary <- c(
 model_dictionary <- c(
     "run-gp-supp-hiv" = "Prevalence of viral suppression among HIV positive individuals",
     "run-gp-supp-pop" = "Prevalence of viraemia",
-    "run-gp-prevl" = "HIV prevalence"
+    "run-gp-prevl" = "HIV seroprevalence"
 )
 
 round_dictionary <- c(
@@ -254,7 +254,7 @@ postproc_dictionaries <- list(
 )
 
 model_dict <- c(
-    `run-gp-prevl` = "HIV prevalence",
+    `run-gp-prevl` = "HIV seroprevalence",
     `run-gp-supp-hiv` = "Prevalence of suppression among HIV positive",
     `run-gp-supp-pop` = "Prevalence of viraemia"
 )
@@ -280,7 +280,7 @@ my_labs_dictionary <- c(
     LOESS_SPAN = "Loess span",
     PARTRATE = "Participation rate",
     PART_RATE = "Participation rate",
-    PHIV_MEAN = "HIV prevalence",
+    PHIV_MEAN = "HIV seroprevalence",
     PTYPE = "Participant type",
     PVLNS_MEAN = "Prevalence of viraemia among population",
     PVLNSofHIV_MEAN = "Prevalence of viraemia among HIV infected",

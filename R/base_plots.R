@@ -208,8 +208,8 @@ palettes <- list(
         inland = "#9C964A",
         Fishing = "#9ac0cd",
         Inland = "#9C964A",
-        `Fishing communities with high HIV prevalence` = "#9ac0cd",
-        `Inland communities with typical HIV prevalence` = "#9C964A",
+        `Fishing communities with high HIV seroprevalence` = "#9ac0cd",
+        `Inland communities with typical HIV seroprevalence` = "#9C964A",
         `Fishing, Round 16` = "#0056E0",
         `Fishing, Round 19` = "#9ac0cd", #
         `Inland, Round 16` = "brown",

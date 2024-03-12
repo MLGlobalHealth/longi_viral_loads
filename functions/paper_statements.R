@@ -32,7 +32,7 @@ paper_statements_overall_prevalence <- function(DT=djoint_agegroup, round=19){
 
     tmp[ROUND == round & SEX == "Total", {
         sprintf(
-            "In round %s, HIV prevalence was estimated to be:\n - %s in inland\n - %s in fishing\n",
+            "In round %s, HIV seroprevalence was estimated to be:\n - %s in inland\n - %s in fishing\n",
             unique(ROUND), CELL[ LOC == 'inland'], CELL[ LOC == 'fishing']
         ) |> cat()
         NULL
@@ -394,7 +394,7 @@ make.table.first.time.participants <- function(DT=check_r1619, splitrow=TRUE){
 paper_statements_gender_prevl_fold <- function(DT = dfolds_prevalence, rounds=19){
     dtable <- subset(DT, ROUND == rounds & MODEL %like% "prevl")
     dtable[, CELL := prettify_cell(M, CL, CU, precision=2) ]
-    fmt <- "In %s communities, HIV prevalence among women was %s fold higher than among men\n"
+    fmt <- "In %s communities, HIV seroprevalence among women was %s fold higher than among men\n"
     if (length(rounds) == 1){
         sprintf( "In round %s...\n", rounds) |> cat()
         dtable[, sprintf(fmt, LOC, CELL) |> cat(), by=c("LOC", "ROUND")]

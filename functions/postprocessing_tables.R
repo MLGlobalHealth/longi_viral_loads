@@ -199,7 +199,7 @@ make_main_table_contributions <- function(
     }
     setnames(ncen_agegroup, "ELIGIBLE_CELL", "Census-eligible\nindividuals in\neach age group" %+% endings["N"])
     if( longname ){
-        setnames(r19_hivprev, "CELL", "HIV prevalence in age band" %+% endings["p"])
+        setnames(r19_hivprev, "CELL", "HIV seroprevalence in age band" %+% endings["p"])
         setnames(r19_prop_unsupp, "CELL", "Proportion of census-eligible individuals\nwho are unsuppressed in age  band" %+% endings["p"])
         setnames(r19_supphiv, "CELL", "Proportion of people\nliving with HIV\nexhibiting viraemia in\neach age group" %+% endings["p"])
     }else{
