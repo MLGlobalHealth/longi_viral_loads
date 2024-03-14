@@ -64,7 +64,7 @@ opts_vec <- c(
 )
 args <- args[names(args) %in% opts_vec]
 # testing
-if (interactive() & usr=="andrea" ) {
+if (interactive() & usr == "andrea") {
     # args$jobname <- "vl_1000_firstpart"
     args$jobname <- "cmdstan_alpha100sharedhyper_vl_1000"
     args$out.dir.exact <- "/home/andrea/HPC/ab1820/home/projects/2022/longvl/cmdstan_alpha100sharedhyper_vl_1000"
@@ -86,10 +86,10 @@ catn("=== MAIN ===")
 # plot.first.participant.rates(add_loess=TRUE)
 
 # get census-eligible
-if (file.exists(path.census.eligible.aggregated)){
+if (file.exists(path.census.eligible.aggregated)) {
     dcens <- fread(path.census.eligible.aggregated)
-}else{
-    dcens <- get.census.eligible(path=path.census.eligible) |>
+} else {
+    dcens <- get.census.eligible(path = path.census.eligible) |>
         setnames(c("AGE_LABEL", "SEX_LABEL", "LOC_LABEL"), c("AGEYRS", "SEX", "LOC"))
 }
 dcens[, AGEGROUP := split.agegroup(AGEYRS)]
@@ -215,7 +215,7 @@ if (make_plots & !args$shared.hyper) {
 catn("=== Get posterior draws from rds files ===")
 ##################################################
 
-dfiles_rds <- get.output.paths.ftp.and.all("round1[0-9].rds$|220729.rds$") |> 
+dfiles_rds <- get.output.paths.ftp.and.all("round1[0-9].rds$|220729.rds$") |>
     unique() |>
     subset(MODEL != "tables")
 if (!args$shared.hyper) {
@@ -230,7 +230,7 @@ catn("Load all previous results and plot")
 # _________________________________________
 
 # get posteriors for proportions among entire pop, as weighted averages of FTP and non.
-filename_rds  <- file.path(out.dir.tables, "fullpop_posteriorquantiles_by_agesexround.rds")
+filename_rds <- file.path(out.dir.tables, "fullpop_posteriorquantiles_by_agesexround.rds")
 
 if (file.exists(filename_rds) & !overwrite) {
     djoint <- readRDS(filename_rds)
@@ -253,7 +253,8 @@ if (file.exists(filename_rds) & !overwrite) {
 
 if (make_plots) {
     # set dimensions for all plots below
-    .w <- 10; .h <- 12
+    .w <- 10
+    .h <- 12
     p_hiv <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-prevl")
     p_supp <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-hiv")
     p_vir <- plot.fit.weighted.by.ftpstatus(djoint, "run-gp-supp-pop")
@@ -265,7 +266,8 @@ if (make_plots) {
     ggsave2(p = p_vir, file = .fnm("suppofpop"), LALA = out.dir.figures, .w, .h)
 
     # need to compare suppression in Round 19 in Inland and fishing communities...
-    .w <- 10; .h <- 7
+    .w <- 10
+    .h <- 7
     p1_vir <- plot.comparison.prevalence.fishinginland.oneround(DT = djoint, model = "run-gp-supp-pop", round = 19)
     p1_supp <- plot.comparison.prevalence.fishinginland.oneround(DT = djoint, model = "run-gp-supp-hiv", round = 19, ylim = 1)
     p1_hiv <- plot.comparison.prevalence.fishinginland.oneround(DT = djoint, model = "run-gp-prevl", round = 19)
@@ -282,7 +284,8 @@ if (make_plots) {
         ggsave2(p = p, file = filename, LALA = out.dir.figures, w = 9, h = 8)
     }
 
-    .w <- 18; .h <- 16
+    .w <- 18
+    .h <- 16
     p1 <- plot_propofpop_of_viraemic_byagesex_stratbycommround(djoint, colorby = "ROUND", cri = TRUE)
     p2 <- plot_propofpop_of_viraemic_byagesex_stratbycommround(djoint, colorby = "ROUND", cri = FALSE)
     filename <- paste0("propofpop_of_viraemic_byagesex_stratbycommround", c("_cri", ""), ".pdf")
@@ -326,7 +329,8 @@ if (file.exists(filename_rds) & !overwrite) {
                     tmp[, quantile2(N / NE), by = c("LOC", "SEX", "AGEGROUP")]
                 }
             )
-        }, by = c("MODEL", "ROUND")
+        },
+        by = c("MODEL", "ROUND")
     ]
     djoint_agegroup[is.na(AGEGROUP), AGEGROUP := "Total"]
     djoint_agegroup[is.na(SEX), SEX := "Total"]
@@ -336,7 +340,7 @@ if (file.exists(filename_rds) & !overwrite) {
 if (make_tables) {
     .null <- paper_statements_overall_prevalence(round = 19)
     .null <- paper_statements_female_prevalence(djoint_agegroup)
-    .null <- paper_statements_prevalence_viraemia(djoint_agegroup, model="run-gp-supp-pop")
+    .null <- paper_statements_prevalence_viraemia(djoint_agegroup, model = "run-gp-supp-pop")
     # .null <- paper_statements_prevalence_viraemia(djoint_agegroup, model="run-gp-supp-hiv")
     .null <- paper_statements_prevalence_viraemia2(model = "run-gp-supp-pop")
     # NOT WORK .null <- paper_statements_prevalence_viraemia2(model = 'run-gp-supp-hiv')
@@ -344,8 +348,8 @@ if (make_tables) {
 
     # For CROI:
     tmp <- djoint_agegroup[AGEGROUP == "Total" & SEX != "Total" & ROUND %in% c(16, 19)]
-    tmp[,  CELL := prettify_cell(M*100, CL*100, CU*100, percent=TRUE)]
-    tmp[, dcast(.SD, ROUND ~ SEX, value.var="CELL") , by=c( "MODEL", "LOC")]
+    tmp[, CELL := prettify_cell(M * 100, CL * 100, CU * 100, percent = TRUE)]
+    tmp[, dcast(.SD, ROUND ~ SEX, value.var = "CELL"), by = c("MODEL", "LOC")]
 }
 
 catn("gender-folds in HIV and viraemia prevalences")
@@ -374,27 +378,29 @@ if (file.exists(filename_rds) & !overwrite) {
                         sets = list(by_cols, setdiff(by_cols, "AGEGROUP"), setdiff(by_cols, c("AGEGROUP", "SEX")))
                     )
                     tmp[, prev := N / NE]
-                    tmp[ is.na(AGEGROUP) & !is.na(SEX), 
-                        .(fold = prev[SEX=="F"]/prev[SEX=="M"]),
-                    by=c(dot.cols, "LOC")][, quantile2(fold), by="LOC"]
+                    tmp[is.na(AGEGROUP) & !is.na(SEX),
+                        .(fold = prev[SEX == "F"] / prev[SEX == "M"]),
+                        by = c(dot.cols, "LOC")
+                    ][, quantile2(fold), by = "LOC"]
                 }
             )
-        }, by = c("MODEL", "ROUND")
+        },
+        by = c("MODEL", "ROUND")
     ]
     dfolds_prevalence[is.na(AGEGROUP), AGEGROUP := "Total"]
     dfolds_prevalence[is.na(SEX), SEX := "Total"]
     saveRDS(object = dfolds_prevalence, filename_rds)
 }
 
-if(make_tables){
-    .null <- paper_statements_gender_prevl_fold(DT=dfolds_prevalence)
+if (make_tables) {
+    .null <- paper_statements_gender_prevl_fold(DT = dfolds_prevalence)
 }
 
 
 catn("Get quantiles for population prevalences aggregated over age")
 # ___________________________________________________________
 
-filename_rds  <- file.path(out.dir.tables, "posterior_quantiles_ageaggregate.rds")
+filename_rds <- file.path(out.dir.tables, "posterior_quantiles_ageaggregate.rds")
 filename_rds2 <- file.path(out.dir.tables, "posterior_pvalues_virred_comparison.rds")
 
 if (file.exists(filename_rds) & !overwrite) {
@@ -426,24 +432,27 @@ if (file.exists(filename_rds) & !overwrite) {
     red <- dcast(djoint_ageaggr,
         MODEL + .chain + .iteration + .draw + LOC + SEX ~ paste0("R", ROUND),
         value.var = "joint"
-    )[j=list(
-            MODEL = MODEL, LOC = LOC, SEX = SEX,
-            redR17 = .percent.reduction(R16, R17),
-            redR18 = .percent.reduction(R16, R18),
-            redR19 = .percent.reduction(R16, R19),
-            redR1718 = .percent.reduction(R17, R18),
-            redR1819 = .percent.reduction(R18, R19)
-        )
-    ] |> melt(
+    )[j = list(
+        MODEL = MODEL, LOC = LOC, SEX = SEX,
+        redR17 = .percent.reduction(R16, R17),
+        redR18 = .percent.reduction(R16, R18),
+        redR19 = .percent.reduction(R16, R19),
+        redR1718 = .percent.reduction(R17, R18),
+        redR1819 = .percent.reduction(R18, R19)
+    )] |> melt(
         id.vars = c("MODEL", "LOC", "SEX"),
         measure.vars = c("redR17", "redR18", "redR19", "redR1718", "redR1819")
     )
-    pval_red <- red[MODEL %like% "run-gp-supp-pop" & variable == "redR19", {
-        iter_F <- as.logical(seq_len(.N) %% 2)
-        list(
-            type = "Viraemia reduction larger in women rather than men",
-            p_val = mean(value[iter_F] > value[!iter_F])
-        ) }, by="LOC"]
+    pval_red <- red[MODEL %like% "run-gp-supp-pop" & variable == "redR19",
+        {
+            iter_F <- as.logical(seq_len(.N) %% 2)
+            list(
+                type = "Viraemia reduction larger in women rather than men",
+                p_val = mean(value[iter_F] > value[!iter_F])
+            )
+        },
+        by = "LOC"
+    ]
     joint_ageagrr_list <- list(
         percent_reduction = red[, quantile2(value), by = c("MODEL", "SEX", "LOC", "variable")],
         round_totals = djoint_ageaggr[, quantile2(joint), by = c("MODEL", "SEX", "LOC", "ROUND")]
@@ -517,7 +526,7 @@ filename_rds2 <- file.path(out.dir.tables, "posterior_pvalues_virofplhiv_compari
 if (file.exists(filename_rds2) & !overwrite) {
     NULL
 } else {
-    pvalues_draws <- dfiles_rds[ ROUND %in% c(19),
+    pvalues_draws <- dfiles_rds[ROUND %in% c(19),
         {
             paths <- file.path(D, F)
             .check <- function(x) {
@@ -560,14 +569,19 @@ if (file.exists(filename_rds2) & !overwrite) {
         by = c("ROUND")
     ]
 
-    pvalues <- pvalues_draws[ROUND == 19, {
-        # stopifnot(.N == 2)
-        length(S[SEX == "F"])
-        z <- mean(S[SEX == "F"] > S[SEX == "M"])
-        if (z == 1){
-            sprintf(">= 1 - 1/16,000")
-        }else{ as.character(z) }
-    }, by = c("LOC", "ROUND")]
+    pvalues <- pvalues_draws[ROUND == 19,
+        {
+            # stopifnot(.N == 2)
+            length(S[SEX == "F"])
+            z <- mean(S[SEX == "F"] > S[SEX == "M"])
+            if (z == 1) {
+                sprintf(">= 1 - 1/16,000")
+            } else {
+                as.character(z)
+            }
+        },
+        by = c("LOC", "ROUND")
+    ]
     pvalues[, TYPE := "Difference in suppression among PLHIV (pd women - men)"]
 
     saveRDS(object = pvalues, filename_rds2)
@@ -576,7 +590,8 @@ if (file.exists(filename_rds2) & !overwrite) {
 
 
 if (make_plots & FALSE) {
-    .w <- 14; .h <- 14
+    .w <- 14
+    .h <- 14
     p_list <- lapply(c(16:19), plot.prevalence.by.age.group, DT = dsupp_agegroup)
     filenames <- paste0("plot_suppofhiv_by_agegroup_round", c(16:19), ".pdf")
     # for (i in 1:length(p_list)) {
@@ -595,7 +610,8 @@ catn("Get quantiles for population prevalences by custom age group")
 
 dcens_custom <- copy(dcens)
 dcens_custom[, AGEGROUP := split.agegroup(AGEYRS,
-    breaks = c(15, 18, 23, 28, 33, 38, 43, 48, 50))]
+    breaks = c(15, 18, 23, 28, 33, 38, 43, 48, 50)
+)]
 
 filename_rds <- file.path(out.dir.tables, "posterior_quantiles_suppression_agegroup_custom.rds")
 
@@ -646,27 +662,29 @@ if (file.exists(filename_rds) & !overwrite) {
                 .aggr.hiv.prev(tmp, by_cols = c("LOC", "SEX", "AGEGROUP"))
             ) |> rbindlist(use.names = TRUE)
         },
-        by = c("ROUND")]
+        by = c("ROUND")
+    ]
     saveRDS(object = dsupp_agegroup_custom, filename_rds)
 }
 
 # I would then need to get a round 19 histogram...
 if (make_plots) {
-    .w <- 12; .h <- 18
+    .w <- 12
+    .h <- 18
     # p_list <- lapply(c(16:19), plot.prevalence.by.age.group, DT = dsupp_agegroup)
     p <- hist_prevalence_by_age_group_custom(dsupp_agegroup_custom)
     filename <- "hist_suppofhiv_by_agegroup_custom_round19.pdf"
-    cmd <- ggsave2(p=p, file=filename, LALA=out.dir.figures, .w, .h, u="cm")
+    cmd <- ggsave2(p = p, file = filename, LALA = out.dir.figures, .w, .h, u = "cm")
     system(cmd)
 }
 
-if ( make_tables ){
-    .null <- paper_statements_prevalence_viraemia_maximum(dsupp_agegroup_custom[SEX%like% "F"])
+if (make_tables) {
+    .null <- paper_statements_prevalence_viraemia_maximum(dsupp_agegroup_custom[SEX %like% "F"])
 }
 
 
 catn("Get quantiles for contributions by age")
-    
+
 # _____________________________________________
 
 filename_rds <- file.path(out.dir.tables, "fullpop_allcontributions.rds")
@@ -723,13 +741,13 @@ if (make_plots) {
 catn("Get quantiles for sex-contributions by age")
 # _____________________________________________
 
-# This first paragraph is not strictly necessary, but it was used to determine the range of ages 
+# This first paragraph is not strictly necessary, but it was used to determine the range of ages
 # which contribute to ~ 50 % of the PLHIV population
 filename_rds <- file.path(out.dir.tables, "fullpop_allcontributions_sex.rds")
 if (file.exists(filename_rds) & !overwrite) {
     dcontrib_sex <- readRDS(filename_rds)
 } else {
-    dcontrib_sex <- dfiles_rds[ MODEL != "run-gp-supp-hiv",
+    dcontrib_sex <- dfiles_rds[MODEL != "run-gp-supp-hiv",
         {
             eval(expr_setup_ftp_all)
             get.weighted.average.p_predict(
@@ -758,8 +776,8 @@ if (file.exists(filename_rds) & !overwrite) {
     saveRDS(object = dcontrib_sex, file = filename_rds)
 }
 
-if(make_tables){
-    # these were the results 
+if (make_tables) {
+    # these were the results
     plhiv_contributors <- data.table(
         SEX = c("F", "F", "M", "M"),
         LOC = c("fishing", "inland", "fishing", "inland"),
@@ -767,7 +785,7 @@ if(make_tables){
         MAX = c(37, 39, 39, 45)
     )
 
-    dcontrib_50p_PLHIV <- dfiles_rds[ ROUND == 19 & MODEL == "run-gp-prevl",
+    dcontrib_50p_PLHIV <- dfiles_rds[ROUND == 19 & MODEL == "run-gp-prevl",
         {
             eval(expr_setup_ftp_all)
             get.weighted.average.p_predict(
@@ -777,7 +795,7 @@ if(make_tables){
                 round = unique(ROUND),
                 expression_prereturn = {
                     tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
-                    tmp <- merge(tmp, plhiv_contributors, by=c("SEX", "LOC"))
+                    tmp <- merge(tmp, plhiv_contributors, by = c("SEX", "LOC"))
                     tmp[, INAGEGROUP := (AGEYRS >= MIN & AGEYRS <= MAX)]
                     tmp <- tmp[, list(z = sum(joint * ELIGIBLE_SMOOTH)), by = c(dot.cols, "LOC", "SEX", "INAGEGROUP")]
                     tmp <- tmp[,
@@ -807,12 +825,11 @@ filename_rds <- file.path(out.dir.tables, "mean_ages_plhiv_viraemic.rds")
 if (file.exists(filename_rds) & !overwrite) {
     dmeanage <- readRDS(filename_rds)
 } else {
-
-    .linearly_interpolate <- function(value, y, x){
+    .linearly_interpolate <- function(value, y, x) {
         idx <- which(y >= value)[1]
-        gradient = y[idx] - y[idx - 1]
-        b = ( y[idx] - value ) / gradient
-        return(x[idx] - b )
+        gradient <- y[idx] - y[idx - 1]
+        b <- (y[idx] - value) / gradient
+        return(x[idx] - b)
     }
 
     dmeanage <- dfiles_rds[MODEL %in% c("run-gp-prevl", "run-gp-supp-pop"),
@@ -827,23 +844,24 @@ if (file.exists(filename_rds) & !overwrite) {
                     tmp <- merge(draws_all, dcens, by = c("LOC", "SEX", "AGEYRS", "ROUND"))
                     # Not sure if valid way to compute the posterior "mode"...
                     tmp[, cum_cdf := cumsum(joint * ELIGIBLE_SMOOTH) / sum(joint * ELIGIBLE_SMOOTH),
-                        by = c(dot.cols, "LOC", "ROUND", "SEX")]
+                        by = c(dot.cols, "LOC", "ROUND", "SEX")
+                    ]
                     tmp1 <- tmp[
                         j = .(
-                            AGEMODE = AGEYRS[which.max(joint * ELIGIBLE_SMOOTH )],
+                            AGEMODE = AGEYRS[which.max(joint * ELIGIBLE_SMOOTH)],
                             AGEMEAN = Hmisc::wtd.mean(AGEYRS, joint * ELIGIBLE_SMOOTH),
                             AGESTD = Hmisc::wtd.var(AGEYRS, joint * ELIGIBLE_SMOOTH) |> sqrt(),
-                            AGE25 =  .linearly_interpolate(.25, y=cum_cdf, x=AGEYRS),
-                            AGE50 =  .linearly_interpolate(.50, y=cum_cdf, x=AGEYRS),
-                            AGE75 =  .linearly_interpolate(.75, y=cum_cdf, x=AGEYRS)
+                            AGE25 = .linearly_interpolate(.25, y = cum_cdf, x = AGEYRS),
+                            AGE50 = .linearly_interpolate(.50, y = cum_cdf, x = AGEYRS),
+                            AGE75 = .linearly_interpolate(.75, y = cum_cdf, x = AGEYRS)
                         ),
                         by = c(dot.cols, "LOC", "ROUND", "SEX")
                     ] |> melt.data.table(
-                            measure.vars = c("AGEMEAN", "AGESTD", "AGEMODE", "AGE25", "AGE50", "AGE75"),
-                            variable.name = "TYPE",
-                            value.name = "value"
-                        )
-                    tmp1[,j = quantile2(value), by = c("SEX", "LOC", "TYPE")]
+                        measure.vars = c("AGEMEAN", "AGESTD", "AGEMODE", "AGE25", "AGE50", "AGE75"),
+                        variable.name = "TYPE",
+                        value.name = "value"
+                    )
+                    tmp1[, j = quantile2(value), by = c("SEX", "LOC", "TYPE")]
                 }
             )
         },
@@ -863,7 +881,7 @@ if (make_tables) {
     )
     rm(tmp1)
 
-    tab <- make.supp.table.meanage(newline=TRUE, include_date=TRUE)
+    tab <- make.supp.table.meanage(newline = TRUE, include_date = TRUE)
 }
 
 catn("Other contribution to viraemia quantiles for text")
@@ -872,7 +890,7 @@ catn("Other contribution to viraemia quantiles for text")
 filename_overleaf <- file.path(out.dir.tables, "overleaf_viraemiacontribution_custom.rds")
 
 dcens_custom <- copy(dcens)
-dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, 25, 35 ,40, 50))]
+dcens_custom[, AGEGROUP := split.agegroup(AGEYRS, breaks = c(15, 25, 35, 40, 50))]
 
 if (file.exists(filename_overleaf) & !overwrite) {
     contrib_viraemia_custom <- readRDS(filename_overleaf)
@@ -913,18 +931,17 @@ if (file.exists(filename_overleaf) & !overwrite) {
 
     # paper_statements_contributions_viraemia_round(round=16, agegroup="15-24")
     # paper_statements_contributions_viraemia_round(round=19, agegroup="15-24")
-    paper_statements_contributions_viraemia_round(round=19, agegroup="25-34")
+    paper_statements_contributions_viraemia_round(round = 19, agegroup = "25-34")
 }
 
 if (make_tables) {
-
-    paper_statements_contributions_census_eligible(agegroup = '15-24', comm="inland", sex='M', smooth=FALSE)
-    paper_statements_contributions_census_eligible(agegroup = '25-39', comm="inland", sex='M', smooth=FALSE)
+    paper_statements_contributions_census_eligible(agegroup = "15-24", comm = "inland", sex = "M", smooth = FALSE)
+    paper_statements_contributions_census_eligible(agegroup = "25-39", comm = "inland", sex = "M", smooth = FALSE)
     # paper_statements_contributions_census_eligible(agegroup = '25-34', comm="inland", sex='M', smooth=FALSE)
 
     # paper_statements_contributions_viraemia_round(round = 16)
-    paper_statements_contributions_viraemia_round(round = 19, agegroup="25-39")
-    paper_statements_contributions_viraemia_round(round = 19, agegroup="15-24")
+    paper_statements_contributions_viraemia_round(round = 19, agegroup = "25-39")
+    paper_statements_contributions_viraemia_round(round = 19, agegroup = "15-24")
     contrib_viraemia_custom |> plot_quantiles(x = AGEGROUP, color = SEX_LAB, facet = LOC_LAB ~ ROUND_LAB)
 }
 
@@ -1142,8 +1159,8 @@ if (file.exists(filename_rds) & !overwrite) {
         {
             eval(expr_setup_ftp_all)
             get.posterior.logratios.ftp(
-                fit1=readRDS(paths[idx.all]),
-                fit2=readRDS(paths[idx.ftp]),
+                fit1 = readRDS(paths[idx.all]),
+                fit2 = readRDS(paths[idx.ftp]),
                 fit_all = readRDS(paths),
                 round = unique(ROUND)
             )
@@ -1160,8 +1177,8 @@ if (file.exists(filename_rds2) & !overwrite) {
         {
             eval(expr_setup_ftp_all)
             get.posterior.diff.ftp(
-                fit1=readRDS(paths[idx.all]),
-                fit2=readRDS(paths[idx.ftp]),
+                fit1 = readRDS(paths[idx.all]),
+                fit2 = readRDS(paths[idx.ftp]),
                 fit_all = readRDS(paths)
             )
         },
@@ -1371,7 +1388,7 @@ if (file.exists(filename_rds) & !overwrite) {
                 return(x)
             }
             # eval(expr_setup_ftp_all)
-            eval(expr_setup_hivprev_supphiv_ftpall )
+            eval(expr_setup_hivprev_supphiv_ftpall)
             cat("Round ", unique(ROUND), "\n")
             # load hiv prevalences to compute N HIV positive in age groups
             draws_prev <- get.weighted.average.p_predict(
@@ -1417,13 +1434,13 @@ if (file.exists(filename_rds) & !overwrite) {
                     cbind(tmp1[, quantile2(RATIO_MF_VIR), by = by_cols_nosex], TYPE = "VIR"),
                     cbind(tmp1[, quantile2(DIFF_MF_SUPP), by = by_cols_nosex], TYPE = "SUP-DIFF")
                 )
-                return(list(Q=out, pv=tmp1[, .(P=mean(DIFF_MF_SUPP > 0)), by=by_cols_nosex]))
+                return(list(Q = out, pv = tmp1[, .(P = mean(DIFF_MF_SUPP > 0)), by = by_cols_nosex]))
             }
             lala <- .take.supp.ratio(tmp, by_cols = c("LOC", "SEX", "AGEGROUP"))
             lala2 <- .take.supp.ratio(tmp, by_cols = c("LOC", "SEX"))
 
-            p_values  <<- rbind(p_values, lala2$pv[, `:=` (ROUND=ROUND, AGEGROUP="Total")])
-            list( lala$Q, lala2$Q[, AGEGROUP := "Total"]) |> 
+            p_values <<- rbind(p_values, lala2$pv[, `:=`(ROUND = ROUND, AGEGROUP = "Total")])
+            list(lala$Q, lala2$Q[, AGEGROUP := "Total"]) |>
                 rbindlist(use.names = TRUE)
         },
         by = c("ROUND")
@@ -1459,43 +1476,49 @@ if (make_tables) {
     tab_mf_diffs <- make.table.malefemale.diff.viraemia(DT = dmf_ratios)
 
     .dict <- dict_table_names$percent_reduction
-    tab_eligible <- dcens[, 
+    tab_eligible <- dcens[,
         .(N_ELIGIBLE = comma(sum(ELIGIBLE))),
-        by = c("ROUND", "LOC", "SEX")] |>
+        by = c("ROUND", "LOC", "SEX")
+    ] |>
         prettify_labels() |>
         remove.nonpretty()
 
-    tab_pvir <- djoint_agegroup[ MODEL %like% 'supp-pop' & AGEGROUP == "Total" & SEX != "Total",  .(
+    tab_pvir <- djoint_agegroup[MODEL %like% "supp-pop" & AGEGROUP == "Total" & SEX != "Total", .(
         LOC, SEX, ROUND,
-        VIR_P = prettify_cell(M*100, CL*100, CU*100, percent = TRUE)
+        VIR_P = prettify_cell(M * 100, CL * 100, CU * 100, percent = TRUE)
     )] |> prettify_labels()
-    set(tab_pvir, j=c("LOC", "SEX", "ROUND"), value=NULL)
+    set(tab_pvir, j = c("LOC", "SEX", "ROUND"), value = NULL)
 
-    tab_hiv <- tablify.posterior.Nunsuppressed(joint_ageagrr_list, 
+    tab_hiv <- tablify.posterior.Nunsuppressed(joint_ageagrr_list,
         CELLname = "HIV",
-        model = "run-gp-prevl")
+        model = "run-gp-prevl"
+    )
     tab_unsupp <- tablify.posterior.Nunsuppressed(joint_ageagrr_list,
         CELLname = "UNSUPP",
-        model = "run-gp-supp-pop")
+        model = "run-gp-supp-pop"
+    )
     dsupp_amonghiv <- dsupp_amonghiv[, .(
-        ROUND_LAB, LOC_LAB, SEX_LAB, 
+        ROUND_LAB, LOC_LAB, SEX_LAB,
         CELL_SUPPHIV = prettify_cell(M * 100, CL * 100, CU * 100, percent = TRUE)
-    )] 
+    )]
 
     by_cols <- c("LOC_LAB", "SEX_LAB", "ROUND_LAB")
     tab_merge <- merge(tab_eligible, tab_hiv) |>
-        merge(tab_unsupp, by=by_cols) |>
-        merge(dsupp_amonghiv, by=by_cols) |>
-        merge(tab_pvir, by=by_cols) |>
-        merge(tab_mf_diffs, by=by_cols)
+        merge(tab_unsupp, by = by_cols) |>
+        merge(dsupp_amonghiv, by = by_cols) |>
+        merge(tab_pvir, by = by_cols) |>
+        merge(tab_mf_diffs, by = by_cols)
     tab_merge[, SEX_LAB := unname(sex_dictionary2[SEX_LAB])]
     tab_merge <- delete.repeated.table.values(tab_merge) |>
         setnames(names(.dict), unname(.dict), skip_absent = TRUE)
     setcolorder(tab_merge, unname(.dict))
 
-    tab_merge <- subset(tab_merge, select = - CELL_HIV_P)
+    tab_merge <- subset(tab_merge, select = -CELL_HIV_P)
     .sd <- names(tab_merge)[-(1:2)]
-    tab_merge[, (.sd) := lapply(.SD, function(x) { x[x == "" | is.na(x)] <- "--"; x}), .SDcols = .sd]
+    tab_merge[, (.sd) := lapply(.SD, function(x) {
+        x[x == "" | is.na(x)] <- "--"
+        x
+    }), .SDcols = .sd]
     colnames(tab_merge)
 
     if (interactive()) {
@@ -1513,36 +1536,40 @@ catn("Assess fits")
 ###################
 
 # necessary for later...
-source(file.path(gitdir.functions,"phsc_vl_cmdstan_helpers.R"))
-group_codes <- expand.grid( SEX=0:1, LOC=0:1)
+source(file.path(gitdir.functions, "phsc_vl_cmdstan_helpers.R"))
+group_codes <- expand.grid(SEX = 0:1, LOC = 0:1)
 setDT(group_codes)
-group_codes[, `:=`( 
-    SEX_LABEL=stan_dicts$INTtoSEX[as.character(SEX)], 
-    LOC_LABEL=stan_dicts$INTtoLOC[as.character(LOC)] )]
+group_codes[, `:=`(
+    SEX_LABEL = stan_dicts$INTtoSEX[as.character(SEX)],
+    LOC_LABEL = stan_dicts$INTtoLOC[as.character(LOC)]
+)]
 
 # Locate rds files for model fits and data
-dirs <- list.files(args$out.dir.exact, pattern="^run-gp", full.names = TRUE) 
-tmp <-  list.files(dirs , pattern = "rds$", full.names = TRUE)
+dirs <- list.files(args$out.dir.exact, pattern = "^run-gp", full.names = TRUE)
+tmp <- list.files(dirs, pattern = "rds$", full.names = TRUE)
 dfits <- data.table(
-    F=tmp,
-    RDS = fifelse( basename(tmp) %like% "standata.rds", yes ="data" , no="fit"),
-    ROUND = as.integer( basename(tmp) |> stringr::str_extract("(?<=round)\\d+")),
+    F = tmp,
+    RDS = fifelse(basename(tmp) %like% "standata.rds", yes = "data", no = "fit"),
+    ROUND = as.integer(basename(tmp) |> stringr::str_extract("(?<=round)\\d+")),
     MODEL = basename(dirname(tmp))
 )
 
 gg_list <- list()
-out <- dfits[, {
-    sprintf( "Model: %s, round: %s\n", MODEL[1], ROUND[1]) |> cat()
-    plot_single_posterior_fit(
-        fit_rds = F[RDS == 'fit'],
-        standata_rds = F[RDS == 'data'],
-        model=MODEL[1],
-        round=ROUND[1]
-    )
-}, by = c("MODEL", "ROUND")]
+out <- dfits[,
+    {
+        sprintf("Model: %s, round: %s\n", MODEL[1], ROUND[1]) |> cat()
+        plot_single_posterior_fit(
+            fit_rds = F[RDS == "fit"],
+            standata_rds = F[RDS == "data"],
+            model = MODEL[1],
+            round = ROUND[1]
+        )
+    },
+    by = c("MODEL", "ROUND")
+]
 
 cmds <- lapply(
-    c('prevl', 'supp-hiv', 'supp-pop'),
+    c("prevl", "supp-hiv", "supp-pop"),
     aggregate_posterior_fits,
     filename_fmt = "suppfig_all_posteriors_vs_data_%s.pdf"
 )
@@ -1552,29 +1579,30 @@ cmds <- lapply(
 # posterior predictive
 
 gg_list_pp <- list()
-out <- lapply( 
-    c("run-gp-prevl","run-gp-supp-hiv","run-gp-supp-pop"),
+out <- lapply(
+    c("run-gp-prevl", "run-gp-supp-hiv", "run-gp-supp-pop"),
     plot_single_posterior_pred,
-    DT=dfits
+    DT = dfits
 )
 
 gg_list_pp <- lapply(
-    gg_list_pp, 
-    function(p) 
-        p + theme(legend.margin = margin(r=0,l=-10, t = 0, b=0, unit = "pt")) 
+    gg_list_pp,
+    function(p) {
+        p + theme(legend.margin = margin(r = 0, l = -10, t = 0, b = 0, unit = "pt"))
+    }
 )
 
 p_pp <- ggarrange(
     plotlist = gg_list_pp,
-    ncol=1, nrow=3,
-    common.legend = TRUE, legend='bottom',
+    ncol = 1, nrow = 3,
+    common.legend = TRUE, legend = "bottom",
     labels = "auto",
     font.label = list(size = 10, color = "black", face = "bold", family = NULL)
-) + nm_reqs 
+) + nm_reqs
 p_pp
 
 filename <- paste0("suppfig_all_ppchecks.pdf")
-cmd <- ggsave2(p = p_pp, file = filename, LALA = out.dir.figures, w = 18 , h = 24, u="cm")
+cmd <- ggsave2(p = p_pp, file = filename, LALA = out.dir.figures, w = 18, h = 24, u = "cm")
 # system(cmd)
 # cmd2overleaf(cmd)
 

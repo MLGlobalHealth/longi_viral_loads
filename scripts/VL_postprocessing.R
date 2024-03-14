@@ -127,27 +127,3 @@ filename <- 'main_allanalyses_inland.pdf'
 ggsave2(p.list[['noraw']], file=filename, LALA=vl.out.dir.figures, w=20, h=24, u='cm')
 filename <- 'main_allanalyses_inland_withraw.pdf'
 ggsave2(p.list[['withraw']], file=filename, LALA=vl.out.dir.figures, w=20, h=24, u='cm')
-
-
-
-# deprecated
-
-if(0){ 
-    # Unaids table
-    # ____________
-    cat('--- Make UNAIDS goals table ---\n')
-    tmp <- make.table.unaids.goals()
-    print(xtable::xtable(tmp), 
-          include.rownames=FALSE, 
-          hline.after=c(-1, seq(0, nrow(tmp), nrow(tmp)/4)),
-          file=file.path(vl.out.dir, 'tables', 'main_unaids_table.tex'))
-    xtable::xtable(tmp)
-
-    # Compare Prevalence of suppression among HIV+
-    # ____________________________________________
-    cat('-- Comparing prevalence of suppression among HIV+ ---\n')
-    tmp <- vl.vlprops.by.comm.gender.loc(dall)
-    vlc <- tmp$DT
-    tmp <- make.map.220810(dall, vlc, 'PVLNSofHIV_MEAN')
-}
-

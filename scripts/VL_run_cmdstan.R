@@ -115,7 +115,7 @@ if( args$confidential ){
     vla <- fread( path.aggregated.nums.denoms.r1619 )
 }
 
-# Estimate HIV prevalence
+# Estimate HIV seroprevalence
 # ________________________
 
 if(args$shared.hyper){
