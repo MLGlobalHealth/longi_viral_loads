@@ -1037,7 +1037,7 @@ plot.figure.main.prevalence <- function(DPREV = dprev, DCONTRIB = dcontrib, subt
     fig_list <- plot_prevalenceandcontrid(
         DPREV,
         DCONTRIB,
-        sec_name = "Age profile of PLHIV\n(black line, right y-axis)", return_list = TRUE,
+        sec_name = "Age profile of HIV burden\n(black line, right y-axis)", return_list = TRUE,
         loc_labeller = fifelse(subtitles == TRUE, yes = "none", no = "longest2n"),
     )
     .title <- function(lab) {

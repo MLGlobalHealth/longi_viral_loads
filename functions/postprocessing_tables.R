@@ -188,8 +188,8 @@ make_main_table_contributions <- function(
 
     names_comp <- if(longname) {
         c(
-            hiv = "Age profile of PLHIV",
-            unsupp = "Age profile of people\nexhibiting viraemia"
+            hiv = "Age profile of HIV burden",
+            unsupp = "Age profile of viraemia burden"
         )
     } else {
         c(
