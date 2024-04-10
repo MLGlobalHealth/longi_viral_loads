@@ -1,10 +1,10 @@
 ## Introduction
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 [![medRxiv link](https://img.shields.io/badge/medRxiv-link%20to%20paper-blue)](TODO)
+[![Zeondo DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10955672.svg)](https://doi.org/10.5281/zenodo.10955672)
 
 
-**Hello!** This repository contains the code for the analyses presented in the paper *TITLE* by A Brizzi et al.
-(I would put the citation here)
+**Hello!** This repository contains the code for the analyses presented in the paper *Age and gender profiles of HIV infection burden and viraemia: novel metrics for HIV epidemic control in African populations with high antiretroviral therapy coverage* by A Brizzi et al.
 
 ## Table of contents
  
@@ -34,7 +34,7 @@ You can follow the steps below to clone our codebase locally and rerun the analy
 
 1. Clone the github repository in a directory of your choice.
 2. Install the dependencies by running `sh dependencies_cmdstan.sh`.
-3. Download the data necessary to run the analyses from TODO.
+3. Download the data necessary to run the analyses from [Zenodo](https://zenodo.org/badge/DOI/10.5281/zenodo.10955672.svg)](https://doi.org/10.5281/zenodo.10955672).
 4. Specify the path to downloaded data directory in `R/paths.R` at line 22: \
     `indir.zenodo <- "PATH-TO-DOWNLOADED-ZENODO-DATA"`
  
