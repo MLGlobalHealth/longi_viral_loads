@@ -92,7 +92,7 @@ Please cite this work as *TODO* (leave a citation.bib in the repo?)
 
 ## Acknowledgments
 
-We thank all contributors, program staff and participants to the Rakai Community Cohort Study; all members of the PANGEA-HIV consortium, the [Rakai Health Sciences Program](https://www.rhsp.org/index.php).
+We thank all contributors, program staff and participants to the Rakai Community Cohort Study; the [Rakai Health Sciences Program](https://www.rhsp.org/index.php).
 
 We also extend our gratitude to the [Imperial College Research Computing Service](https://doi.org/10.14469/hpc/2232) for providing the computational resources to perform this study. 
 
