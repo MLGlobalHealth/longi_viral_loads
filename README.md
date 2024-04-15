@@ -34,7 +34,7 @@ You can follow the steps below to clone our codebase locally and rerun the analy
 
 1. Clone the github repository in a directory of your choice.
 2. Install the dependencies by running `sh dependencies_cmdstan.sh`.
-3. Download the data necessary to run the analyses from [Zenodo](https://zenodo.org/badge/DOI/10.5281/zenodo.10955672.svg)](https://doi.org/10.5281/zenodo.10955672).
+3. Download the data necessary to run the analyses from [Zenodo](https://doi.org/10.5281/zenodo.10955672).
 4. Specify the path to downloaded data directory in `R/paths.R` at line 22: \
     `indir.zenodo <- "PATH-TO-DOWNLOADED-ZENODO-DATA"`
  
