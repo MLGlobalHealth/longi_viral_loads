@@ -1,6 +1,6 @@
 ## Introduction
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
-[![medRxiv link](https://img.shields.io/badge/medRxiv-link%20to%20paper-blue)](TODO)
+[![medRxiv link](https://img.shields.io/badge/medRxiv-link%20to%20paper-blue)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11071606/)
 
 
 **Hello!** This repository contains the code for the analyses presented in the paper *TITLE* by A Brizzi et al.
@@ -34,7 +34,7 @@ You can follow the steps below to clone our codebase locally and rerun the analy
 
 1. Clone the github repository in a directory of your choice.
 2. Install the dependencies by running `sh dependencies_cmdstan.sh`.
-3. Download the data necessary to run the analyses from TODO.
+3. Download the data necessary to run the analyses from [zenodo](https://zenodo.org/uploads/12663850).
 4. Specify the path to downloaded data directory in `R/paths.R` at line 22: \
     `indir.zenodo <- "PATH-TO-DOWNLOADED-ZENODO-DATA"`
  
