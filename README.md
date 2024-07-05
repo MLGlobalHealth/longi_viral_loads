@@ -1,10 +1,10 @@
 ## Introduction
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 [![medRxiv link](https://img.shields.io/badge/medRxiv-link%20to%20paper-blue)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11071606/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.12663850.svg)](https://doi.org/10.5281/zenodo.12663850)
 
 
-**Hello!** This repository contains the code for the analyses presented in the paper *TITLE* by A Brizzi et al.
-(I would put the citation here)
+**Hello!** This repository contains the code for the analyses presented in the paper *Age and gender profiles of HIV infection burden and viraemia: novel metrics for HIV epidemic control in African populations with high antiretroviral therapy coverage* by A Brizzi et al.
 
 ## Table of contents
  
@@ -34,7 +34,7 @@ You can follow the steps below to clone our codebase locally and rerun the analy
 
 1. Clone the github repository in a directory of your choice.
 2. Install the dependencies by running `sh dependencies_cmdstan.sh`.
-3. Download the data necessary to run the analyses from [zenodo](https://zenodo.org/uploads/12663850).
+3. Download the data necessary to run the analyses from [Zenodo](https://doi.org/10.5281/zenodo.12663850).
 4. Specify the path to downloaded data directory in `R/paths.R` at line 22: \
     `indir.zenodo <- "PATH-TO-DOWNLOADED-ZENODO-DATA"`
  
@@ -92,10 +92,10 @@ Please cite this work as *TODO* (leave a citation.bib in the repo?)
 
 ## Acknowledgments
 
-We thank all contributors, program staff and participants to the Rakai Community Cohort Study; all members of the PANGEA-HIV consortium, the [Rakai Health Sciences Program](https://www.rhsp.org/index.php).
+We thank all contributors, program staff and participants to the Rakai Community Cohort Study; the [Rakai Health Sciences Program](https://www.rhsp.org/index.php).
 
 We also extend our gratitude to the [Imperial College Research Computing Service](https://doi.org/10.14469/hpc/2232) for providing the computational resources to perform this study. 
 
 ## Funding
 
-TOCOPY FROM PAPER.
+> This study was supported by the National Institute of Allergy and Infectious Diseases [U01AI075115 to RHG, R01AI087409 to RHG, U01AI100031 to RHG, ZIAAI001040 to TCQ]; the National Institute of Mental Health [F31MH095649 to Dr Jennifer Wagman, R01MH099733 to Ned Sacktor and MJW, R01MH107275 to LWC]; the Division of Intramural Research of the National Institute for Allergy and Infectious Diseases [TCQ, OL, SJR], NIAID [K01AA024068 to Dr Jennifer Wagman]; the Johns Hopkins University Center for AIDS Research [2P30AI094189 to Dr Richard Chaisson]; the U.S. President’s Emergency Plan for AIDS Relief (PEPFAR) through the Centers for Disease Control and Prevention [NU2GGH000817 to RHSP]; the Engineering and Physical Sciences Research Council through the EPSRC Centre for Doctoral Training in Modern Statistics and Statistical Machine Learning at Imperial and Oxford [EP/S023151/1 to Prof Axel Gandy]. The funders had no role in study design, data collection and analysis, decision to publish or preparation of the manuscript. The findings and conclusions in this report are those of the author(s) and do not necessarily represent the official position of the Centers for Disease Control and Prevention. 
