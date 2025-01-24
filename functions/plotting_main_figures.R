@@ -2019,7 +2019,17 @@ aggregate_posterior_fits <- function(model, filename_fmt) {
     nms_like_16 <- nms %which.like% "16"
     nms_notlike_16 <- nms %which.like% "17|18|19"
 
-    unique_legend <- ggpubr::as_ggplot(ggpubr::get_legend(gg_list[[1]] + nm_reqs))
+    # bug here. To fix need to:
+    #  1. find the global scale across the plots of interest.
+    #  2. apply the same scale to all plots 
+    #  scale_size_continuous(limits = global_size_range)
+    max_size = sapply(nms, function(n){max(gg_list[[n]]$plot_env$DT2$N)}) |> max()
+    gg_list[nms] <- lapply(
+        gg_list[nms],
+        function(p){
+            p + scale_size_continuous(limits = c(0, max_size/5))
+        })
+    unique_legend <- ggpubr::as_ggplot(ggpubr::get_legend(gg_list[[nms[1]]] + nm_reqs))
 
     p_all <- ggarrange(
         plotlist = c(
